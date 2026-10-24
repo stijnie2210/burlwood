@@ -19,3 +19,7 @@ frontend/node_modules
 .idea
 .vscode
 *.swp
+
+# Impeccable: critique sessions and the hook cache are local; DESIGN.md's sidecar is shared
+.impeccable/critique/
+.impeccable/hook.cache.json
