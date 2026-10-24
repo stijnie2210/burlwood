@@ -206,9 +206,9 @@ onUnmounted(() => document.removeEventListener('keydown', onKeyDown));
 .fdv-header {
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 0 12px;
-  height: 38px;
+  gap: var(--space-3);
+  padding: 0 var(--inset-panel);
+  height: var(--file-header-h);
   background: var(--surface-raised);
   border-bottom: 1px solid var(--border-subtle);
   flex-shrink: 0;
@@ -293,6 +293,7 @@ onUnmounted(() => document.removeEventListener('keydown', onKeyDown));
   flex: 1;
   overflow-y: auto;
   min-width: 0;
+  background: var(--surface-sunken);
 }
 
 .fdv-notice {
@@ -397,7 +398,7 @@ onUnmounted(() => document.removeEventListener('keydown', onKeyDown));
 .fdv-files {
   flex-shrink: 0;
   border-left: 1px solid var(--border-subtle);
-  background: var(--surface-sunken);
+  background: var(--surface-base);
   display: flex;
   flex-direction: column;
   overflow: hidden;

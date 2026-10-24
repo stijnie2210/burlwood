@@ -347,6 +347,7 @@ async function onMenuRefresh() {
 }
 
 .graph-scroller {
+  container: graph / inline-size;
   flex: 1;
   overflow-y: auto;
   overflow-x: auto;

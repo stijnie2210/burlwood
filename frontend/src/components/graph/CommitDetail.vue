@@ -57,14 +57,14 @@ const displayDate = computed(() => {
   flex-direction: column;
   overflow: hidden;
   font-size: var(--text-row);
-  background: var(--surface-sunken);
+  background: var(--surface-chrome);
   border-left: 1px solid var(--border-subtle);
   min-width: 200px;
   height: 100%;
 }
 
 .commit-meta {
-  padding: 10px 12px;
+  padding: var(--space-3) var(--inset-panel) var(--space-4);
   border-bottom: 1px solid var(--border-subtle);
   flex-shrink: 0;
 }
@@ -72,9 +72,9 @@ const displayDate = computed(() => {
 .meta-row {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: var(--space-1);
   flex-wrap: wrap;
-  margin-bottom: 5px;
+  margin-bottom: var(--space-2);
 }
 
 .meta-hash {
@@ -84,16 +84,18 @@ const displayDate = computed(() => {
 }
 
 .meta-subject {
-  font-size: var(--text-body);
+  font-size: var(--text-title);
   color: var(--text-primary);
-  font-weight: 500;
-  margin-bottom: 3px;
+  font-weight: 600;
+  margin-bottom: var(--space-2);
+  line-height: 1.35;
+  overflow-wrap: anywhere;
 }
 .meta-info {
   display: flex;
-  gap: 12px;
-  color: var(--text-secondary);
-  font-size: var(--text-meta);
+  gap: var(--space-3);
+  color: var(--text-tertiary);
+  font-size: var(--text-row);
 }
 
 .loading {

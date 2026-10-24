@@ -7,6 +7,21 @@
   --text-body: 13px;
   --text-title: 15px;
 
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+  --inset-panel: var(--space-3);
+
+  --toolbar-h: 56px;
+  --tabbar-h: 28px;
+  --file-header-h: 32px;
+  --row-h: 24px;
+  /* Room for the macOS traffic lights in the hidden-inset title bar. */
+  --traffic-light-inset: 84px;
+
   --surface-sunken: #141416;
   --surface-base: #1b1b1d;
   --surface-raised: #222225;

@@ -37,7 +37,7 @@ const staging = useStagingStore();
 const toast = useToastStore();
 
 const STAGING_FL_KEY = 'gitgood:stagingFileListWidth';
-const fileListWidth = ref(parseInt(localStorage.getItem(STAGING_FL_KEY) ?? '260', 10));
+const fileListWidth = ref(parseInt(localStorage.getItem(STAGING_FL_KEY) ?? '300', 10));
 watch(fileListWidth, (v) => localStorage.setItem(STAGING_FL_KEY, String(v)));
 
 function makeResizer(width: Ref<number>, min: number, max: number) {
@@ -708,12 +708,6 @@ async function doAbortRebase() {
           role="listbox"
           aria-label="Changed files"
         >
-          <div class="staging-toolbar">
-            <button class="toolbar-btn" title="Refresh status" @click="staging.load(repoPath())">
-              ⟳ Refresh
-            </button>
-          </div>
-
           <div v-if="staging.loading" class="list-loading">Loading…</div>
           <template v-else>
             <!-- Conflicts section (only shown during a merge) -->
@@ -743,9 +737,28 @@ async function doAbortRebase() {
             <!-- Unstaged section -->
             <div class="section-header">
               <span>Unstaged ({{ staging.unstagedFiles.length }})</span>
-              <button v-if="staging.unstagedFiles.length" class="section-btn" @click="onStageAll">
-                Stage All
-              </button>
+              <div class="section-actions">
+                <button
+                  class="section-icon-btn"
+                  title="Refresh status"
+                  aria-label="Refresh status"
+                  @click="staging.load(repoPath())"
+                >
+                  <svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true">
+                    <path
+                      d="M10.5 6a4.5 4.5 0 1 1-1.3-3.2M10.5 1.5v2.8H7.7"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="1.3"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                    />
+                  </svg>
+                </button>
+                <button v-if="staging.unstagedFiles.length" class="section-btn" @click="onStageAll">
+                  Stage All
+                </button>
+              </div>
             </div>
             <div v-if="!staging.unstagedFiles.length" class="empty-section">Clean</div>
             <div
@@ -846,11 +859,6 @@ async function doAbortRebase() {
           </template>
 
           <template v-else>
-            <label class="amend-row">
-              <input v-model="amend" type="checkbox" @change="onAmendToggle" />
-              <span>Amend previous commit</span>
-            </label>
-
             <div class="summary-row">
               <textarea
                 v-model="commitSummary"
@@ -878,6 +886,11 @@ async function doAbortRebase() {
               rows="2"
               @keydown.meta.enter="onCommit"
             />
+
+            <label class="amend-row">
+              <input v-model="amend" type="checkbox" @change="onAmendToggle" />
+              <span>Amend previous commit</span>
+            </label>
 
             <button
               class="commit-btn"
@@ -1045,7 +1058,7 @@ async function doAbortRebase() {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 7px 14px;
+  padding: var(--space-2) var(--inset-panel);
   background: var(--warning-soft);
   border-bottom: 1px solid var(--warning-border);
   flex-shrink: 0;
@@ -1059,7 +1072,7 @@ async function doAbortRebase() {
 .merge-abort-confirm {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: var(--space-2);
 }
 
 .merge-abort-confirm-text {
@@ -1068,7 +1081,7 @@ async function doAbortRebase() {
 }
 
 .merge-abort-btn {
-  padding: 3px 10px;
+  padding: var(--space-1) var(--space-2);
   background: var(--danger-soft);
   border: 1px solid var(--danger-border);
   border-radius: 4px;
@@ -1105,7 +1118,7 @@ async function doAbortRebase() {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 7px 14px;
+  padding: var(--space-2) var(--inset-panel);
   background: var(--accent-soft);
   border-bottom: 1px solid var(--accent-border);
   flex-shrink: 0;
@@ -1196,25 +1209,28 @@ async function doAbortRebase() {
   min-height: 0;
 }
 
-.staging-toolbar {
+.section-actions {
   display: flex;
-  gap: 4px;
-  padding: 6px 8px;
-  border-bottom: 1px solid var(--border);
-  flex-shrink: 0;
+  align-items: center;
+  gap: var(--space-1);
 }
 
-.toolbar-btn {
-  padding: 3px 8px;
-  background: var(--surface-control);
-  border: 1px solid var(--border);
+.section-icon-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  background: none;
+  border: none;
   border-radius: 4px;
-  color: var(--text-primary);
-  font-size: var(--text-meta);
+  color: var(--text-tertiary);
   cursor: pointer;
 }
-.toolbar-btn:hover {
-  background: var(--surface-control-hover);
+.section-icon-btn:hover {
+  background: var(--surface-hover);
+  color: var(--text-primary);
 }
 
 .list-loading {
@@ -1230,7 +1246,7 @@ async function doAbortRebase() {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 6px 10px 4px;
+  padding: var(--space-3) var(--inset-panel) var(--space-1);
   font-size: var(--text-meta);
   font-weight: 600;
   color: var(--text-secondary);
@@ -1257,7 +1273,7 @@ async function doAbortRebase() {
 }
 
 .empty-section {
-  padding: 4px 12px 6px;
+  padding: var(--space-1) var(--inset-panel) var(--space-2);
   font-size: var(--text-meta);
   color: var(--text-tertiary);
   font-style: italic;
@@ -1266,11 +1282,13 @@ async function doAbortRebase() {
 .file-item {
   display: flex;
   align-items: center;
-  gap: 6px;
-  padding: 4px 8px 4px 10px;
+  gap: var(--space-2);
+  padding: 0 var(--inset-panel);
   font-size: var(--text-row);
   cursor: pointer;
   min-width: 0;
+  position: relative;
+  min-height: var(--row-h);
 }
 .file-item:hover {
   background: var(--surface-hover);
@@ -1347,11 +1365,20 @@ async function doAbortRebase() {
   justify-content: center;
   opacity: 0;
   transition: opacity 0.1s;
+  position: absolute;
+  right: var(--space-2);
+  top: 50%;
+  margin-top: -9px;
 }
 .file-item:hover .inline-btn,
 .file-item:focus-within .inline-btn,
 .file-item.selected .inline-btn {
   opacity: 1;
+}
+.file-item:hover .file-name,
+.file-item:focus-within .file-name,
+.file-item.selected .file-name {
+  padding-right: 22px;
 }
 .stage-inline {
   background: var(--add-soft);
@@ -1361,7 +1388,7 @@ async function doAbortRebase() {
   background: var(--add-soft-strong);
 }
 .unstage-inline {
-  background: var(--danger-soft);
+  background: var(--accent-soft);
   color: var(--accent-text);
 }
 .unstage-inline:hover {
@@ -1373,10 +1400,10 @@ async function doAbortRebase() {
   flex-shrink: 0;
   border-top: 1px solid var(--border-subtle);
   background: var(--surface-raised);
-  padding: 8px;
+  padding: var(--inset-panel);
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: var(--space-2);
 }
 
 .amend-row {
@@ -1443,7 +1470,7 @@ async function doAbortRebase() {
   border: 1px solid var(--border);
   border-radius: 4px;
   color: var(--text-secondary);
-  font-size: var(--text-meta);
+  font-size: var(--text-row);
   padding: 5px 8px;
   resize: none;
   outline: none;
@@ -1452,7 +1479,7 @@ async function doAbortRebase() {
   box-sizing: border-box;
 }
 .desc-input:focus {
-  border-color: var(--border-strong);
+  border-color: var(--focus-ring);
 }
 .desc-input::placeholder {
   color: var(--text-tertiary);
@@ -1469,6 +1496,7 @@ async function doAbortRebase() {
   transition: background 0.15s;
   background: var(--surface-control);
   color: var(--text-secondary);
+  margin-top: var(--space-1);
 }
 .commit-btn:disabled {
   cursor: default;
@@ -1527,7 +1555,7 @@ async function doAbortRebase() {
 
 .image-preview-header {
   flex-shrink: 0;
-  padding: 7px 12px;
+  padding: 0 var(--inset-panel);
   font-size: var(--text-meta);
   font-family: var(--font-mono);
   color: var(--text-secondary);
@@ -1536,6 +1564,8 @@ async function doAbortRebase() {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  height: var(--file-header-h);
+  box-sizing: border-box;
 }
 
 .image-preview-loading,

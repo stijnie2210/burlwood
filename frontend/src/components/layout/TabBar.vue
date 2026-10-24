@@ -1,115 +1,53 @@
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted } from 'vue';
 import { useReposStore } from '../../stores/repos';
+import { useRepoPickerStore } from '../../stores/repoPicker';
 
 const repos = useReposStore();
-
-const showPicker = ref(false);
-const pickerPos = ref({ x: 0, y: 0 });
-const addBtnRef = ref<HTMLButtonElement | null>(null);
-
-function shortenPath(path: string): string {
-  return path.replace(/^\/Users\/[^/]+/, '~');
-}
-
-async function openPicker() {
-  if (showPicker.value) {
-    showPicker.value = false;
-    return;
-  }
-  await repos.loadRecents();
-  if (addBtnRef.value) {
-    const rect = addBtnRef.value.getBoundingClientRect();
-    pickerPos.value = { x: rect.left, y: rect.bottom };
-  }
-  showPicker.value = true;
-}
-
-function closePicker() {
-  showPicker.value = false;
-}
-
-async function openRecent(path: string) {
-  closePicker();
-  await repos.openRepo(path);
-}
-
-async function browseFolder() {
-  closePicker();
-  await repos.pickAndOpen();
-}
-
-function onWindowMouseDown(e: MouseEvent) {
-  const target = e.target as HTMLElement;
-  if (!target.closest('.repo-picker') && !target.closest('.tab-add')) {
-    closePicker();
-  }
-}
-
-onMounted(() => window.addEventListener('mousedown', onWindowMouseDown));
-onUnmounted(() => window.removeEventListener('mousedown', onWindowMouseDown));
+const picker = useRepoPickerStore();
 </script>
 
 <template>
-  <div class="tab-bar" role="tablist" aria-label="Open repositories">
-    <div
-      v-for="(tab, i) in repos.tabs"
-      :key="tab.path"
-      class="tab"
-      :class="{ active: repos.activeIndex === i }"
-    >
-      <button
-        class="tab-select"
-        role="tab"
-        :aria-selected="repos.activeIndex === i"
-        :title="tab.path"
-        @click="repos.setActive(i)"
+  <div class="tab-bar">
+    <div class="tab-strip" role="tablist" aria-label="Open repositories">
+      <div
+        v-for="(tab, i) in repos.tabs"
+        :key="tab.path"
+        class="tab"
+        :class="{ active: repos.activeIndex === i }"
       >
-        <span class="tab-name">{{ tab.name }}</span>
-      </button>
-      <button
-        class="tab-close"
-        :aria-label="`Close ${tab.name}`"
-        title="Close tab (⌘W)"
-        @click="repos.closeTab(i)"
-      >
-        ×
-      </button>
+        <button
+          class="tab-select"
+          role="tab"
+          :aria-selected="repos.activeIndex === i"
+          :title="tab.path"
+          @click="repos.setActive(i)"
+        >
+          {{ tab.name }}
+        </button>
+        <button
+          class="tab-close"
+          :aria-label="`Close ${tab.name}`"
+          title="Close tab (⌘W)"
+          @click="repos.closeTab(i)"
+        >
+          <svg width="8" height="8" viewBox="0 0 8 8" aria-hidden="true">
+            <path d="M1 1l6 6M7 1L1 7" stroke="currentColor" stroke-width="1.4" />
+          </svg>
+        </button>
+      </div>
     </div>
     <button
-      ref="addBtnRef"
       class="tab-add"
+      data-repo-picker-anchor
       title="Open repository (⌘O)"
       aria-label="Open repository"
-      @click="openPicker()"
+      @click="picker.toggle($event.currentTarget as HTMLElement)"
     >
-      +
+      <svg width="10" height="10" viewBox="0 0 10 10" aria-hidden="true">
+        <path d="M5 0.5v9M0.5 5h9" stroke="currentColor" stroke-width="1.4" />
+      </svg>
     </button>
   </div>
-
-  <Teleport to="body">
-    <div
-      v-if="showPicker"
-      class="repo-picker"
-      :style="{ left: pickerPos.x + 'px', top: pickerPos.y + 'px' }"
-    >
-      <div class="picker-section-label">Recent</div>
-      <div v-if="repos.recentRepos.length === 0" class="picker-empty">No recent repositories</div>
-      <button
-        v-for="r in repos.recentRepos"
-        :key="r.path"
-        class="picker-item"
-        @click="openRecent(r.path)"
-      >
-        <span class="picker-item-name">{{ r.name }}</span>
-        <span class="picker-item-path">{{ shortenPath(r.path) }}</span>
-      </button>
-      <div class="picker-divider" />
-      <button class="picker-item picker-browse" @click="browseFolder()">
-        Browse for folder...
-      </button>
-    </div>
-  </Teleport>
 </template>
 
 <style scoped>
@@ -117,149 +55,102 @@ onUnmounted(() => window.removeEventListener('mousedown', onWindowMouseDown));
   user-select: none;
   -webkit-user-select: none;
   display: flex;
-  align-items: center;
+  align-items: stretch;
+  height: var(--tabbar-h);
   background: var(--surface-chrome);
-  border-bottom: 1px solid var(--border);
-  height: 36px;
-  overflow-x: auto;
+  border-bottom: 1px solid var(--border-subtle);
   flex-shrink: 0;
 }
 
-.tab {
+.tab-strip {
   display: flex;
-  align-items: center;
-  gap: 2px;
-  padding: 0 6px 0 0;
-  height: 100%;
-  border-right: 1px solid var(--border);
-  color: var(--text-secondary);
-  font-size: var(--text-body);
-  white-space: nowrap;
-  transition: background 0.1s;
+  flex: 1;
+  min-width: 0;
+  overflow-x: auto;
 }
 
-.tab-select {
-  height: 100%;
-  padding: 0 4px 0 12px;
-  background: none;
-  border: none;
-  color: inherit;
-  font: inherit;
-  cursor: pointer;
-  white-space: nowrap;
+/* Safari-style: tabs share the width, but never grow past a readable name. */
+.tab {
+  position: relative;
+  display: flex;
+  align-items: center;
+  flex: 1 1 0;
+  min-width: 112px;
+  max-width: 240px;
+  border-right: 1px solid var(--border-subtle);
+  color: var(--text-tertiary);
+  font-size: var(--text-row);
 }
 
 .tab:hover {
   background: var(--surface-hover);
-  color: var(--text-primary);
+  color: var(--text-secondary);
 }
+
 .tab.active {
-  background: var(--surface-control);
+  background: var(--surface-base);
   color: var(--text-primary);
-  border-bottom: 2px solid var(--focus-ring);
+  margin-bottom: -1px;
+}
+
+.tab-select {
+  flex: 1;
+  min-width: 0;
+  height: 100%;
+  padding: 0 var(--space-5) 0 var(--space-3);
+  background: none;
+  border: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .tab-close {
+  position: absolute;
+  right: var(--space-1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  padding: 0;
   background: none;
   border: none;
   border-radius: 3px;
   color: inherit;
   cursor: pointer;
-  opacity: 0.4;
-  font-size: 16px;
-  line-height: 1;
-  padding: 0 2px;
+  opacity: 0;
 }
-.tab-close:focus-visible,
+
+.tab:hover .tab-close,
+.tab.active .tab-close,
+.tab-close:focus-visible {
+  opacity: 0.6;
+}
+
 .tab-close:hover {
   opacity: 1;
-  color: var(--danger);
+  background: var(--surface-control);
 }
 
 .tab-add {
-  padding: 0 12px;
-  height: 100%;
-  background: none;
-  border: none;
-  color: var(--text-tertiary);
-  cursor: pointer;
-  font-size: 16px;
-  line-height: 1;
-}
-.tab-add:hover {
-  color: var(--text-secondary);
-}
-</style>
-
-<style>
-.repo-picker {
-  position: fixed;
-  z-index: 1000;
-  min-width: 280px;
-  max-width: 360px;
-  background: var(--surface-overlay);
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  box-shadow: var(--shadow-popover);
-  padding: 6px 0;
-  max-height: 380px;
-  overflow-y: auto;
-}
-
-.picker-section-label {
-  padding: 4px 12px 6px;
-  font-size: var(--text-meta);
-  font-weight: 600;
-  color: var(--text-tertiary);
-}
-
-.picker-empty {
-  padding: 6px 12px;
-  font-size: var(--text-body);
-  color: var(--text-tertiary);
-}
-
-.picker-item {
   display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  width: 100%;
-  padding: 6px 12px;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  flex-shrink: 0;
   background: none;
   border: none;
-  cursor: pointer;
-  text-align: left;
-  gap: 1px;
-}
-
-.picker-item:hover {
-  background: var(--surface-hover);
-}
-
-.picker-item-name {
-  font-size: var(--text-body);
-  color: var(--text-primary);
-  font-weight: 500;
-}
-
-.picker-item-path {
-  font-size: var(--text-meta);
   color: var(--text-tertiary);
+  cursor: pointer;
 }
 
-.picker-divider {
-  height: 1px;
-  background: var(--border);
-  margin: 4px 0;
-}
-
-.picker-browse {
-  color: var(--accent-text);
-  font-size: var(--text-body);
-  padding: 8px 12px;
-}
-
-.picker-browse:hover {
+.tab-add:hover {
+  color: var(--text-primary);
   background: var(--surface-hover);
 }
 </style>

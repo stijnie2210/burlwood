@@ -624,8 +624,9 @@ async function confirmStashRename() {
             "
           >
             <span class="branch-icon" aria-hidden="true">○</span>
-            <span class="remote-label">{{ b.remote }}</span
-            >/{{ b.name }}
+            <span class="branch-name"
+              ><span class="remote-label">{{ b.remote }}/</span>{{ b.name }}</span
+            >
           </li>
         </ul>
       </section>
@@ -997,7 +998,7 @@ async function confirmStashRename() {
 }
 
 .branch-filter-row {
-  padding: 8px 10px 0;
+  padding: var(--space-3) var(--inset-panel) var(--space-1);
   flex-shrink: 0;
 }
 

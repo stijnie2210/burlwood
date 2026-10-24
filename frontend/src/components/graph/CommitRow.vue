@@ -82,8 +82,8 @@ watchEffect(() => {
   display: flex;
   align-items: center;
   width: 100%;
-  gap: 8px;
-  padding-right: 16px;
+  gap: var(--space-2);
+  padding-right: var(--space-4);
   white-space: nowrap;
   overflow: hidden;
   cursor: pointer;
@@ -91,10 +91,10 @@ watchEffect(() => {
 }
 
 .row-inner:hover {
-  background: rgba(255, 255, 255, 0.04);
+  background: var(--surface-hover);
 }
 .row-inner.selected {
-  background: var(--accent-soft);
+  background: var(--surface-selected);
 }
 
 .row-canvas {
@@ -136,13 +136,13 @@ watchEffect(() => {
   overflow: hidden;
   text-overflow: ellipsis;
   color: var(--text-primary);
-  font-size: var(--text-row);
+  font-size: var(--text-body);
 }
 .row-author {
   width: 120px;
   overflow: hidden;
   text-overflow: ellipsis;
-  color: var(--text-secondary);
+  color: var(--text-tertiary);
   flex-shrink: 0;
   font-size: var(--text-row);
 }
@@ -152,5 +152,18 @@ watchEffect(() => {
   flex-shrink: 0;
   text-align: right;
   font-size: var(--text-row);
+  font-variant-numeric: tabular-nums;
+}
+
+/* The subject is what people scan; metadata columns give way first in narrow panes. */
+@container graph (max-width: 720px) {
+  .row-author {
+    display: none;
+  }
+}
+@container graph (max-width: 520px) {
+  .row-date {
+    display: none;
+  }
 }
 </style>

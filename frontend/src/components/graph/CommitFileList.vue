@@ -67,14 +67,15 @@ function fileStatus(file: FileDiff): string {
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 8px 12px;
+  padding: var(--space-1) var(--inset-panel);
   background: transparent;
   border: none;
   cursor: pointer;
   text-align: left;
   color: var(--text-secondary);
   width: 100%;
-  font-size: var(--text-body);
+  font-size: var(--text-row);
+  min-height: var(--row-h);
 }
 .file-item:hover {
   background: var(--surface-hover);

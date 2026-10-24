@@ -12,6 +12,7 @@ import StagingView from './components/staging/StagingView.vue';
 import ToastStack from './components/layout/ToastStack.vue';
 import PreferencesModal from './components/layout/PreferencesModal.vue';
 import LogViewerModal from './components/layout/LogViewerModal.vue';
+import RepoPicker from './components/layout/RepoPicker.vue';
 import { useReposStore } from './stores/repos';
 import { useCommitsStore } from './stores/commits';
 import { useStagingStore } from './stores/staging';
@@ -184,8 +185,9 @@ onUnmounted(() => {
 
 <template>
   <div class="app">
-    <TabBar />
-    <ToolBar />
+    <ToolBar v-model:view-mode="viewMode" />
+    <TabBar v-if="repos.tabs.length > 1" />
+    <RepoPicker />
     <ToastStack />
     <PreferencesModal />
     <LogViewerModal />
@@ -213,27 +215,6 @@ onUnmounted(() => {
         </div>
 
         <template v-else>
-          <!-- View mode switcher -->
-          <div class="view-tabs">
-            <button
-              class="view-tab"
-              :class="{ active: viewMode === 'commits' }"
-              @click="viewMode = 'commits'"
-            >
-              Commits
-            </button>
-            <button
-              class="view-tab"
-              :class="{ active: viewMode === 'staging' }"
-              @click="viewMode = 'staging'"
-            >
-              Working Tree
-              <span v-if="staging.totalChanges" class="view-tab-badge">
-                {{ staging.totalChanges }}
-              </span>
-            </button>
-          </div>
-
           <!-- Commits view -->
           <div v-if="viewMode === 'commits'" class="repo-view">
             <template v-if="commits.selectedFileIndex !== null">
@@ -288,48 +269,6 @@ body {
   background: var(--surface-base);
   display: flex;
   flex-direction: column;
-}
-
-.view-tabs {
-  user-select: none;
-  -webkit-user-select: none;
-  display: flex;
-  gap: 2px;
-  padding: 4px 8px;
-  background: var(--surface-base);
-  border-bottom: 1px solid var(--border-subtle);
-  flex-shrink: 0;
-}
-
-.view-tab {
-  display: flex;
-  align-items: center;
-  gap: 5px;
-  padding: 4px 12px;
-  border-radius: 4px;
-  border: none;
-  background: transparent;
-  color: var(--text-tertiary);
-  font-size: var(--text-row);
-  cursor: pointer;
-}
-.view-tab:hover {
-  color: var(--text-secondary);
-  background: var(--surface-hover);
-}
-.view-tab.active {
-  color: var(--text-primary);
-  background: var(--surface-control);
-}
-
-.view-tab-badge {
-  background: var(--accent-fill);
-  color: var(--text-on-accent);
-  font-size: var(--text-meta);
-  font-weight: 700;
-  padding: 1px 5px;
-  border-radius: 8px;
-  line-height: 1.4;
 }
 
 .repo-view {

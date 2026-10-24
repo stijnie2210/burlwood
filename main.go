@@ -8,6 +8,7 @@ import (
 	"github.com/wailsapp/wails/v2/pkg/menu/keys"
 	"github.com/wailsapp/wails/v2/pkg/options"
 	"github.com/wailsapp/wails/v2/pkg/options/assetserver"
+	"github.com/wailsapp/wails/v2/pkg/options/mac"
 	"github.com/wailsapp/wails/v2/pkg/runtime"
 )
 
@@ -58,16 +59,22 @@ func main() {
 	viewMenu.AddText("Find Commit…", keys.CmdOrCtrl("f"), emit("find"))
 
 	err := wails.Run(&options.App{
-		Title:  "gitgood",
-		Width:  1440,
-		Height: 900,
+		Title:     "gitgood",
+		Width:     1440,
+		Height:    900,
+		MinWidth:  960,
+		MinHeight: 600,
 		AssetServer: &assetserver.Options{
 			Assets: assets,
 		},
-		BackgroundColour: &options.RGBA{R: 15, G: 15, B: 26, A: 255},
-		Menu:             appMenu,
-		OnStartup:        app.startup,
-		OnBeforeClose:    app.beforeClose,
+		BackgroundColour: &options.RGBA{R: 27, G: 27, B: 29, A: 255},
+		// The toolbar row doubles as the title bar; the frontend marks it draggable and insets it for the traffic lights.
+		Mac: &mac.Options{
+			TitleBar: mac.TitleBarHiddenInset(),
+		},
+		Menu:          appMenu,
+		OnStartup:     app.startup,
+		OnBeforeClose: app.beforeClose,
 		Bind: []interface{}{
 			app,
 		},

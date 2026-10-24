@@ -128,11 +128,13 @@ const { visible, hiddenLines, revealAll } = useLineBudget(
 .file-action-bar {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 7px 12px;
+  gap: var(--space-2);
+  padding: 0 var(--inset-panel);
   background: var(--surface-raised);
   border-bottom: 1px solid var(--border-subtle);
   flex-shrink: 0;
+  height: var(--file-header-h);
+  box-sizing: border-box;
 }
 
 .file-action-path {
@@ -279,7 +281,7 @@ const { visible, hiddenLines, revealAll } = useLineBudget(
 .diff-lineno {
   width: 44px;
   text-align: right;
-  padding-right: 6px;
+  padding-right: var(--space-2);
   color: var(--text-tertiary);
   flex-shrink: 0;
   user-select: none;

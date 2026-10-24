@@ -14,6 +14,10 @@ import {
   OpenTerminal,
 } from '../../../wailsjs/go/main/App';
 import { usePrefsStore } from '../../stores/prefs';
+import { useRepoPickerStore } from '../../stores/repoPicker';
+
+const viewMode = defineModel<'commits' | 'staging'>('viewMode', { required: true });
+const picker = useRepoPickerStore();
 
 const repos = useReposStore();
 const prefsStore = usePrefsStore();
@@ -195,7 +199,46 @@ async function confirmBranch() {
 <template>
   <div class="toolbar">
     <div class="toolbar-inner">
-      <div class="toolbar-side" />
+      <div class="toolbar-side toolbar-side--left">
+        <button
+          class="repo-btn"
+          data-repo-picker-anchor
+          :title="repos.activeRepo?.path ?? 'Open a repository'"
+          aria-haspopup="menu"
+          :aria-expanded="picker.open"
+          @click="picker.toggle($event.currentTarget as HTMLElement)"
+        >
+          <span class="repo-btn-name">{{ repos.activeRepo?.name ?? 'Open Repository' }}</span>
+          <svg width="8" height="5" viewBox="0 0 8 5" aria-hidden="true">
+            <path d="M0.5 0.5L4 4L7.5 0.5" fill="none" stroke="currentColor" stroke-width="1.3" />
+          </svg>
+        </button>
+        <div v-if="repos.activeRepo" class="view-switch" role="tablist" aria-label="View">
+          <button
+            class="view-switch-btn"
+            role="tab"
+            :class="{ active: viewMode === 'commits' }"
+            :aria-selected="viewMode === 'commits'"
+            title="Commits (⌘1)"
+            @click="viewMode = 'commits'"
+          >
+            Commits
+          </button>
+          <button
+            class="view-switch-btn"
+            role="tab"
+            :class="{ active: viewMode === 'staging' }"
+            :aria-selected="viewMode === 'staging'"
+            title="Working Tree (⌘2)"
+            @click="viewMode = 'staging'"
+          >
+            Working Tree
+            <span v-if="staging.totalChanges" class="view-switch-badge">
+              {{ staging.totalChanges }}
+            </span>
+          </button>
+        </div>
+      </div>
       <!-- Remote ops group -->
       <div class="btn-group">
         <button
@@ -471,19 +514,115 @@ async function confirmBranch() {
   flex-shrink: 0;
   background: var(--surface-chrome);
   border-bottom: 1px solid var(--border-subtle);
-  user-select: none;
+  /* This row is the window's title bar (hidden-inset), so empty space drags the window. */
+  --wails-draggable: drag;
+}
+
+.toolbar button,
+.toolbar input,
+.pull-menu,
+.branch-popover {
+  --wails-draggable: no-drag;
 }
 
 .toolbar-inner {
   display: flex;
   align-items: center;
-  height: 48px;
-  padding: 0 8px;
+  height: var(--toolbar-h);
+  padding: 0 var(--inset-panel) 0 var(--traffic-light-inset);
   gap: 2px;
 }
 
 .toolbar-side {
   flex: 1;
+  min-width: 0;
+}
+
+.toolbar-side--left {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.repo-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  max-width: 200px;
+  height: 28px;
+  padding: 0 var(--space-2);
+  background: none;
+  border: none;
+  border-radius: 5px;
+  color: var(--text-primary);
+  font-size: var(--text-body);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.repo-btn:hover {
+  background: var(--surface-hover);
+}
+
+.repo-btn-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.repo-btn svg {
+  flex-shrink: 0;
+  color: var(--text-tertiary);
+}
+
+/* macOS-style segmented control */
+.view-switch {
+  display: flex;
+  flex-shrink: 0;
+  padding: 2px;
+  gap: 2px;
+  background: var(--surface-sunken);
+  border: 1px solid var(--border-subtle);
+  border-radius: 7px;
+}
+
+.view-switch-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  height: 22px;
+  padding: 0 var(--space-3);
+  background: none;
+  border: none;
+  border-radius: 5px;
+  color: var(--text-secondary);
+  font-size: var(--text-row);
+  font-weight: 500;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.view-switch-btn:hover:not(.active) {
+  color: var(--text-primary);
+}
+
+.view-switch-btn.active {
+  background: var(--surface-control-hover);
+  color: var(--text-primary);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+}
+
+.view-switch-badge {
+  min-width: 16px;
+  padding: 0 5px;
+  border-radius: 8px;
+  background: var(--accent-fill);
+  color: var(--text-on-accent);
+  font-size: var(--text-meta);
+  font-weight: 600;
+  line-height: 16px;
+  text-align: center;
 }
 
 .toolbar-side--right {
