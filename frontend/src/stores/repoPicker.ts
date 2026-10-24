@@ -1,4 +1,4 @@
-import { defineStore } from 'pinia';
+import { acceptHMRUpdate, defineStore } from 'pinia';
 import { ref } from 'vue';
 import { useReposStore } from './repos';
 
@@ -25,3 +25,9 @@ export const useRepoPickerStore = defineStore('repoPicker', () => {
 
   return { open, x, y, toggle, close };
 });
+
+// Without this, editing a store during `wails dev` keeps the old instance (and its old logic)
+// running until a full reload.
+if (import.meta.hot) {
+  import.meta.hot.accept(acceptHMRUpdate(useRepoPickerStore, import.meta.hot));
+}

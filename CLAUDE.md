@@ -34,6 +34,10 @@ frontend/src/stores/     ← Pinia stores (one per domain)
 frontend/src/components/ ← Vue components, grouped by feature
 ```
 
+### Store rules
+- Every Pinia store ends with the `acceptHMRUpdate` block; without it `wails dev` keeps running the old store logic after an edit.
+- Loads that depend on the repo check `isActive(repoPath)` (from `stores/repos.ts`) before starting and after every await, so late results (auto-fetch, slow git calls) never touch another repo's view.
+
 ### Wails binding rules
 - Every Go struct that crosses the boundary needs `json:"camelCase"` tags on every field
 - Methods on `*App` in `app.go` are auto-bound; keep `app.go` thin — real logic lives in `internal/repo/`

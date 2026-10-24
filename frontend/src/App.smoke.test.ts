@@ -16,24 +16,26 @@ vi.mock('../wailsjs/go/main/App', async (importOriginal) => {
   return Object.fromEntries(
     Object.keys(orig).map((k) => [
       k,
-      async () =>
-        lists.includes(k)
-          ? []
-          : k === 'GetAheadBehind'
-            ? { ahead: 0, behind: 0 }
-            : k === 'GetPrefs'
-              ? {}
-              : k === 'LoadSession'
-                ? {
-                    tabs: [
-                      { path: '/tmp/a', name: 'a' },
-                      { path: '/tmp/b', name: 'b' },
-                    ],
-                    activeIndex: 0,
-                  }
-                : k === 'GetRebaseState'
-                  ? { step: 0, total: 0, message: '', onto: '' }
-                  : null,
+      async (arg?: unknown) =>
+        k === 'OpenRepository'
+          ? arg
+          : lists.includes(k)
+            ? []
+            : k === 'GetAheadBehind'
+              ? { ahead: 0, behind: 0 }
+              : k === 'GetPrefs'
+                ? {}
+                : k === 'LoadSession'
+                  ? {
+                      tabs: [
+                        { path: '/tmp/a', name: 'a' },
+                        { path: '/tmp/b', name: 'b' },
+                      ],
+                      activeIndex: 0,
+                    }
+                  : k === 'GetRebaseState'
+                    ? { step: 0, total: 0, message: '', onto: '' }
+                    : null,
     ])
   );
 });
@@ -53,7 +55,8 @@ describe('App smoke test', () => {
     const { default: App } = await import('./App.vue');
     const app = createApp(App);
     app.config.errorHandler = (e) => errors.push(e);
-    app.use(createPinia());
+    const pinia = createPinia();
+    app.use(pinia);
     app.mount(el);
     await nextTick();
     await new Promise((r) => setTimeout(r, 50));
@@ -64,5 +67,23 @@ describe('App smoke test', () => {
     await new Promise((r) => setTimeout(r, 50));
     expect(errors).toEqual([]);
     expect(el.innerHTML).toContain('Unstaged');
+
+    // An open commit-file diff must not survive a repo switch; the graph comes back.
+    window.dispatchEvent(new KeyboardEvent('keydown', { key: '1', metaKey: true }));
+    await nextTick();
+    const { useCommitsStore } = await import('./stores/commits');
+    const commits = useCommitsStore(pinia);
+    commits.diff = [{ oldPath: 'a.txt', newPath: 'a.txt', isBinary: false, hunks: [] }] as never;
+    commits.selectedHash = 'abc';
+    commits.selectedFileIndex = 0;
+    await nextTick();
+    expect(el.querySelector('.fdv')).not.toBeNull();
+
+    window.dispatchEvent(new KeyboardEvent('keydown', { key: ']', metaKey: true }));
+    await nextTick();
+    await new Promise((r) => setTimeout(r, 50));
+    expect(errors).toEqual([]);
+    expect(el.querySelector('.fdv')).toBeNull();
+    expect(el.querySelector('.graph-scroller')).not.toBeNull();
   });
 });

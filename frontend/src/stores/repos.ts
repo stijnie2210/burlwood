@@ -1,4 +1,4 @@
-import { defineStore } from 'pinia';
+import { acceptHMRUpdate, defineStore } from 'pinia';
 import { useToastStore } from './toast';
 import { ref, computed } from 'vue';
 import {
@@ -13,6 +13,11 @@ import {
 export interface RepoTab {
   path: string;
   name: string;
+}
+
+// Stores call this after every await: a response for a repo that's no longer active is stale.
+export function isActive(repoPath: string): boolean {
+  return useReposStore().activeRepo?.path === repoPath;
 }
 
 export const useReposStore = defineStore('repos', () => {
@@ -113,3 +118,9 @@ export const useReposStore = defineStore('repos', () => {
     setActive,
   };
 });
+
+// Without this, editing a store during `wails dev` keeps the old instance (and its old logic)
+// running until a full reload.
+if (import.meta.hot) {
+  import.meta.hot.accept(acceptHMRUpdate(useReposStore, import.meta.hot));
+}

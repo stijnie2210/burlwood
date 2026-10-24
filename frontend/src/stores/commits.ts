@@ -1,8 +1,9 @@
-import { defineStore } from 'pinia';
+import { acceptHMRUpdate, defineStore } from 'pinia';
 import { ref, computed } from 'vue';
 import { GetCommitGraph, GetCommitDiff } from '../../wailsjs/go/main/App';
 import type { graph, repo } from '../../wailsjs/go/models';
 import { usePrefsStore } from './prefs';
+import { isActive } from './repos';
 import { describeGitError } from '../utils/gitErrors';
 
 export type GraphRow = graph.GraphRow;
@@ -29,7 +30,7 @@ export const useCommitsStore = defineStore('commits', () => {
   // Reloading the repo that is already shown is a quiet refresh: rows swap in place and the
   // selection survives, so routine operations (fetch, push, stash, commit) don't lose your place.
   async function load(repoPath: string) {
-    if (!repoPath) {
+    if (!repoPath || !isActive(repoPath)) {
       return;
     }
     const initialLimit = usePrefsStore().prefs.commitGraphLimit;
@@ -37,6 +38,7 @@ export const useCommitsStore = defineStore('commits', () => {
     const limit = refresh ? Math.max(initialLimit, loadedLimit.value) : initialLimit;
     if (!refresh) {
       loading.value = true;
+      rows.value = [];
       hasMore.value = false;
       selectedHash.value = null;
       selectedFileIndex.value = null;
@@ -98,9 +100,14 @@ export const useCommitsStore = defineStore('commits', () => {
     diff.value = [];
     diffError.value = null;
     try {
-      diff.value = await GetCommitDiff(repoPath, hash);
+      const result = await GetCommitDiff(repoPath, hash);
+      if (currentRepoPath.value === repoPath && selectedHash.value === hash) {
+        diff.value = result;
+      }
     } catch (e) {
-      diffError.value = describeGitError(e).message;
+      if (currentRepoPath.value === repoPath) {
+        diffError.value = describeGitError(e).message;
+      }
     } finally {
       diffLoading.value = false;
     }
@@ -136,3 +143,9 @@ export const useCommitsStore = defineStore('commits', () => {
     clear,
   };
 });
+
+// Without this, editing a store during `wails dev` keeps the old instance (and its old logic)
+// running until a full reload.
+if (import.meta.hot) {
+  import.meta.hot.accept(acceptHMRUpdate(useCommitsStore, import.meta.hot));
+}

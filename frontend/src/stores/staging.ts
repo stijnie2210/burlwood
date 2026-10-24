@@ -1,4 +1,4 @@
-import { defineStore } from 'pinia';
+import { acceptHMRUpdate, defineStore } from 'pinia';
 import { ref, computed } from 'vue';
 import {
   GetStatus,
@@ -24,6 +24,7 @@ import {
 import type { gitcli, repo } from '../../wailsjs/go/models';
 import { describeGitError } from '../utils/gitErrors';
 import { useToastStore } from './toast';
+import { isActive } from './repos';
 
 export type FileStatus = repo.FileStatus;
 export type FileDiff = repo.FileDiff;
@@ -88,10 +89,11 @@ export const useStagingStore = defineStore('staging', () => {
 
   // Only the first load of a repo shows the loading state; later loads swap the list in place.
   async function load(repoPath: string) {
-    if (!repoPath) {
+    if (!repoPath || !isActive(repoPath)) {
       return;
     }
     if (loadedRepoPath !== repoPath) {
+      clear();
       loading.value = true;
     }
     try {
@@ -108,6 +110,9 @@ export const useStagingStore = defineStore('staging', () => {
         IsInRebase(repoPath),
         GetRebaseState(repoPath),
       ]);
+      if (!isActive(repoPath)) {
+        return;
+      }
       files.value = statusResult;
       isInMerge.value = mergeState;
       mergeMessage.value = mergeMsg;
@@ -115,9 +120,13 @@ export const useStagingStore = defineStore('staging', () => {
       rebaseState.value = rebaseInfo;
       loadedRepoPath = repoPath;
     } catch (e) {
-      useToastStore().error(e);
+      if (isActive(repoPath)) {
+        useToastStore().error(e);
+      }
     } finally {
-      loading.value = false;
+      if (isActive(repoPath)) {
+        loading.value = false;
+      }
     }
   }
 
@@ -144,9 +153,14 @@ export const useStagingStore = defineStore('staging', () => {
     diff.value = [];
     diffError.value = null;
     try {
-      diff.value = await GetWorkingDiff(repoPath, path, mode === 'staged');
+      const result = await GetWorkingDiff(repoPath, path, mode === 'staged');
+      if (isActive(repoPath) && selectedPath.value === path) {
+        diff.value = result;
+      }
     } catch (e) {
-      diffError.value = describeGitError(e).message;
+      if (isActive(repoPath)) {
+        diffError.value = describeGitError(e).message;
+      }
     } finally {
       diffLoading.value = false;
     }
@@ -159,7 +173,11 @@ export const useStagingStore = defineStore('staging', () => {
       return;
     }
     try {
-      diff.value = await GetWorkingDiff(repoPath, path, selectedMode.value === 'staged');
+      const result = await GetWorkingDiff(repoPath, path, selectedMode.value === 'staged');
+      if (!isActive(repoPath) || selectedPath.value !== path) {
+        return;
+      }
+      diff.value = result;
       diffError.value = null;
     } catch (e) {
       diffError.value = describeGitError(e).message;
@@ -300,3 +318,9 @@ export const useStagingStore = defineStore('staging', () => {
     clear,
   };
 });
+
+// Without this, editing a store during `wails dev` keeps the old instance (and its old logic)
+// running until a full reload.
+if (import.meta.hot) {
+  import.meta.hot.accept(acceptHMRUpdate(useStagingStore, import.meta.hot));
+}

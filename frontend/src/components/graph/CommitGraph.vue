@@ -75,18 +75,6 @@ const items = computed(() => virtualizer.value.getVirtualItems());
 const totalSize = computed(() => virtualizer.value.getTotalSize());
 const graphWidth = computed(() => (commits.maxColumn + 2) * CELL_W);
 
-watch(
-  () => repos.activeRepo?.path,
-  (path) => {
-    if (path) {
-      commits.load(path);
-    } else {
-      commits.clear();
-    }
-  },
-  { immediate: true }
-);
-
 // Scroll to top when search results change so first match is visible
 watch(filteredRows, () => {
   virtualizer.value.scrollToIndex(0);

@@ -101,6 +101,23 @@ onUnmounted(() => {
 
 const viewMode = ref<'commits' | 'staging'>('commits');
 
+// Switching repos always lands on the graph: an open diff or working-tree file belongs to the
+// repo you left. App owns this load because the graph isn't mounted while a file diff is open.
+watch(
+  () => repos.activeRepo?.path,
+  (path, previous) => {
+    if (previous !== undefined && path !== previous) {
+      viewMode.value = 'commits';
+    }
+    if (path) {
+      commits.load(path);
+    } else {
+      commits.clear();
+    }
+  },
+  { immediate: true }
+);
+
 // Generic resize helper
 function makeResizer(
   width: Ref<number>,
