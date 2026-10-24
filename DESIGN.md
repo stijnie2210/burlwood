@@ -133,7 +133,7 @@ Destructive operations are written like careful notebook corrections: they name 
 A neutral dark palette where hue only appears when it encodes git state or an action.
 
 ### Primary
-- **System Blue** (accent-fill): solid fill for the single primary action in a context (Commit, Save & Stage, Continue Rebase, Push tag), the HEAD label, and the hovered item in every context menu. White text on it clears 4.7:1.
+- **System Blue** (accent-fill): follows the accent colour chosen in System Settings (via WebKit's `-apple-system-control-accent`, darkened for white text); the hex here is the fallback. Solid fill for the single primary action in a context (Commit, Save & Stage, Continue Rebase, Push tag), the HEAD label, and the hovered item in every context menu. White text on it clears 4.7:1.
 - **Link Blue** (accent-text): blue as text: active toolbar button, current branch, renamed-file status, focus borders, and the "theirs" side of a conflict.
 
 ### Secondary
@@ -146,11 +146,16 @@ A neutral dark palette where hue only appears when it encodes git state or an ac
 - **Ink Well** (surface-sunken): behind diffs and code, the deepest layer.
 - **Notebook Page** (surface-base): the main canvas, commit graph background.
 - **Ruled Line** (surface-raised): bars inside panels, such as hunk headers and file action bars.
-- **Binding** (surface-chrome): sidebar, tab bar, toolbar, file panel. Lighter than the page, as macOS chrome is.
+- **Binding** (surface-chrome): tab bar, toolbar, file panel. Lighter than the page, as macOS chrome is.
+- **Frosted Binding** (surface-sidebar): the sidebar is a dark tint over the window's vibrancy (translucent window, dark appearance forced), so it reads as a macOS source list.
 - **Loose Leaf** (surface-overlay): menus, popovers, modals, toasts.
 - **Primary / Secondary / Tertiary text**: content, supporting text, and metadata (hashes, dates, line numbers). Tertiary is the floor: never go dimmer for readable text.
 
 ### Named Rules
+**The System Accent Rule.** Never hard-code the accent: derive fills, text, focus and selection from `--accent-system` with `color-mix`, so the app follows the user's System Settings.
+
+**The Key Window Rule.** Selection is accent-tinted only while the window is key; `html.window-inactive` turns it grey.
+
 **The Meaning-Only Rule.** Every hue in the interface must map to a git state or an action. A new colour needs a new meaning.
 
 **The No-Shared-Red Rule.** Red means removal or destruction, never a neutral action. Unstage is blue, not red. Graph lanes never use the add or delete hues.
@@ -237,6 +242,7 @@ Small, consistent radii that echo macOS controls: 3px for ref labels and badges,
 ## Do's and Don'ts
 
 ### Do:
+- **Do** keep the default arrow cursor on controls (macOS has no hand cursor on buttons); only resize handles change the cursor.
 - **Do** use the semantic tokens in `style.css` for every colour, size and shadow.
 - **Do** give each context one blue primary action and make everything else neutral.
 - **Do** name the consequence in any destructive confirmation ("leaves them reachable only through the reflog").

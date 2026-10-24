@@ -366,7 +366,7 @@ async function onMenuRefresh() {
   background: none;
   border: none;
   color: var(--text-tertiary);
-  cursor: pointer;
+  cursor: default;
   font-size: 16px;
   line-height: 1;
   padding: 0 2px;

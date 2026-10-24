@@ -67,10 +67,15 @@ func main() {
 		AssetServer: &assetserver.Options{
 			Assets: assets,
 		},
-		BackgroundColour: &options.RGBA{R: 27, G: 27, B: 29, A: 255},
+		// Transparent so the sidebar can show the window's vibrancy; every other area paints its own background.
+		BackgroundColour: &options.RGBA{R: 27, G: 27, B: 29, A: 0},
 		// The toolbar row doubles as the title bar; the frontend marks it draggable and insets it for the traffic lights.
 		Mac: &mac.Options{
-			TitleBar: mac.TitleBarHiddenInset(),
+			TitleBar:             mac.TitleBarHiddenInset(),
+			WebviewIsTransparent: true,
+			WindowIsTranslucent:  true,
+			// The UI is dark-only, so the vibrancy material must be the dark one regardless of system appearance.
+			Appearance: mac.NSAppearanceNameDarkAqua,
 		},
 		Menu:          appMenu,
 		OnStartup:     app.startup,

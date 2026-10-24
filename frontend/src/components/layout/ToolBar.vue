@@ -548,7 +548,7 @@ async function confirmBranch() {
   color: var(--text-primary);
   font-size: var(--text-body);
   font-weight: 600;
-  cursor: pointer;
+  cursor: default;
 }
 
 .repo-btn:hover {
@@ -589,7 +589,7 @@ async function confirmBranch() {
   color: var(--text-secondary);
   font-size: var(--text-row);
   font-weight: 500;
-  cursor: pointer;
+  cursor: default;
   white-space: nowrap;
 }
 
@@ -645,7 +645,7 @@ async function confirmBranch() {
   background: transparent;
   border-radius: 5px;
   color: var(--text-secondary);
-  cursor: pointer;
+  cursor: default;
   min-width: 52px;
   transition:
     background 0.1s,
@@ -706,7 +706,7 @@ async function confirmBranch() {
   border: none;
   background: transparent;
   color: var(--text-tertiary);
-  cursor: pointer;
+  cursor: default;
   border-radius: 4px;
   margin-left: 1px;
 }
@@ -754,7 +754,7 @@ async function confirmBranch() {
   color: var(--text-primary);
   font-size: var(--text-row);
   text-align: left;
-  cursor: pointer;
+  cursor: default;
 }
 
 .pull-menu-item:hover {
@@ -830,7 +830,7 @@ async function confirmBranch() {
   border-radius: 4px;
   color: var(--text-on-accent);
   font-size: var(--text-meta);
-  cursor: pointer;
+  cursor: default;
   white-space: nowrap;
 }
 .branch-confirm:hover {
@@ -844,7 +844,7 @@ async function confirmBranch() {
   border-radius: 4px;
   color: var(--text-tertiary);
   font-size: var(--text-meta);
-  cursor: pointer;
+  cursor: default;
 }
 .branch-cancel:hover {
   color: var(--text-primary);

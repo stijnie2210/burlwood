@@ -103,7 +103,7 @@ const picker = useRepoPickerStore();
   color: inherit;
   font: inherit;
   text-align: left;
-  cursor: pointer;
+  cursor: default;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -122,7 +122,7 @@ const picker = useRepoPickerStore();
   border: none;
   border-radius: 3px;
   color: inherit;
-  cursor: pointer;
+  cursor: default;
   opacity: 0;
 }
 
@@ -146,7 +146,7 @@ const picker = useRepoPickerStore();
   background: none;
   border: none;
   color: var(--text-tertiary);
-  cursor: pointer;
+  cursor: default;
 }
 
 .tab-add:hover {

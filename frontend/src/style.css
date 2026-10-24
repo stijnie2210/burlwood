@@ -29,6 +29,8 @@
   --surface-overlay: #2e2e31;
   --surface-field: #19191b;
   --surface-control: #38383c;
+  /* Tint over the window's vibrancy: keeps the sidebar dark and its text readable on any wallpaper. */
+  --surface-sidebar: rgba(30, 30, 33, 0.45);
   --surface-control-hover: #424246;
   --surface-hover: rgba(255, 255, 255, 0.06);
   --surface-selected: #22355a;
@@ -99,8 +101,30 @@
   --shadow-modal: 0 12px 40px rgba(0, 0, 0, 0.6);
 }
 
+/* Follow the accent colour chosen in System Settings › Appearance. -apple-system-control-accent is
+   WebKit-only; elsewhere the fixed blue above stays. Fills are darkened so white text keeps its
+   contrast; text and focus are lightened to read on the dark surfaces. */
+@supports (color: -apple-system-control-accent) {
+  :root {
+    --accent-system: -apple-system-control-accent;
+    --accent-fill: color-mix(in srgb, var(--accent-system) 82%, black);
+    --accent-fill-hover: color-mix(in srgb, var(--accent-system) 72%, black);
+    --accent-text: color-mix(in srgb, var(--accent-system) 72%, white);
+    --accent-soft: color-mix(in srgb, var(--accent-system) 14%, transparent);
+    --accent-soft-strong: color-mix(in srgb, var(--accent-system) 24%, transparent);
+    --accent-border: color-mix(in srgb, var(--accent-system) 45%, transparent);
+    --focus-ring: var(--accent-text);
+    --surface-selected: color-mix(in srgb, var(--accent-system) 30%, #1b1b1d);
+  }
+}
+
+/* macOS greys out the selection while the window isn't key; App.vue toggles this class. */
+:root.window-inactive {
+  --surface-selected: #3a3a3d;
+}
+
 html {
-  background-color: var(--surface-base);
+  background-color: transparent;
   color: var(--text-primary);
 }
 

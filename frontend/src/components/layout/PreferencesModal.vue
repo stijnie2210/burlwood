@@ -237,7 +237,7 @@ const { onKeydown } = useDialog(() => prefs.modalOpen, panelRef, onCancel);
   border: none;
   color: var(--text-tertiary);
   font-size: var(--text-row);
-  cursor: pointer;
+  cursor: default;
   padding: 3px 7px;
   border-radius: 4px;
   line-height: 1;
@@ -330,7 +330,7 @@ const { onKeydown } = useDialog(() => prefs.modalOpen, panelRef, onCancel);
   font-size: var(--text-body);
   padding: 10px 32px 10px 12px;
   outline: none;
-  cursor: pointer;
+  cursor: default;
   min-width: 160px;
 }
 .prefs-select:focus {
@@ -354,7 +354,7 @@ const { onKeydown } = useDialog(() => prefs.modalOpen, panelRef, onCancel);
   border-radius: 20px;
   color: var(--text-tertiary);
   font-size: var(--text-meta);
-  cursor: pointer;
+  cursor: default;
   transition:
     color 0.1s,
     border-color 0.1s;
@@ -372,7 +372,7 @@ const { onKeydown } = useDialog(() => prefs.modalOpen, panelRef, onCancel);
 /* Toggle switch */
 .toggle {
   display: inline-flex;
-  cursor: pointer;
+  cursor: default;
   flex-shrink: 0;
 }
 .toggle input {
@@ -427,11 +427,11 @@ const { onKeydown } = useDialog(() => prefs.modalOpen, panelRef, onCancel);
   display: flex;
   align-items: center;
   gap: 6px;
-  cursor: pointer;
+  cursor: default;
 }
 .radio-option input {
   accent-color: var(--accent-text);
-  cursor: pointer;
+  cursor: default;
 }
 .radio-label {
   font-size: var(--text-row);
@@ -460,7 +460,7 @@ const { onKeydown } = useDialog(() => prefs.modalOpen, panelRef, onCancel);
   border-radius: 6px;
   color: var(--text-tertiary);
   font-size: var(--text-row);
-  cursor: pointer;
+  cursor: default;
 }
 .prefs-btn-cancel:hover {
   color: var(--text-secondary);
@@ -475,7 +475,7 @@ const { onKeydown } = useDialog(() => prefs.modalOpen, panelRef, onCancel);
   color: var(--text-on-accent);
   font-size: var(--text-row);
   font-weight: 600;
-  cursor: pointer;
+  cursor: default;
 }
 .prefs-btn-save:hover {
   background: var(--accent-fill-hover);

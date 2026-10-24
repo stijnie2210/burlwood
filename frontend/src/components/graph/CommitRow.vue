@@ -89,7 +89,7 @@ watchEffect(() => {
   padding-right: var(--space-4);
   white-space: nowrap;
   overflow: hidden;
-  cursor: pointer;
+  cursor: default;
   height: 100%;
 }
 

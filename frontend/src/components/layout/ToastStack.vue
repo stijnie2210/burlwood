@@ -123,7 +123,7 @@ async function runAction(t: Toast, e: MouseEvent) {
   border-radius: 6px;
   font-size: var(--text-row);
   max-width: 420px;
-  cursor: pointer;
+  cursor: default;
   pointer-events: all;
   box-shadow: var(--shadow-popover);
   user-select: none;
@@ -180,7 +180,7 @@ async function runAction(t: Toast, e: MouseEvent) {
   border: none;
   border-radius: 4px;
   color: var(--text-tertiary);
-  cursor: pointer;
+  cursor: default;
 }
 .toast-close:hover {
   background: var(--surface-hover);
@@ -205,7 +205,7 @@ async function runAction(t: Toast, e: MouseEvent) {
   font-size: var(--text-meta);
   font-weight: 600;
   padding: 3px 8px;
-  cursor: pointer;
+  cursor: default;
 }
 .toast-action:hover {
   background: rgba(255, 255, 255, 0.16);

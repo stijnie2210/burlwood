@@ -100,7 +100,7 @@ function tabStop(fi: number): number {
   padding: var(--space-1) var(--inset-panel);
   background: transparent;
   border: none;
-  cursor: pointer;
+  cursor: default;
   text-align: left;
   color: var(--text-secondary);
   width: 100%;

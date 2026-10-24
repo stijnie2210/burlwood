@@ -453,7 +453,7 @@ async function pushTag(name: string) {
   text-align: left;
   color: var(--text-primary);
   font-size: var(--text-row);
-  cursor: pointer;
+  cursor: default;
   white-space: nowrap;
 }
 .ctx-item:focus-visible,
@@ -505,7 +505,7 @@ async function pushTag(name: string) {
   border: 1px solid transparent;
   border-radius: 5px;
   text-align: left;
-  cursor: pointer;
+  cursor: default;
 }
 .ctx-choice:hover {
   background: var(--surface-hover);
@@ -544,7 +544,7 @@ async function pushTag(name: string) {
   border-radius: 4px;
   font-size: var(--text-meta);
   font-weight: 600;
-  cursor: pointer;
+  cursor: default;
   border: 1px solid transparent;
 }
 
@@ -613,7 +613,7 @@ async function pushTag(name: string) {
   border-radius: 4px;
   color: var(--text-on-accent);
   font-size: var(--text-meta);
-  cursor: pointer;
+  cursor: default;
   white-space: nowrap;
 }
 .ctx-confirm:hover {
