@@ -59,10 +59,16 @@ rounded:
   popover: "6px"
   modal: "10px"
 spacing:
-  row-y: "4px"
-  row-x: "12px"
-  section: "8px"
-  panel: "24px"
+  space-1: "4px"
+  space-2: "8px"
+  space-3: "12px"
+  space-4: "16px"
+  space-5: "24px"
+  space-6: "32px"
+  inset-panel: "12px"
+  row: "24px"
+  toolbar: "56px"
+  file-header: "32px"
 components:
   button-primary:
     backgroundColor: "{colors.accent-fill}"
@@ -160,8 +166,8 @@ A neutral dark palette where hue only appears when it encodes git state or an ac
 
 ### Hierarchy
 - **Title** (600, 15px): modal titles and the welcome line.
-- **Body** (400, 13px): buttons, inputs, sidebar branches, messages.
-- **Row** (400, 12px): list rows, menu items, commit subjects, and code lines (12px on 19px lines).
+- **Body** (400, 13px): commit subjects in the graph, buttons, inputs, sidebar branches, messages.
+- **Row** (400, 12px): list rows, menu items, metadata columns, and code lines (12px on 19px lines).
 - **Label** (600, 11px, sentence case): section headings, badges, metadata, line numbers. No uppercase, no letter-spacing.
 
 ### Named Rules
@@ -171,7 +177,13 @@ A neutral dark palette where hue only appears when it encodes git state or an ac
 
 ## Layout
 
-A fixed desktop shell: repo tab bar, toolbar, then a resizable sidebar beside the main panel, which switches between the commit graph and the working tree. Panels resize by dragging 4px handles that turn blue on hover. Lists use tight rows (4px vertical, 10–12px horizontal padding) with no gaps between them. Modals and empty states use 24px padding. Base text is left-aligned; the welcome screen and centred empty-state messages set their centring explicitly.
+A fixed desktop shell with as little chrome as possible:
+
+- **Toolbar = title bar** (56px, hidden-inset macOS title bar). The traffic lights sit in its left 84px; then the repo button (name ▾, opens the repo picker) and the Commits | Working Tree segmented control; git actions centred; Settings right. Empty toolbar space drags the window.
+- **Repo tabs** (28px) appear below the toolbar only when two or more repos are open.
+- **Workspace:** resizable sidebar, main panel, and on the commit view an inspector (commit detail) on the right. Panels resize by dragging 4px handles that turn blue on hover.
+
+Spacing follows a 4px scale (`--space-1` to `--space-6`: 4/8/12/16/24/32). Every panel edge uses `--inset-panel` (12px), so sidebar, file list, banners and headers align on one vertical line. List rows are 24px (`--row-h`), commit rows 28px; file header bars are 32px (`--file-header-h`). Groups separate with more space above a section heading than below it (12px / 4px). The commit row gives way from the right in narrow panes: author hides below 720px, date below 520px. Base text is left-aligned; the welcome screen and centred empty-state messages set their centring explicitly.
 
 ## Elevation & Depth
 

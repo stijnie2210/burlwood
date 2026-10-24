@@ -66,8 +66,8 @@ internal/graph/
   layout.go                         BuildGraph() — greedy lane assignment
                                     GraphRow{hash, column, color, edgesIn, edges, maxColumn}
 frontend/src/
-  App.vue                           Root: TabBar + resizable Sidebar + main panel
-                                    viewMode ref ('commits'|'staging') — view tab switcher
+  App.vue                           Root: ToolBar (title-bar row, v-model:view-mode) + TabBar (2+ repos only)
+                                    + RepoPicker + resizable Sidebar + main panel; viewMode ref ('commits'|'staging')
   composables/
     useContextMenu.ts               clampMenuPosition(el, x, y), handleMenuKeydown (↑/↓/Esc), menuEventFor (Shift+F10)
     useDialog.ts                    Esc, initial focus, Tab trap and focus return for modals
@@ -79,7 +79,10 @@ frontend/src/
     staging.ts                      files[], unstagedFiles, stagedFiles, diff[]
                                     buildHunkPatch() — constructs patch string for git apply
   components/
-    layout/TabBar.vue               Repo tabs (open/close/switch)
+    layout/ToolBar.vue              Title-bar row (hidden-inset, --wails-draggable): repo button, Commits|Working Tree
+                                    segmented control, git actions, Settings
+    layout/TabBar.vue               Repo tabs (open/close/switch); only rendered with 2+ repos
+    layout/RepoPicker.vue           Recent repos + Open…; shared by the toolbar repo button and the tab bar + (stores/repoPicker.ts)
     layout/Sidebar.vue              Branch list — width set by App.vue via :style
     graph/CommitGraph.vue           @tanstack/vue-virtual virtualizer; canvas-per-row
     graph/CommitRow.vue             Single row: canvas + shortHash + labels + subject
