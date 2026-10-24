@@ -61,10 +61,11 @@ function makeResizer(width: Ref<number>, min: number, max: number) {
 
 const startResize = makeResizer(fileListWidth, 180, 520);
 
+// Keep the top-level directory: in a monorepo it tells you which package the file is in.
 function shortPath(p: string) {
   const parts = p.split('/');
-  if (parts.length > 2) {
-    return '…/' + parts.slice(-2).join('/');
+  if (parts.length > 3) {
+    return `${parts[0]}/…/${parts.slice(-2).join('/')}`;
   }
   return p;
 }
@@ -246,9 +247,24 @@ const STATUS_LABELS: Record<string, string> = {
   D: 'D',
   R: 'R',
   C: 'C',
-  '?': 'U',
+  '?': '?',
   U: '!',
 };
+
+const STATUS_NAMES: Record<string, string> = {
+  M: 'Modified',
+  A: 'Added',
+  D: 'Deleted',
+  R: 'Renamed',
+  C: 'Copied',
+  '?': 'Untracked',
+  U: 'Unmerged',
+};
+
+function statusClass(code: string): string {
+  const c = code.trim();
+  return c === '?' || c === '' ? 'q' : c;
+}
 
 const selectedIsConflict = computed(() => {
   if (!staging.selectedPath) {
@@ -787,7 +803,11 @@ async function doAbortRebase() {
                 openFileCtxMenu(menuEventFor($event), file.path, 'unstaged')
               "
             >
-              <span class="status-code" :class="`sc-${file.unstaged.trim() || 'q'}`">
+              <span
+                class="status-code"
+                :class="`sc-${statusClass(file.unstaged)}`"
+                :title="STATUS_NAMES[file.unstaged]"
+              >
                 {{ STATUS_LABELS[file.unstaged] ?? file.unstaged }}
               </span>
               <span class="file-name" :title="file.path">{{ shortPath(file.path) }}</span>
@@ -830,7 +850,11 @@ async function doAbortRebase() {
                 openFileCtxMenu(menuEventFor($event), file.path, 'staged')
               "
             >
-              <span class="status-code" :class="`sc-${file.staged.trim() || 'q'}`">
+              <span
+                class="status-code"
+                :class="`sc-${statusClass(file.staged)}`"
+                :title="STATUS_NAMES[file.staged]"
+              >
                 {{ STATUS_LABELS[file.staged] ?? file.staged }}
               </span>
               <span class="file-name" :title="file.path">{{ shortPath(file.path) }}</span>
@@ -1422,7 +1446,7 @@ async function doAbortRebase() {
   color: var(--accent-text);
 }
 .unstage-inline:hover {
-  background: var(--danger-soft-hover);
+  background: var(--accent-soft-strong);
 }
 
 /* ── Commit panel ─────────────────────────── */
@@ -1596,6 +1620,8 @@ async function doAbortRebase() {
   white-space: nowrap;
   height: var(--file-header-h);
   box-sizing: border-box;
+  display: flex;
+  align-items: center;
 }
 
 .image-preview-loading,

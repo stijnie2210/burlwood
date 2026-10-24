@@ -194,7 +194,7 @@ async function confirmBranch() {
 
 <template>
   <div class="toolbar">
-    <div class="toolbar-inner">
+    <div class="toolbar-inner" :class="{ 'no-repo': !repos.activeRepo }">
       <div class="toolbar-side toolbar-side--left">
         <button
           class="repo-btn"
@@ -529,6 +529,12 @@ async function confirmBranch() {
   gap: 2px;
 }
 
+/* Without a repo there is nothing to act on; show only the repo button and Settings. */
+.toolbar-inner.no-repo > .btn-group,
+.toolbar-inner.no-repo > .separator {
+  display: none;
+}
+
 .toolbar-side {
   flex: 1;
   min-width: 0;
@@ -683,7 +689,6 @@ async function confirmBranch() {
 .tbtn-label {
   font-size: var(--text-meta);
   font-weight: 500;
-  letter-spacing: 0.02em;
 }
 
 /* Spin animation for loading state */
@@ -769,8 +774,8 @@ async function confirmBranch() {
 }
 
 .pull-menu-item.selected {
-  background: var(--accent-fill);
-  color: var(--text-on-accent);
+  background: var(--surface-control);
+  color: var(--text-primary);
 }
 
 .pull-menu-radio {
@@ -784,7 +789,7 @@ async function confirmBranch() {
 }
 
 .pull-menu-item.selected .pull-menu-radio {
-  border-color: var(--text-on-accent);
+  border-color: var(--accent-text);
 }
 
 .pull-menu-item.selected .pull-menu-radio::after {
@@ -792,7 +797,7 @@ async function confirmBranch() {
   position: absolute;
   inset: 2px;
   border-radius: 50%;
-  background: var(--text-on-accent);
+  background: var(--accent-text);
 }
 
 /* Branch popover */

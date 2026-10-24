@@ -20,7 +20,7 @@ func main() {
 
 	appMenu := menu.NewMenu()
 	gitgoodMenu := appMenu.AddSubmenu("gitgood")
-	gitgoodMenu.AddText("Preferences…", keys.CmdOrCtrl(","), func(_ *menu.CallbackData) {
+	gitgoodMenu.AddText("Settings…", keys.CmdOrCtrl(","), func(_ *menu.CallbackData) {
 		if app.ctx != nil {
 			runtime.EventsEmit(app.ctx, "open-preferences")
 		}

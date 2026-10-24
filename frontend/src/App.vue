@@ -224,8 +224,10 @@ onUnmounted(() => {
     <PreferencesModal />
     <LogViewerModal />
     <div class="workspace">
-      <Sidebar :style="{ width: sidebarWidth + 'px' }" />
-      <div class="resize-handle" @mousedown.prevent="startSidebarResize" />
+      <template v-if="repos.activeRepo">
+        <Sidebar :style="{ width: sidebarWidth + 'px' }" />
+        <div class="resize-handle" @mousedown.prevent="startSidebarResize" />
+      </template>
       <main class="main-panel">
         <div v-if="!repos.activeRepo" class="welcome">
           <img :src="logoUrl" class="welcome-logo" alt="" />
@@ -352,7 +354,7 @@ body {
   padding: 8px 20px;
   background: var(--accent-fill);
   border: none;
-  border-radius: 6px;
+  border-radius: 5px;
   color: var(--text-on-accent);
   cursor: pointer;
   font-size: var(--text-body);

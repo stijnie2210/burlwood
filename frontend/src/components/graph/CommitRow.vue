@@ -36,10 +36,13 @@ watchEffect(() => {
   if (!canvas || !props.row) {
     return;
   }
-  canvas.width = props.graphWidth;
-  canvas.height = props.rowH;
+  // Draw at device resolution so lanes stay crisp on Retina; CSS keeps the logical size.
+  const dpr = window.devicePixelRatio || 1;
+  canvas.width = Math.round(props.graphWidth * dpr);
+  canvas.height = Math.round(props.rowH * dpr);
   const ctx = canvas.getContext('2d');
   if (ctx) {
+    ctx.scale(dpr, dpr);
     drawGraphCell(ctx, props.row, props.rowH);
   }
 });

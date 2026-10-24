@@ -562,7 +562,7 @@ async function pushTag(name: string) {
   border-color: var(--danger-fill);
 }
 .ctx-confirm-btn--danger:hover {
-  background: var(--danger-soft-hover);
+  background: var(--danger-fill-hover);
 }
 .ctx-confirm-btn--cancel {
   background: transparent;

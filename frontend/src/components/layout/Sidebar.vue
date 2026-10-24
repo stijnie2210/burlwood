@@ -828,9 +828,7 @@ async function confirmStashRename() {
         <button role="menuitem" class="ctx-menu-item ctx-menu-item-primary" @click="applyStash()">
           Apply
         </button>
-        <button role="menuitem" class="ctx-menu-item ctx-menu-item-primary" @click="popStash()">
-          Pop
-        </button>
+        <button role="menuitem" class="ctx-menu-item" @click="popStash()">Pop</button>
         <div class="ctx-menu-divider" />
         <button role="menuitem" class="ctx-menu-item" @click="startStashRename()">Rename</button>
         <button
@@ -861,11 +859,16 @@ async function confirmStashRename() {
 
       <template v-else-if="stashCtxMenu.mode === 'confirm-drop'">
         <div class="ctx-menu-confirm">
-          <p class="ctx-menu-confirm-text">Drop "{{ stashCtxMenu.ref }}"?</p>
-          <button class="ctx-menu-item ctx-menu-item-danger" @click="confirmStashDrop()">
-            Drop
-          </button>
-          <button class="ctx-menu-item" @click="closeStashCtxMenu()">Cancel</button>
+          <p class="ctx-menu-confirm-text">
+            Drop "{{ stashCtxMenu.ref }}"? Its changes are deleted from the stash list and can't be
+            restored from gitgood.
+          </p>
+          <div class="ctx-menu-row">
+            <button class="ctx-menu-btn ctx-menu-btn-danger" @click="confirmStashDrop()">
+              Drop
+            </button>
+            <button class="ctx-menu-btn" @click="closeStashCtxMenu()">Cancel</button>
+          </div>
         </div>
       </template>
     </div>

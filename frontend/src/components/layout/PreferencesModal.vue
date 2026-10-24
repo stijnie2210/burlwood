@@ -68,8 +68,8 @@ const { onKeydown } = useDialog(() => prefs.modalOpen, panelRef, onCancel);
         @keydown="onKeydown"
       >
         <div class="prefs-header">
-          <span id="prefs-title" class="prefs-title">Preferences</span>
-          <button class="prefs-close" aria-label="Close preferences" @click="onCancel">✕</button>
+          <span id="prefs-title" class="prefs-title">Settings</span>
+          <button class="prefs-close" aria-label="Close settings" @click="onCancel">✕</button>
         </div>
 
         <div class="prefs-body">
