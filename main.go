@@ -31,7 +31,31 @@ func main() {
 		}
 	})
 
+	// The frontend handles these too; listing them here makes every shortcut discoverable in the menu bar.
+	emit := func(action string) menu.Callback {
+		return func(_ *menu.CallbackData) {
+			if app.ctx != nil {
+				runtime.EventsEmit(app.ctx, "menu", action)
+			}
+		}
+	}
+
+	repoMenu := appMenu.AddSubmenu("Repository")
+	repoMenu.AddText("Open Repository…", keys.CmdOrCtrl("o"), emit("open-repo"))
+	repoMenu.AddText("Close Tab", keys.CmdOrCtrl("w"), emit("close-tab"))
+	repoMenu.AddSeparator()
+	repoMenu.AddText("Fetch All", keys.CmdOrCtrl("r"), emit("fetch"))
+	repoMenu.AddSeparator()
+	repoMenu.AddText("Previous Tab", keys.CmdOrCtrl("["), emit("prev-tab"))
+	repoMenu.AddText("Next Tab", keys.CmdOrCtrl("]"), emit("next-tab"))
+
 	appMenu.Append(menu.EditMenu())
+
+	viewMenu := appMenu.AddSubmenu("View")
+	viewMenu.AddText("Commits", keys.CmdOrCtrl("1"), emit("view-commits"))
+	viewMenu.AddText("Working Tree", keys.CmdOrCtrl("2"), emit("view-staging"))
+	viewMenu.AddSeparator()
+	viewMenu.AddText("Find Commit…", keys.CmdOrCtrl("f"), emit("find"))
 
 	err := wails.Run(&options.App{
 		Title:  "gitgood",
@@ -40,7 +64,7 @@ func main() {
 		AssetServer: &assetserver.Options{
 			Assets: assets,
 		},
-		BackgroundColour: &options.RGBA{R: 27, G: 38, B: 54, A: 1},
+		BackgroundColour: &options.RGBA{R: 15, G: 15, B: 26, A: 255},
 		Menu:             appMenu,
 		OnStartup:        app.startup,
 		OnBeforeClose:    app.beforeClose,
