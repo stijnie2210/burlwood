@@ -45,10 +45,13 @@ frontend/src/components/ ← Vue components, grouped by feature
 app.go                              All bound methods
 internal/gitcli/
   runner.go                         Run() / RunWithInput() — exec.Command wrapper
-  staging.go                        StageFile, UnstageFile, ApplyPatch, DiscardFile
+  staging.go                        StageFile, UnstageFile, StageFiles/UnstageFiles (one call, paths via stdin),
+                                    ApplyPatch, DiscardFile
   remote.go                         FetchAll, Pull, Push
   fileops.go                        OpenInDefaultApp, ShowInFinder, OpenInEditor,
                                     StashFile, AppendToGitignore, GetFilePatch, DeleteWorkingFile
+  undo.go                           SnapshotWorkingFile/RestoreWorkingFile (discard undo via hash-object),
+                                    HardResetWithUndo/UndoHardReset (stash create + previous HEAD)
 internal/repo/
   manager.go                        Manager{map[string]*git.Repository}; Open/Close/Get
                                     RecentEntry → ~/Library/Application Support/gitgood/repos.json
@@ -66,7 +69,9 @@ frontend/src/
   App.vue                           Root: TabBar + resizable Sidebar + main panel
                                     viewMode ref ('commits'|'staging') — view tab switcher
   composables/
-    useContextMenu.ts               clampMenuPosition(el, x, y) — shared viewport clamping for all context menus
+    useContextMenu.ts               clampMenuPosition(el, x, y), handleMenuKeydown (↑/↓/Esc), menuEventFor (Shift+F10)
+    useDialog.ts                    Esc, initial focus, Tab trap and focus return for modals
+    useLineBudget.ts                renders the first 2000 diff lines until "Show more"; hunk actions keep the full hunk
   stores/
     repos.ts                        tabs[], activeRepo, openRepo, pickAndOpen, closeTab
     branches.ts                     local[], remote[] — loaded on activeRepo change
@@ -109,8 +114,18 @@ Frontend builds the patch (not backend) so the applied patch exactly matches wha
 ### Resizable panels
 `makeResizer(width: Ref<number>, min, max, direction)` in `App.vue` — returns a mousedown handler. Direction `'right'` = delta is +x; `'left'` = delta is −x (for right-edge panels). Each component that needs local resize (e.g. `StagingView`) defines its own inline version.
 
+### Fonts
+macOS system fonts via tokens in `style.css`: `var(--font-ui)` (SF Pro, set on `body`) and `var(--font-mono)` (SF Mono → Menlo) for hashes, paths and diffs. Never use bare `monospace` — WKWebView maps it to Courier. Base text is left-aligned; centre explicitly where intended.
+
+Four text sizes, as tokens: `--text-meta` 11 (labels, hashes, line numbers), `--text-row` 12 (list rows, menus, code), `--text-body` 13 (buttons, inputs, messages), `--text-title` 15 (modal titles). Only exceptions: the welcome wordmark (32px) and glyph icons (16px).
+
 ### Color theme
-Background hierarchy: `#0a0a14` (deepest) → `#0f0f1a` → `#0d0d18` → `#111124` → `#16213e` (sidebar). Accent: `#4f8ef7` (blue). Status colors: M=orange, A=green, D=red, R=blue, untracked=cyan.
+All colours are semantic tokens in `style.css`; never hard-code hex in components. Neutral macOS-style greys, colour only where it means something:
+- Surfaces: `--surface-sunken` (diffs) → `-base` (canvas) → `-raised` (bars in panels) → `-chrome` (sidebar, tab bar, toolbar) → `-overlay` (menus, modals, toasts); plus `-field`, `-control`, `-hover`, `-selected`
+- Text: `--text-primary` / `-secondary` / `-tertiary` (all ≥4.5:1 on every surface), `--text-on-accent`
+- Accent (system blue): `--accent-fill` for primary buttons and menu hover, `--accent-text`, `--focus-ring`
+- Git meaning: `--add` / `--del` (+ `-fg`, `-line-bg`), `--modified`, `--untracked`, `--ours` / `--theirs`, `--tag`, `--stash`; `--danger*` and `--warning*` for destructive and in-progress states
+- Graph lanes (`internal/graph/layout.go`) are muted and avoid the add/del hues; syntax colours in `assets/prism-theme.css` follow Xcode's dark theme
 
 ## Phase Status
 

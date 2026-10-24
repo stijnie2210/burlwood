@@ -1,0 +1,604 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-10-24T20:05:33+00:00",
+  "title": "Design System: gitgood",
+  "extensions": {
+    "colorMeta": {
+      "accent-fill": {
+        "role": "primary",
+        "displayName": "System Blue",
+        "canonical": "oklch(56.2% 0.179 260)",
+        "tonalRamp": [
+          "#000925",
+          "#0a224a",
+          "#1e3e74",
+          "#345c9f",
+          "#517cc6",
+          "#789fe0",
+          "#a5c5fb",
+          "#d7f0ff"
+        ]
+      },
+      "accent-fill-hover": {
+        "role": "primary",
+        "displayName": "System Blue (hover)",
+        "canonical": "oklch(52.9% 0.170 260)",
+        "tonalRamp": [
+          "#000925",
+          "#0a224a",
+          "#1e3e74",
+          "#345c9f",
+          "#517cc6",
+          "#789fe0",
+          "#a5c5fb",
+          "#d7f0ff"
+        ]
+      },
+      "accent-text": {
+        "role": "primary",
+        "displayName": "Link Blue",
+        "canonical": "oklch(71.4% 0.152 254)",
+        "tonalRamp": [
+          "#000a24",
+          "#01234a",
+          "#134073",
+          "#285e9e",
+          "#457fc5",
+          "#70a1de",
+          "#9fc7fa",
+          "#d2f2ff"
+        ]
+      },
+      "surface-sunken": {
+        "role": "neutral",
+        "displayName": "Ink Well",
+        "canonical": "oklch(19.2% 0.004 286)",
+        "tonalRamp": [
+          "#0b0b0d",
+          "#242426",
+          "#3f3f42",
+          "#5d5d60",
+          "#7d7d7f",
+          "#9e9ea1",
+          "#c4c4c7",
+          "#eeeef1"
+        ]
+      },
+      "surface-base": {
+        "role": "neutral",
+        "displayName": "Notebook Page",
+        "canonical": "oklch(22.3% 0.004 286)",
+        "tonalRamp": [
+          "#0b0b0d",
+          "#242426",
+          "#3f3f42",
+          "#5d5d60",
+          "#7d7d7f",
+          "#9e9ea1",
+          "#c4c4c6",
+          "#eeeef1"
+        ]
+      },
+      "surface-raised": {
+        "role": "neutral",
+        "displayName": "Ruled Line",
+        "canonical": "oklch(25.3% 0.006 286)",
+        "tonalRamp": [
+          "#0b0b0d",
+          "#242427",
+          "#3f3f43",
+          "#5d5d61",
+          "#7d7d80",
+          "#9e9ea2",
+          "#c3c4c8",
+          "#eeeef2"
+        ]
+      },
+      "surface-chrome": {
+        "role": "neutral",
+        "displayName": "Binding",
+        "canonical": "oklch(27.8% 0.005 286)",
+        "tonalRamp": [
+          "#0b0b0d",
+          "#242427",
+          "#3f3f43",
+          "#5d5d61",
+          "#7d7d80",
+          "#9e9ea2",
+          "#c4c4c7",
+          "#eeeef2"
+        ]
+      },
+      "surface-overlay": {
+        "role": "neutral",
+        "displayName": "Loose Leaf",
+        "canonical": "oklch(30.2% 0.005 286)",
+        "tonalRamp": [
+          "#0b0b0d",
+          "#242427",
+          "#3f3f42",
+          "#5d5d61",
+          "#7d7d80",
+          "#9e9ea2",
+          "#c4c4c7",
+          "#eeeef2"
+        ]
+      },
+      "surface-field": {
+        "role": "neutral",
+        "displayName": "Field",
+        "canonical": "oklch(21.4% 0.004 286)",
+        "tonalRamp": [
+          "#0b0b0d",
+          "#242426",
+          "#3f3f42",
+          "#5d5d60",
+          "#7d7d7f",
+          "#9e9ea1",
+          "#c4c4c6",
+          "#eeeef1"
+        ]
+      },
+      "surface-control": {
+        "role": "neutral",
+        "displayName": "Control",
+        "canonical": "oklch(34.2% 0.007 286)",
+        "tonalRamp": [
+          "#0b0b0e",
+          "#242427",
+          "#3f3f43",
+          "#5d5d61",
+          "#7d7d81",
+          "#9e9ea3",
+          "#c3c3c8",
+          "#eeeef3"
+        ]
+      },
+      "surface-control-hover": {
+        "role": "neutral",
+        "displayName": "Control Hover",
+        "canonical": "oklch(38.1% 0.007 286)",
+        "tonalRamp": [
+          "#0b0b0e",
+          "#242427",
+          "#3f3f43",
+          "#5d5d61",
+          "#7d7d81",
+          "#9e9ea2",
+          "#c3c3c8",
+          "#eeeef3"
+        ]
+      },
+      "surface-selected": {
+        "role": "neutral",
+        "displayName": "Selection",
+        "canonical": "oklch(33.3% 0.070 263)",
+        "tonalRamp": [
+          "#010825",
+          "#112246",
+          "#2b3f65",
+          "#485d86",
+          "#677da8",
+          "#879fcb",
+          "#acc5f3",
+          "#d8efff"
+        ]
+      },
+      "border-subtle": {
+        "role": "neutral",
+        "displayName": "Hairline",
+        "canonical": "oklch(31.0% 0.005 286)",
+        "tonalRamp": [
+          "#0b0b0d",
+          "#242427",
+          "#3f3f42",
+          "#5d5d60",
+          "#7d7d80",
+          "#9e9ea2",
+          "#c4c4c7",
+          "#eeeef2"
+        ]
+      },
+      "border": {
+        "role": "neutral",
+        "displayName": "Border",
+        "canonical": "oklch(35.8% 0.007 286)",
+        "tonalRamp": [
+          "#0b0b0e",
+          "#242427",
+          "#3f3f43",
+          "#5d5d61",
+          "#7d7d81",
+          "#9e9ea3",
+          "#c3c3c8",
+          "#eeeef3"
+        ]
+      },
+      "border-strong": {
+        "role": "neutral",
+        "displayName": "Strong Border",
+        "canonical": "oklch(41.8% 0.008 286)",
+        "tonalRamp": [
+          "#0b0b0f",
+          "#242328",
+          "#3f3f44",
+          "#5d5d62",
+          "#7d7d82",
+          "#9e9ea3",
+          "#c3c3c9",
+          "#eeeef4"
+        ]
+      },
+      "text-primary": {
+        "role": "neutral",
+        "displayName": "Primary Text",
+        "canonical": "oklch(93.2% 0.003 286)",
+        "tonalRamp": [
+          "#0b0b0c",
+          "#242425",
+          "#3f3f41",
+          "#5d5d5f",
+          "#7d7d7f",
+          "#9e9ea0",
+          "#c4c4c6",
+          "#eeeef0"
+        ]
+      },
+      "text-secondary": {
+        "role": "neutral",
+        "displayName": "Secondary Text",
+        "canonical": "oklch(80.9% 0.007 286)",
+        "tonalRamp": [
+          "#0b0b0e",
+          "#242427",
+          "#3f3f43",
+          "#5d5d61",
+          "#7d7d81",
+          "#9e9ea3",
+          "#c3c3c8",
+          "#eeeef3"
+        ]
+      },
+      "text-tertiary": {
+        "role": "neutral",
+        "displayName": "Tertiary Text",
+        "canonical": "oklch(71.1% 0.007 286)",
+        "tonalRamp": [
+          "#0b0b0e",
+          "#242427",
+          "#3f3f43",
+          "#5d5d62",
+          "#7d7d81",
+          "#9e9ea3",
+          "#c3c3c9",
+          "#eeeef3"
+        ]
+      },
+      "text-on-accent": {
+        "role": "neutral",
+        "displayName": "On Accent",
+        "canonical": "oklch(100.0% 0.000 90)",
+        "tonalRamp": [
+          "#0b0b0b",
+          "#242424",
+          "#404040",
+          "#5d5d5d",
+          "#7d7d7d",
+          "#9e9e9e",
+          "#c4c4c4",
+          "#eeeeee"
+        ]
+      },
+      "add": {
+        "role": "secondary",
+        "displayName": "Diff Green",
+        "canonical": "oklch(74.7% 0.160 151)",
+        "tonalRamp": [
+          "#001200",
+          "#002e0d",
+          "#004e22",
+          "#177039",
+          "#3a9256",
+          "#6bb17d",
+          "#9cd4a9",
+          "#d1fbda"
+        ]
+      },
+      "add-fg": {
+        "role": "secondary",
+        "displayName": "Pale Diff Green",
+        "canonical": "oklch(89.6% 0.076 154)",
+        "tonalRamp": [
+          "#001201",
+          "#002e11",
+          "#184b2d",
+          "#386a4a",
+          "#588b69",
+          "#79ad89",
+          "#9ed3ae",
+          "#cffcdc"
+        ]
+      },
+      "del": {
+        "role": "secondary",
+        "displayName": "Diff Red",
+        "canonical": "oklch(73.4% 0.163 26)",
+        "tonalRamp": [
+          "#1f0001",
+          "#430f0e",
+          "#6b2623",
+          "#953e39",
+          "#bb5d56",
+          "#d8847c",
+          "#f6afa8",
+          "#ffdfd9"
+        ]
+      },
+      "del-fg": {
+        "role": "secondary",
+        "displayName": "Pale Diff Red",
+        "canonical": "oklch(85.7% 0.077 25)",
+        "tonalRamp": [
+          "#1f0001",
+          "#421010",
+          "#622e2b",
+          "#844c48",
+          "#a66b66",
+          "#ca8c86",
+          "#f2b1ab",
+          "#ffdfda"
+        ]
+      },
+      "modified": {
+        "role": "secondary",
+        "displayName": "Signal Orange",
+        "canonical": "oklch(77.6% 0.145 70)",
+        "tonalRamp": [
+          "#1a0400",
+          "#3b1a00",
+          "#603400",
+          "#864f00",
+          "#ab6e0f",
+          "#c89351",
+          "#e7bb88",
+          "#ffe8c2"
+        ]
+      },
+      "untracked": {
+        "role": "secondary",
+        "displayName": "Untracked Cyan",
+        "canonical": "oklch(77.8% 0.105 214)",
+        "tonalRamp": [
+          "#00101b",
+          "#002c3c",
+          "#004b60",
+          "#006b82",
+          "#008da4",
+          "#3eafc6",
+          "#81d3e6",
+          "#bffaff"
+        ]
+      },
+      "danger-fill": {
+        "role": "secondary",
+        "displayName": "Destructive Red",
+        "canonical": "oklch(54.1% 0.186 27)",
+        "tonalRamp": [
+          "#1f0000",
+          "#430f0c",
+          "#6b2621",
+          "#953e37",
+          "#bb5d53",
+          "#d8847a",
+          "#f6b0a6",
+          "#ffdfd8"
+        ]
+      },
+      "danger-fill-hover": {
+        "role": "secondary",
+        "displayName": "Destructive Red (hover)",
+        "canonical": "oklch(49.8% 0.173 27)",
+        "tonalRamp": [
+          "#1f0000",
+          "#430f0c",
+          "#6b2621",
+          "#953e37",
+          "#bb5d54",
+          "#d8847a",
+          "#f6b0a6",
+          "#ffdfd8"
+        ]
+      },
+      "tag": {
+        "role": "tertiary",
+        "displayName": "Brass",
+        "canonical": "oklch(79.0% 0.139 85)",
+        "tonalRamp": [
+          "#170700",
+          "#351f00",
+          "#573a00",
+          "#7c5600",
+          "#9e7600",
+          "#bc994c",
+          "#ddc084",
+          "#ffecbf"
+        ]
+      },
+      "stash": {
+        "role": "tertiary",
+        "displayName": "Lilac",
+        "canonical": "oklch(74.3% 0.131 304)",
+        "tonalRamp": [
+          "#110320",
+          "#2d1743",
+          "#4b306a",
+          "#6c4a93",
+          "#8d69b8",
+          "#ad8ed3",
+          "#d0b7f1",
+          "#f7e5ff"
+        ]
+      }
+    },
+    "typographyMeta": {
+      "title": {
+        "displayName": "Title",
+        "purpose": "Modal titles and the welcome line."
+      },
+      "body": {
+        "displayName": "Body",
+        "purpose": "Buttons, inputs, sidebar branches, messages."
+      },
+      "row": {
+        "displayName": "Row",
+        "purpose": "List rows, menu items, commit subjects."
+      },
+      "code": {
+        "displayName": "Code",
+        "purpose": "Diffs, hashes, paths."
+      },
+      "label": {
+        "displayName": "Label",
+        "purpose": "Section headings, badges, metadata, line numbers."
+      }
+    },
+    "shadows": [
+      {
+        "name": "shadow-popover",
+        "value": "0 8px 24px rgba(0, 0, 0, 0.5)",
+        "purpose": "Context menus, dropdowns, repo picker, toasts."
+      },
+      {
+        "name": "shadow-modal",
+        "value": "0 12px 40px rgba(0, 0, 0, 0.6)",
+        "purpose": "Preferences and log viewer modals."
+      }
+    ],
+    "motion": [
+      {
+        "name": "hover-background",
+        "value": "background 0.1s–0.15s",
+        "purpose": "Row and button hover fills."
+      },
+      {
+        "name": "toast-slide",
+        "value": "transform/opacity 0.2s ease",
+        "purpose": "Toast enter/leave."
+      }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "The single blue action in a context, e.g. Commit.",
+      "html": "<button class=\"ds-btn-primary\">Commit to <strong>main</strong></button>",
+      "css": ".ds-btn-primary{width:240px;padding:8px;border:none;border-radius:5px;background:var(--accent-fill,#2f6fdc);color:#fff;font:500 12px -apple-system,BlinkMacSystemFont,system-ui,sans-serif;cursor:pointer;transition:background .15s}.ds-btn-primary:hover{background:var(--accent-fill-hover,#2a66cc)}.ds-btn-primary:focus-visible{outline:2px solid var(--focus-ring,#5aa5ff);outline-offset:2px}"
+    },
+    {
+      "name": "Secondary Button",
+      "kind": "button",
+      "refersTo": "button-secondary",
+      "description": "Neutral control fill for everything that is not the primary action.",
+      "html": "<button class=\"ds-btn-secondary\">Type a message to commit</button>",
+      "css": ".ds-btn-secondary{width:240px;padding:8px;border:none;border-radius:5px;background:var(--surface-control,#38383c);color:var(--text-secondary,#c0c0c5);font:500 12px -apple-system,BlinkMacSystemFont,system-ui,sans-serif;cursor:pointer}.ds-btn-secondary:hover{background:var(--surface-control-hover,#424246)}.ds-btn-secondary:focus-visible{outline:2px solid var(--focus-ring,#5aa5ff);outline-offset:2px}"
+    },
+    {
+      "name": "Destructive Confirmation",
+      "kind": "custom",
+      "refersTo": "button-destructive",
+      "description": "In-menu confirmation that names the consequence before a destructive step.",
+      "html": "<div class=\"ds-confirm\"><p>\"feature/x\" has commits that aren't merged into any other branch. Force deleting it leaves them reachable only through the reflog.</p><div class=\"ds-row\"><button class=\"ds-danger\">Force delete</button><button class=\"ds-plain\">Keep branch</button></div></div>",
+      "css": ".ds-confirm{width:250px;padding:8px 10px;background:var(--surface-overlay,#2e2e31);border:1px solid var(--border,#3c3c40);border-radius:6px;box-shadow:0 8px 24px rgba(0,0,0,.5);font-family:-apple-system,BlinkMacSystemFont,system-ui,sans-serif}.ds-confirm p{margin:0 0 8px;font-size:11px;line-height:1.4;color:var(--danger,#ff7b72)}.ds-row{display:flex;gap:6px}.ds-danger,.ds-plain{flex:1;padding:4px 0;border:none;border-radius:4px;font-size:12px;cursor:pointer}.ds-danger{background:var(--danger-fill,#c42f2a);color:#fff;font-weight:600}.ds-danger:hover{background:var(--danger-fill-hover,#b02824)}.ds-plain{background:var(--surface-control,#38383c);color:var(--text-secondary,#c0c0c5)}.ds-plain:hover{background:var(--surface-control-hover,#424246)}"
+    },
+    {
+      "name": "Text Field",
+      "kind": "input",
+      "refersTo": "input",
+      "description": "Commit summary and inline name inputs.",
+      "html": "<input class=\"ds-input\" placeholder=\"Commit summary\" />",
+      "css": ".ds-input{width:240px;padding:6px 8px;background:var(--surface-field,#19191b);border:1px solid var(--border,#3c3c40);border-radius:4px;color:var(--text-primary,#e8e8ea);font:12px -apple-system,BlinkMacSystemFont,system-ui,sans-serif;outline:none}.ds-input::placeholder{color:var(--text-tertiary,#a1a1a6)}.ds-input:focus{border-color:var(--focus-ring,#5aa5ff)}"
+    },
+    {
+      "name": "Context Menu",
+      "kind": "nav",
+      "refersTo": "menu",
+      "description": "Teleported right-click menu; rows highlight in system blue.",
+      "html": "<div class=\"ds-menu\"><div class=\"ds-menu-label\">a1b2c3d — Fix graph lanes</div><button class=\"ds-item\">Copy short SHA</button><button class=\"ds-item\">Create branch here…</button><div class=\"ds-div\"></div><button class=\"ds-item ds-danger-item\">Hard — discard all changes</button></div>",
+      "css": ".ds-menu{width:230px;padding:4px 0;background:var(--surface-overlay,#2e2e31);border:1px solid var(--border,#3c3c40);border-radius:6px;box-shadow:0 8px 24px rgba(0,0,0,.5);font-family:-apple-system,BlinkMacSystemFont,system-ui,sans-serif}.ds-menu-label{padding:5px 12px;font:11px ui-monospace,'SF Mono',Menlo,monospace;color:var(--text-tertiary,#a1a1a6)}.ds-item{display:block;width:100%;padding:6px 12px;border:none;background:none;text-align:left;font-size:12px;color:var(--text-primary,#e8e8ea);cursor:pointer}.ds-item:hover,.ds-item:focus-visible{background:var(--accent-fill,#2f6fdc);color:#fff;outline:none}.ds-danger-item{color:var(--danger,#ff7b72)}.ds-div{height:1px;margin:3px 0;background:var(--border-subtle,#303033)}"
+    },
+    {
+      "name": "Ref Labels",
+      "kind": "chip",
+      "refersTo": "label-branch",
+      "description": "HEAD, branch, remote, tag and stash labels in the commit graph.",
+      "html": "<span class=\"ds-l ds-head\">HEAD</span> <span class=\"ds-l ds-branch\">main</span> <span class=\"ds-l ds-remote\">origin/main</span> <span class=\"ds-l ds-tag\">v1.2.0</span> <span class=\"ds-l ds-stash\">stash@{0}</span>",
+      "css": ".ds-l{display:inline-block;padding:1px 5px;border-radius:3px;font:500 11px -apple-system,BlinkMacSystemFont,system-ui,sans-serif;border:1px solid transparent}.ds-head{background:var(--accent-fill,#2f6fdc);color:#fff}.ds-branch{background:rgba(90,165,255,.13);color:var(--accent-text,#5aa5ff);border-color:rgba(90,165,255,.4)}.ds-remote{background:var(--surface-control,#38383c);color:var(--text-secondary,#c0c0c5);border-color:var(--border-strong,#4c4c51)}.ds-tag{background:rgba(227,179,65,.14);color:var(--tag,#e3b341);border-color:rgba(227,179,65,.35)}.ds-stash{background:rgba(190,150,239,.14);color:var(--stash,#be96ef);border-color:rgba(190,150,239,.35)}"
+    },
+    {
+      "name": "Diff Lines",
+      "kind": "custom",
+      "description": "Signature component: SF Mono diff on the Ink Well surface.",
+      "html": "<div class=\"ds-diff\"><div class=\"ds-h\">@@ -12,3 +12,4 @@</div><div class=\"ds-ln\"><span>12</span><span>12</span><code> func layout() {</code></div><div class=\"ds-ln ds-del\"><span>13</span><span></span><code>-  colors := legacy</code></div><div class=\"ds-ln ds-add\"><span></span><span>13</span><code>+  colors := laneColors</code></div><div class=\"ds-ln ds-add\"><span></span><span>14</span><code>+  return build(colors)</code></div></div>",
+      "css": ".ds-diff{width:340px;background:var(--surface-sunken,#141416);font:12px/19px ui-monospace,'SF Mono',Menlo,monospace;color:var(--text-secondary,#c0c0c5)}.ds-h{padding:3px 10px;background:var(--surface-raised,#222225);color:var(--text-tertiary,#a1a1a6);font-size:11px}.ds-ln{display:flex;white-space:pre}.ds-ln span{width:36px;padding-right:6px;text-align:right;font-size:11px;color:var(--text-tertiary,#a1a1a6)}.ds-ln code{font:inherit;padding-left:6px}.ds-add{background:rgba(79,201,119,.09)}.ds-add code{color:var(--add-fg,#b6ecc6)}.ds-del{background:rgba(255,123,114,.09)}.ds-del code{color:var(--del-fg,#ffbdb7)}"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Lab Notebook",
+    "overview": "gitgood is where a developer reads what happened and decides what happens next. The notebook metaphor sets the priorities: the entries (commit history, diffs, conflicts) are the content, and everything around them is the binding. It should be quiet, neutral, and steady enough to read for hours. The chrome uses macOS's own vocabulary (system fonts, neutral greys, system-blue actions, blue-highlighted menus) so the app feels at home next to Xcode and Finder rather than like a themed web page.\n\nColour is reserved for meaning. A green line was added and a red line was removed. Orange is a modified file. Blue is the thing you can act on. If a colour does not carry one of those meanings, it should not be there. The UI is dense because git work is dense, but it is never cramped: text stays at or above 11px, every text level clears 4.5:1 contrast, and code gets its own monospace voice.\n\nDestructive operations are written like careful notebook corrections: they name their consequence and can be undone where git allows (discard and hard reset show an Undo toast). Anything that can't be undone, such as force-pushing or force-deleting, gets its own explicit, red-filled step.",
+    "keyCharacteristics": [
+      "Neutral grey surfaces layered by tone, not by borders or shadows",
+      "One accent (system blue) for actions, focus and selection",
+      "Git semantics own the remaining colour: add, delete, modified, untracked, ours/theirs, tag, stash",
+      "SF Pro for the interface, SF Mono for anything copied from or into git",
+      "Four text sizes, no decorative type"
+    ],
+    "rules": [
+      {
+        "name": "The Meaning-Only Rule",
+        "body": "Every hue in the interface must map to a git state or an action. A new colour needs a new meaning.",
+        "section": "colors"
+      },
+      {
+        "name": "The No-Shared-Red Rule",
+        "body": "Red means removal or destruction, never a neutral action. Unstage is blue, not red. Graph lanes never use the add or delete hues.",
+        "section": "colors"
+      },
+      {
+        "name": "The Token Rule",
+        "body": "Components use `var(--token)` from `frontend/src/style.css`. A hex value in a component is a bug.",
+        "section": "colors"
+      },
+      {
+        "name": "The Four Sizes Rule",
+        "body": "Text uses `--text-meta`, `--text-row`, `--text-body` or `--text-title`. The only exceptions are the 32px welcome wordmark and 16px glyph icons.",
+        "section": "typography"
+      },
+      {
+        "name": "The Real Mono Rule",
+        "body": "Never write bare `monospace`; WKWebView maps it to Courier. Use `var(--font-mono)`.",
+        "section": "typography"
+      },
+      {
+        "name": "The Floaters-Only Rule",
+        "body": "A shadow means \"this is above the window and will go away\". Inline content, including image previews, gets a hairline border instead.",
+        "section": "elevation"
+      }
+    ],
+    "dos": [
+      "**Do** use the semantic tokens in `style.css` for every colour, size and shadow.",
+      "**Do** give each context one blue primary action and make everything else neutral.",
+      "**Do** name the consequence in any destructive confirmation (\"leaves them reachable only through the reflog\").",
+      "**Do** offer Undo where git can restore the state, and an explicit red step where it can't.",
+      "**Do** keep metadata at tertiary text or brighter; check 4.5:1 on the lightest surface it can appear on (overlay)."
+    ],
+    "donts": [
+      "**Don't** introduce navy or tinted backgrounds; surfaces stay neutral grey.",
+      "**Don't** use green or red for anything other than add/delete (plus ours and destructive actions).",
+      "**Don't** use uppercase letter-spaced micro-labels; labels are 11px semibold in sentence case.",
+      "**Don't** put shadows on inline content; only popovers and modals float.",
+      "**Don't** rely on inherited centring; alignment is left unless a rule centres explicitly."
+    ]
+  }
+}
