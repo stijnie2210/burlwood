@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { useToastStore, isLongMessage } from '../../stores/toast';
+import type { Toast } from '../../stores/toast';
 import { useLogModalStore } from '../../stores/logModal';
 
 const toast = useToastStore();
@@ -15,32 +16,85 @@ function preview(message: string): string {
   return message.includes('\n') ? firstLine + ' …' : firstLine;
 }
 
-function viewLog(t: { type: string; message: string }, e: MouseEvent) {
+function viewLog(t: Toast, e: MouseEvent) {
   e.stopPropagation();
-  logModal.show(t.type === 'error' ? 'Error details' : 'Details', t.message);
+  logModal.show(t.type === 'error' ? 'Error details' : 'Details', t.detail ?? t.message);
+}
+
+async function runAction(t: Toast, e: MouseEvent) {
+  e.stopPropagation();
+  toast.dismiss(t.id);
+  await t.action?.run();
 }
 </script>
 
 <template>
   <Teleport to="body">
-    <div class="toast-stack">
+    <div class="toast-stack" role="status" aria-live="polite">
       <TransitionGroup name="toast">
         <div
           v-for="t in toast.toasts"
           :key="t.id"
           class="toast"
-          :class="`toast--${t.type}`"
-          @click="toast.dismiss(t.id)"
+          :class="[`toast--${t.type}`, { paused: t.paused }]"
+          :role="t.type === 'error' ? 'alert' : undefined"
+          @click="!t.action && toast.dismiss(t.id)"
+          @mouseenter="toast.pause(t.id)"
+          @mouseleave="toast.resume(t.id)"
+          @focusin="toast.pause(t.id)"
+          @focusout="toast.resume(t.id)"
         >
-          <span class="toast-icon">
-            <template v-if="t.type === 'success'">✓</template>
-            <template v-else-if="t.type === 'error'">✕</template>
-            <template v-else>i</template>
-          </span>
-          <span class="toast-msg">{{ isLongMessage(t.message) ? preview(t.message) : t.message }}</span>
-          <button v-if="isLongMessage(t.message)" class="toast-action" @click="viewLog(t, $event)">
-            View log
+          <svg class="toast-icon" width="14" height="14" viewBox="0 0 14 14" aria-hidden="true">
+            <path
+              v-if="t.type === 'success'"
+              d="M3 7.5l2.5 2.5L11 4.5"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.6"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            />
+            <path
+              v-else-if="t.type === 'error'"
+              d="M4 4l6 6M10 4l-6 6"
+              stroke="currentColor"
+              stroke-width="1.6"
+              stroke-linecap="round"
+            />
+            <g v-else fill="currentColor">
+              <circle cx="7" cy="3.8" r="1.1" />
+              <rect x="6.1" y="6" width="1.8" height="5" rx="0.9" />
+            </g>
+          </svg>
+          <span class="toast-msg">{{
+            isLongMessage(t.message) ? preview(t.message) : t.message
+          }}</span>
+          <button
+            v-if="t.detail || isLongMessage(t.message)"
+            class="toast-action"
+            @click="viewLog(t, $event)"
+          >
+            Details
           </button>
+          <button
+            v-if="t.action"
+            class="toast-action"
+            :class="{ 'toast-action--danger': t.action.danger }"
+            :title="t.action.label === 'Undo' ? 'Undo (⌘Z)' : undefined"
+            @click="runAction(t, $event)"
+          >
+            {{ t.action.label }}
+          </button>
+          <button class="toast-close" aria-label="Dismiss" @click.stop="toast.dismiss(t.id)">
+            <svg width="8" height="8" viewBox="0 0 8 8" aria-hidden="true">
+              <path d="M1 1l6 6M7 1L1 7" stroke="currentColor" stroke-width="1.4" />
+            </svg>
+          </button>
+          <span
+            v-if="t.action && t.duration > 0"
+            class="toast-timer"
+            :style="{ animationDuration: `${t.duration}ms` }"
+          />
         </div>
       </TransitionGroup>
     </div>
@@ -60,42 +114,81 @@ function viewLog(t: { type: string; message: string }, e: MouseEvent) {
 }
 
 .toast {
+  position: relative;
+  overflow: hidden;
   display: flex;
   align-items: center;
   gap: 8px;
   padding: 9px 14px;
   border-radius: 6px;
-  font-size: 12px;
+  font-size: var(--text-row);
   max-width: 420px;
   cursor: pointer;
   pointer-events: all;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
+  box-shadow: var(--shadow-popover);
   user-select: none;
 }
 
 .toast--success {
-  background: #162a1e;
-  border: 1px solid #2a5a38;
-  color: #7de8a8;
+  background: var(--surface-overlay);
+  border: 1px solid var(--border);
+  color: var(--text-primary);
 }
 .toast--error {
-  background: #2a1616;
-  border: 1px solid #5a2828;
-  color: #f79090;
+  background: var(--surface-overlay);
+  border: 1px solid var(--danger-border);
+  color: var(--text-primary);
 }
 .toast--info {
-  background: #151530;
-  border: 1px solid #2d2d60;
-  color: #99aadd;
+  background: var(--surface-overlay);
+  border: 1px solid var(--border);
+  color: var(--text-primary);
+}
+
+.toast--success .toast-icon {
+  color: var(--add);
+}
+.toast--error .toast-icon {
+  color: var(--danger);
+}
+.toast--info .toast-icon {
+  color: var(--accent-text);
 }
 
 .toast-icon {
-  font-size: 11px;
-  font-weight: 700;
   flex-shrink: 0;
-  width: 14px;
-  text-align: center;
-  line-height: 1;
+}
+
+.toast-action--danger {
+  background: var(--danger-fill);
+  border-color: var(--danger-fill);
+  color: var(--text-on-accent);
+}
+.toast-action--danger:hover {
+  background: var(--danger-fill-hover);
+}
+
+.toast-close {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 18px;
+  height: 18px;
+  padding: 0;
+  background: none;
+  border: none;
+  border-radius: 4px;
+  color: var(--text-tertiary);
+  cursor: pointer;
+}
+.toast-close:hover {
+  background: var(--surface-hover);
+  color: var(--text-primary);
+}
+
+.toast.paused .toast-timer {
+  animation-play-state: paused;
 }
 
 .toast-msg {
@@ -109,13 +202,35 @@ function viewLog(t: { type: string; message: string }, e: MouseEvent) {
   border: 1px solid rgba(255, 255, 255, 0.15);
   border-radius: 4px;
   color: inherit;
-  font-size: 11px;
+  font-size: var(--text-meta);
   font-weight: 600;
   padding: 3px 8px;
   cursor: pointer;
 }
 .toast-action:hover {
   background: rgba(255, 255, 255, 0.16);
+}
+
+.toast-timer {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  height: 2px;
+  width: 100%;
+  background: currentColor;
+  opacity: 0.45;
+  transform-origin: left;
+  animation: toast-timer linear forwards;
+}
+@keyframes toast-timer {
+  to {
+    transform: scaleX(0);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .toast-timer {
+    display: none;
+  }
 }
 
 /* Transitions */

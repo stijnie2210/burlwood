@@ -34,6 +34,10 @@ frontend/src/stores/     ← Pinia stores (one per domain)
 frontend/src/components/ ← Vue components, grouped by feature
 ```
 
+### Store rules
+- Every Pinia store ends with the `acceptHMRUpdate` block; without it `wails dev` keeps running the old store logic after an edit.
+- Loads that depend on the repo check `isActive(repoPath)` (from `stores/repos.ts`) before starting and after every await, so late results (auto-fetch, slow git calls) never touch another repo's view.
+
 ### Wails binding rules
 - Every Go struct that crosses the boundary needs `json:"camelCase"` tags on every field
 - Methods on `*App` in `app.go` are auto-bound; keep `app.go` thin — real logic lives in `internal/repo/`
@@ -45,10 +49,17 @@ frontend/src/components/ ← Vue components, grouped by feature
 app.go                              All bound methods
 internal/gitcli/
   runner.go                         Run() / RunWithInput() — exec.Command wrapper
-  staging.go                        StageFile, UnstageFile, ApplyPatch, DiscardFile
-  remote.go                         FetchAll, Pull, Push
+  staging.go                        StageFile, UnstageFile, StageFiles/UnstageFiles (one call, paths via stdin),
+                                    ApplyPatch, DiscardFile
+  remote.go                         FetchAll, Pull, PushTag/ForcePushTag
+  push.go                           PushBranch(branch, force): upstream from config or -u on the default remote;
+                                    non-fast-forward → Rejected result (not an error); force = --force-with-lease --force-if-includes
+                                    (the bare lease is defeated by background auto-fetch)
+  amend.go                          GetAmendInfo: full message (%B) + whether HEAD is already on its upstream
   fileops.go                        OpenInDefaultApp, ShowInFinder, OpenInEditor,
                                     StashFile, AppendToGitignore, GetFilePatch, DeleteWorkingFile
+  undo.go                           SnapshotWorkingFile/RestoreWorkingFile (discard undo via hash-object),
+                                    HardResetWithUndo/UndoHardReset (stash create + previous HEAD)
 internal/repo/
   manager.go                        Manager{map[string]*git.Repository}; Open/Close/Get
                                     RecentEntry → ~/Library/Application Support/gitgood/repos.json
@@ -63,10 +74,15 @@ internal/graph/
   layout.go                         BuildGraph() — greedy lane assignment
                                     GraphRow{hash, column, color, edgesIn, edges, maxColumn}
 frontend/src/
-  App.vue                           Root: TabBar + resizable Sidebar + main panel
-                                    viewMode ref ('commits'|'staging') — view tab switcher
+  App.vue                           Root: ToolBar (title-bar row, v-model:view-mode) + TabBar (2+ repos only)
+                                    + RepoPicker + resizable Sidebar + main panel; viewMode ref ('commits'|'staging')
   composables/
-    useContextMenu.ts               clampMenuPosition(el, x, y) — shared viewport clamping for all context menus
+    useContextMenu.ts               clampMenuPosition(el, x, y), handleMenuKeydown (↑/↓/Esc), menuEventFor (Shift+F10)
+    useDialog.ts                    Esc, initial focus, Tab trap and focus return for modals
+    useLineBudget.ts                renders the first 2000 diff lines until "Show more"; hunk actions keep the full hunk
+    usePush.ts                      pushWithFeedback: names the destination; rejection → red "Force push (with lease)" toast
+  utils/gitErrors.ts                describeGitError: raw git stderr → sentence + next step (toast.error uses it; raw text under Details)
+  App.smoke.test.ts                 mounts the whole app on stubbed Wails bindings — catches setup-time crashes
   stores/
     repos.ts                        tabs[], activeRepo, openRepo, pickAndOpen, closeTab
     branches.ts                     local[], remote[] — loaded on activeRepo change
@@ -74,7 +90,10 @@ frontend/src/
     staging.ts                      files[], unstagedFiles, stagedFiles, diff[]
                                     buildHunkPatch() — constructs patch string for git apply
   components/
-    layout/TabBar.vue               Repo tabs (open/close/switch)
+    layout/ToolBar.vue              Title-bar row (hidden-inset, --wails-draggable): repo button, Commits|Working Tree
+                                    segmented control, git actions, Settings
+    layout/TabBar.vue               Repo tabs (open/close/switch); only rendered with 2+ repos
+    layout/RepoPicker.vue           Recent repos + Open…; shared by the toolbar repo button and the tab bar + (stores/repoPicker.ts)
     layout/Sidebar.vue              Branch list — width set by App.vue via :style
     graph/CommitGraph.vue           @tanstack/vue-virtual virtualizer; canvas-per-row
     graph/CommitRow.vue             Single row: canvas + shortHash + labels + subject
@@ -109,8 +128,18 @@ Frontend builds the patch (not backend) so the applied patch exactly matches wha
 ### Resizable panels
 `makeResizer(width: Ref<number>, min, max, direction)` in `App.vue` — returns a mousedown handler. Direction `'right'` = delta is +x; `'left'` = delta is −x (for right-edge panels). Each component that needs local resize (e.g. `StagingView`) defines its own inline version.
 
+### Fonts
+macOS system fonts via tokens in `style.css`: `var(--font-ui)` (SF Pro, set on `body`) and `var(--font-mono)` (SF Mono → Menlo) for hashes, paths and diffs. Never use bare `monospace` — WKWebView maps it to Courier. Base text is left-aligned; centre explicitly where intended.
+
+Four text sizes, as tokens: `--text-meta` 11 (labels, hashes, line numbers), `--text-row` 12 (list rows, menus, code), `--text-body` 13 (buttons, inputs, messages), `--text-title` 15 (modal titles). Only exceptions: the welcome wordmark (32px) and glyph icons (16px).
+
 ### Color theme
-Background hierarchy: `#0a0a14` (deepest) → `#0f0f1a` → `#0d0d18` → `#111124` → `#16213e` (sidebar). Accent: `#4f8ef7` (blue). Status colors: M=orange, A=green, D=red, R=blue, untracked=cyan.
+All colours are semantic tokens in `style.css`; never hard-code hex in components. Neutral macOS-style greys, colour only where it means something:
+- Surfaces: `--surface-sunken` (diffs) → `-base` (canvas) → `-raised` (bars in panels) → `-chrome` (sidebar, tab bar, toolbar) → `-overlay` (menus, modals, toasts); plus `-field`, `-control`, `-hover`, `-selected`
+- Text: `--text-primary` / `-secondary` / `-tertiary` (all ≥4.5:1 on every surface), `--text-on-accent`
+- Accent (system blue): `--accent-fill` for primary buttons and menu hover, `--accent-text`, `--focus-ring`
+- Git meaning: `--add` / `--del` (+ `-fg`, `-line-bg`), `--modified`, `--untracked`, `--ours` / `--theirs`, `--tag`, `--stash`; `--danger*` and `--warning*` for destructive and in-progress states
+- Graph lanes (`internal/graph/layout.go`) are muted and avoid the add/del hues; syntax colours in `assets/prism-theme.css` follow Xcode's dark theme
 
 ## Phase Status
 
@@ -126,7 +155,7 @@ Background hierarchy: `#0a0a14` (deepest) → `#0f0f1a` → `#0d0d18` → `#1111
 ### Conflict resolution flow (`internal/repo/conflict.go`)
 `IsInMerge()` checks for `MERGE_HEAD` / `CHERRY_PICK_HEAD`. `GetConflictContent()` calls `git show :1:/:2:/:3:` for base/ours/theirs plus reads the working file (with markers). `ResolveConflict()` writes the file and stages it. `AbortMerge()` runs `git merge --abort`.
 
-Frontend parses `<<<<<<< / ======= / >>>>>>>` markers into context + conflict chunks. Each conflict chunk has Accept Ours / Accept Theirs buttons. "Save & Stage" assembles accepted chunks and calls `ResolveConflict`. Merge message auto-fills commit summary when `isInMerge` becomes true.
+Frontend parses markers with `utils/conflicts.ts` (`parseConflicts`, unit-tested) into context + conflict chunks; diff3/zdiff3 `|||||||` sections become a read-only base, never part of "ours". Save & Stage refuses output that still contains `<<<<<<<`/`|||||||`/`>>>>>>>`. Each conflict chunk has Accept Ours / Accept Theirs buttons. "Save & Stage" assembles accepted chunks and calls `ResolveConflict`. Merge message auto-fills commit summary when `isInMerge` becomes true.
 
 ### Rebase flow (`internal/gitcli/rebase.go`)
 `StartRebase(onto)` → `git rebase <onto>`. `ContinueRebase()` → `git rebase --continue`. `AbortRebase()` → `git rebase --abort`. Working Tree view shows a rebase banner with step/total progress, reuses ConflictView for mid-rebase conflicts.

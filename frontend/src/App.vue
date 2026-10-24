@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, onUnmounted, ref, watch, type Ref, computed } from 'vue';
+import { onMounted, onUnmounted, ref, watch, type Ref, computed, nextTick } from 'vue';
 import { EventsOn, EventsOff } from '../wailsjs/runtime/runtime';
 import { useDetailWidth } from './composables/useDetailWidth';
 import TabBar from './components/layout/TabBar.vue';
@@ -12,11 +12,13 @@ import StagingView from './components/staging/StagingView.vue';
 import ToastStack from './components/layout/ToastStack.vue';
 import PreferencesModal from './components/layout/PreferencesModal.vue';
 import LogViewerModal from './components/layout/LogViewerModal.vue';
+import RepoPicker from './components/layout/RepoPicker.vue';
 import { useReposStore } from './stores/repos';
 import { useCommitsStore } from './stores/commits';
 import { useStagingStore } from './stores/staging';
 import { useBranchesStore } from './stores/branches';
 import { usePrefsStore } from './stores/prefs';
+import { useToastStore } from './stores/toast';
 import logoUrl from './assets/images/logo-icon.png';
 
 const repos = useReposStore();
@@ -24,6 +26,7 @@ const commits = useCommitsStore();
 const staging = useStagingStore();
 const branches = useBranchesStore();
 const prefsStore = usePrefsStore();
+const toast = useToastStore();
 onMounted(async () => {
   await prefsStore.load();
   await repos.restoreSession();
@@ -53,10 +56,31 @@ function restartFetchTimer(path: string | undefined) {
   if (!path || !prefsStore.prefs.autoFetchEnabled) {
     return;
   }
-  branches.silentFetchAndRefresh(path);
-  fetchPollTimer = setInterval(() => {
-    branches.silentFetchAndRefresh(path);
-  }, prefsStore.prefs.autoFetchIntervalSecs * 1000);
+  autoFetch(path);
+  fetchPollTimer = setInterval(
+    () => autoFetch(path),
+    prefsStore.prefs.autoFetchIntervalSecs * 1000
+  );
+}
+
+async function autoFetch(path: string) {
+  await branches.silentFetchAndRefresh(path);
+  if (repos.activeRepo?.path === path) {
+    await commits.load(path);
+  }
+}
+
+// Coming back from the editor is when the working tree most likely changed.
+let lastFocusRefresh = 0;
+function refreshOnFocus() {
+  const path = repoPath.value;
+  if (!path || document.visibilityState === 'hidden' || Date.now() - lastFocusRefresh < 1500) {
+    return;
+  }
+  lastFocusRefresh = Date.now();
+  staging.refresh(path);
+  branches.load(path);
+  commits.load(path);
 }
 
 watch(
@@ -76,6 +100,23 @@ onUnmounted(() => {
 });
 
 const viewMode = ref<'commits' | 'staging'>('commits');
+
+// Switching repos always lands on the graph: an open diff or working-tree file belongs to the
+// repo you left. App owns this load because the graph isn't mounted while a file diff is open.
+watch(
+  () => repos.activeRepo?.path,
+  (path, previous) => {
+    if (previous !== undefined && path !== previous) {
+      viewMode.value = 'commits';
+    }
+    if (path) {
+      commits.load(path);
+    } else {
+      commits.clear();
+    }
+  },
+  { immediate: true }
+);
 
 // Generic resize helper
 function makeResizer(
@@ -115,35 +156,18 @@ const startDetailResize = makeResizer(detailWidth, 200, 800, 'left');
 
 const repoPath = computed(() => repos.activeRepo?.path ?? '');
 
-function onGlobalKeyDown(e: KeyboardEvent) {
-  if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) {
-    return;
-  }
-  if (!e.metaKey && !e.ctrlKey) {
-    return;
-  }
-  if (e.key === '1') {
-    e.preventDefault();
-    if (repos.activeRepo) {
-      viewMode.value = 'commits';
-    }
-  } else if (e.key === '2') {
-    e.preventDefault();
-    if (repos.activeRepo) {
-      viewMode.value = 'staging';
-    }
-  } else if (e.key === '[') {
-    e.preventDefault();
-    if (repos.tabs.length > 1) {
-      repos.setActive((repos.activeIndex - 1 + repos.tabs.length) % repos.tabs.length);
-    }
-  } else if (e.key === ']') {
-    e.preventDefault();
-    if (repos.tabs.length > 1) {
-      repos.setActive((repos.activeIndex + 1) % repos.tabs.length);
-    }
-  } else if (e.key === 'r') {
-    e.preventDefault();
+function runAction(action: string) {
+  if (action === 'view-commits' && repos.activeRepo) {
+    viewMode.value = 'commits';
+  } else if (action === 'view-staging' && repos.activeRepo) {
+    viewMode.value = 'staging';
+  } else if (action === 'prev-tab' && repos.tabs.length > 1) {
+    repos.setActive((repos.activeIndex - 1 + repos.tabs.length) % repos.tabs.length);
+  } else if (action === 'next-tab' && repos.tabs.length > 1) {
+    repos.setActive((repos.activeIndex + 1) % repos.tabs.length);
+  } else if (action === 'close-tab' && repos.tabs.length > 0) {
+    repos.closeTab(repos.activeIndex);
+  } else if (action === 'fetch') {
     const path = repoPath.value;
     if (path) {
       staging.fetchAll(path).then(() => {
@@ -152,35 +176,75 @@ function onGlobalKeyDown(e: KeyboardEvent) {
         branches.load(path);
       });
     }
-  } else if (e.key === 'o') {
-    e.preventDefault();
+  } else if (action === 'open-repo') {
     repos.pickAndOpen();
-  } else if (e.key === ',') {
-    e.preventDefault();
+  } else if (action === 'preferences') {
     prefsStore.openModal();
+  } else if (action === 'find' && repos.activeRepo) {
+    viewMode.value = 'commits';
+    nextTick(() => window.dispatchEvent(new CustomEvent('gitgood:find')));
+  }
+}
+
+const SHORTCUTS: Record<string, string> = {
+  '1': 'view-commits',
+  '2': 'view-staging',
+  '[': 'prev-tab',
+  ']': 'next-tab',
+  w: 'close-tab',
+  r: 'fetch',
+  o: 'open-repo',
+  ',': 'preferences',
+};
+
+function onGlobalKeyDown(e: KeyboardEvent) {
+  if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) {
+    return;
+  }
+  if (!e.metaKey && !e.ctrlKey) {
+    return;
+  }
+  // Outside text fields, ⌘Z undoes the last discard or hard reset while its Undo toast is up.
+  if (e.key === 'z' && !e.shiftKey && toast.undoLatest()) {
+    e.preventDefault();
+    return;
+  }
+  const action = SHORTCUTS[e.key];
+  if (action) {
+    e.preventDefault();
+    runAction(action);
   }
 }
 
 onMounted(() => {
   window.addEventListener('keydown', onGlobalKeyDown);
+  window.addEventListener('focus', refreshOnFocus);
+  document.addEventListener('visibilitychange', refreshOnFocus);
   EventsOn('open-preferences', () => prefsStore.openModal());
+  EventsOn('menu', runAction);
 });
 onUnmounted(() => {
   window.removeEventListener('keydown', onGlobalKeyDown);
+  window.removeEventListener('focus', refreshOnFocus);
+  document.removeEventListener('visibilitychange', refreshOnFocus);
   EventsOff('open-preferences');
+  EventsOff('menu');
 });
 </script>
 
 <template>
   <div class="app">
-    <TabBar />
-    <ToolBar />
+    <ToolBar v-model:view-mode="viewMode" />
+    <TabBar v-if="repos.tabs.length > 1" />
+    <RepoPicker />
     <ToastStack />
     <PreferencesModal />
     <LogViewerModal />
     <div class="workspace">
-      <Sidebar :style="{ width: sidebarWidth + 'px' }" />
-      <div class="resize-handle" @mousedown.prevent="startSidebarResize" />
+      <template v-if="repos.activeRepo">
+        <Sidebar :style="{ width: sidebarWidth + 'px' }" />
+        <div class="resize-handle" @mousedown.prevent="startSidebarResize" />
+      </template>
       <main class="main-panel">
         <div v-if="!repos.activeRepo" class="welcome">
           <img :src="logoUrl" class="welcome-logo" alt="" />
@@ -191,36 +255,17 @@ onUnmounted(() => {
           <div v-if="repos.recentRepos.length" class="recents">
             <h3>Recent</h3>
             <ul>
-              <li v-for="r in repos.recentRepos" :key="r.path" @click="repos.openRepo(r.path)">
-                <strong>{{ r.name }}</strong>
-                <span>{{ r.path }}</span>
+              <li v-for="r in repos.recentRepos" :key="r.path">
+                <button class="recent-btn" @click="repos.openRepo(r.path)">
+                  <strong>{{ r.name }}</strong>
+                  <span>{{ r.path }}</span>
+                </button>
               </li>
             </ul>
           </div>
         </div>
 
         <template v-else>
-          <!-- View mode switcher -->
-          <div class="view-tabs">
-            <button
-              class="view-tab"
-              :class="{ active: viewMode === 'commits' }"
-              @click="viewMode = 'commits'"
-            >
-              Commits
-            </button>
-            <button
-              class="view-tab"
-              :class="{ active: viewMode === 'staging' }"
-              @click="viewMode = 'staging'"
-            >
-              Working Tree
-              <span v-if="staging.totalChanges" class="view-tab-badge">
-                {{ staging.totalChanges }}
-              </span>
-            </button>
-          </div>
-
           <!-- Commits view -->
           <div v-if="viewMode === 'commits'" class="repo-view">
             <template v-if="commits.selectedFileIndex !== null">
@@ -250,9 +295,8 @@ onUnmounted(() => {
   padding: 0;
 }
 body {
-  background: #0f0f1a;
-  color: #e0e0e0;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  background: var(--surface-base);
+  color: var(--text-primary);
 }
 </style>
 
@@ -273,49 +317,9 @@ body {
 .main-panel {
   flex: 1;
   overflow: hidden;
-  background: #0f0f1a;
+  background: var(--surface-base);
   display: flex;
   flex-direction: column;
-}
-
-.view-tabs {
-  display: flex;
-  gap: 2px;
-  padding: 4px 8px;
-  background: #0a0a14;
-  border-bottom: 1px solid #1e1e36;
-  flex-shrink: 0;
-}
-
-.view-tab {
-  display: flex;
-  align-items: center;
-  gap: 5px;
-  padding: 4px 12px;
-  border-radius: 4px;
-  border: none;
-  background: transparent;
-  color: #555;
-  font-size: 12px;
-  cursor: pointer;
-}
-.view-tab:hover {
-  color: #888;
-  background: #111120;
-}
-.view-tab.active {
-  color: #ccc;
-  background: #16162a;
-}
-
-.view-tab-badge {
-  background: #4f8ef7;
-  color: #fff;
-  font-size: 9px;
-  font-weight: 700;
-  padding: 1px 5px;
-  border-radius: 8px;
-  line-height: 1.4;
 }
 
 .repo-view {
@@ -327,12 +331,12 @@ body {
 .resize-handle {
   width: 4px;
   flex-shrink: 0;
-  background: #1e1e36;
+  background: var(--border-subtle);
   cursor: col-resize;
   transition: background 0.15s;
 }
 .resize-handle:hover {
-  background: #4f8ef7;
+  background: var(--accent-fill);
 }
 
 .welcome {
@@ -342,7 +346,8 @@ body {
   justify-content: center;
   height: 100%;
   gap: 12px;
-  color: #666;
+  text-align: center;
+  color: var(--text-secondary);
 }
 
 .welcome-logo {
@@ -351,25 +356,25 @@ body {
 .welcome-brand {
   font-size: 32px;
   font-weight: 700;
-  color: #4f8ef7;
+  color: var(--accent-text);
   margin-top: -4px;
 }
 .welcome-brand span {
-  color: #ccc;
+  color: var(--text-primary);
   font-weight: 400;
 }
 .welcome p {
-  font-size: 15px;
+  font-size: var(--text-title);
 }
 
 .welcome button {
   padding: 8px 20px;
-  background: #4f8ef7;
+  background: var(--accent-fill);
   border: none;
-  border-radius: 6px;
-  color: white;
+  border-radius: 5px;
+  color: var(--text-on-accent);
   cursor: pointer;
-  font-size: 14px;
+  font-size: var(--text-body);
 }
 
 .recents {
@@ -378,32 +383,35 @@ body {
   width: 400px;
 }
 .recents h3 {
-  font-size: 12px;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  color: #444;
+  font-size: var(--text-row);
+  color: var(--text-tertiary);
   margin-bottom: 8px;
 }
 .recents ul {
   list-style: none;
 }
-.recents li {
+.recent-btn {
   display: flex;
   flex-direction: column;
+  width: 100%;
   padding: 8px 10px;
+  border: none;
   border-radius: 4px;
+  background: none;
+  text-align: left;
+  font: inherit;
   cursor: pointer;
   gap: 2px;
 }
-.recents li:hover {
-  background: #1a1a2e;
+.recent-btn:hover {
+  background: var(--surface-hover);
 }
-.recents li strong {
-  font-size: 14px;
-  color: #ccc;
+.recent-btn strong {
+  font-size: var(--text-body);
+  color: var(--text-primary);
 }
-.recents li span {
-  font-size: 11px;
-  color: #555;
+.recent-btn span {
+  font-size: var(--text-meta);
+  color: var(--text-tertiary);
 }
 </style>

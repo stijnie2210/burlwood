@@ -10,7 +10,13 @@ import { useToastStore } from '../../stores/toast';
 import HunkSelector from './HunkSelector.vue';
 import ConflictView from './ConflictView.vue';
 import type { Hunk } from '../../stores/staging';
-import { clampMenuPosition } from '../../composables/useContextMenu';
+import {
+  clampMenuPosition,
+  focusFirstMenuItem,
+  handleMenuKeydown,
+  keepFocusInMenu,
+  menuEventFor,
+} from '../../composables/useContextMenu';
 import {
   AbortMerge,
   ContinueRebase,
@@ -32,7 +38,7 @@ const staging = useStagingStore();
 const toast = useToastStore();
 
 const STAGING_FL_KEY = 'gitgood:stagingFileListWidth';
-const fileListWidth = ref(parseInt(localStorage.getItem(STAGING_FL_KEY) ?? '260', 10));
+const fileListWidth = ref(parseInt(localStorage.getItem(STAGING_FL_KEY) ?? '300', 10));
 watch(fileListWidth, (v) => localStorage.setItem(STAGING_FL_KEY, String(v)));
 
 function makeResizer(width: Ref<number>, min: number, max: number) {
@@ -55,10 +61,11 @@ function makeResizer(width: Ref<number>, min: number, max: number) {
 
 const startResize = makeResizer(fileListWidth, 180, 520);
 
+// Keep the top-level directory: in a monorepo it tells you which package the file is in.
 function shortPath(p: string) {
   const parts = p.split('/');
-  if (parts.length > 2) {
-    return '…/' + parts.slice(-2).join('/');
+  if (parts.length > 3) {
+    return `${parts[0]}/…/${parts.slice(-2).join('/')}`;
   }
   return p;
 }
@@ -71,7 +78,12 @@ function onSelectFile(path: string, mode: 'staged' | 'unstaged') {
 async function onStageFile(path: string) {
   const prevIdx = staging.unstagedFiles.findIndex((f) => f.path === path);
   const wasSelected = staging.selectedPath === path;
-  await staging.stageFile(repoPath(), path);
+  try {
+    await staging.stageFile(repoPath(), path);
+  } catch (e) {
+    toast.error(e);
+    return;
+  }
   if (!wasSelected) {
     return;
   }
@@ -88,7 +100,12 @@ async function onStageFile(path: string) {
 async function onUnstageFile(path: string) {
   const prevIdx = staging.stagedFiles.findIndex((f) => f.path === path);
   const wasSelected = staging.selectedPath === path;
-  await staging.unstageFile(repoPath(), path);
+  try {
+    await staging.unstageFile(repoPath(), path);
+  } catch (e) {
+    toast.error(e);
+    return;
+  }
   if (!wasSelected) {
     return;
   }
@@ -102,29 +119,70 @@ async function onUnstageFile(path: string) {
   }
 }
 
-function onDiscardFile(path: string) {
-  staging.discardFile(repoPath(), path);
-}
-
-function onStageHunk(hunk: Hunk) {
-  if (staging.selectedPath) {
-    staging.stageHunk(repoPath(), staging.selectedPath, hunk);
+async function onDiscardFile(path: string) {
+  const repo = repoPath();
+  const name = path.split('/').pop() ?? path;
+  try {
+    const snapshot = await staging.discardFile(repo, path);
+    if (!snapshot.undoable) {
+      toast.success(`Discarded changes to ${name}`);
+      return;
+    }
+    toast.withUndo(`Discarded changes to ${name}`, async () => {
+      try {
+        await staging.undoDiscard(repo, snapshot);
+        if (repoPath() === repo) {
+          await staging.load(repo);
+        }
+        toast.success(`Restored ${name}`);
+      } catch (e) {
+        toast.error(e);
+      }
+    });
+  } catch (e) {
+    toast.error(e);
   }
 }
 
-function onUnstageHunk(hunk: Hunk) {
-  if (staging.selectedPath) {
-    staging.unstageHunk(repoPath(), staging.selectedPath, hunk);
+async function onStageHunk(hunk: Hunk) {
+  if (!staging.selectedPath) {
+    return;
+  }
+  try {
+    await staging.stageHunk(repoPath(), staging.selectedPath, hunk);
+  } catch (e) {
+    toast.error(e);
+  }
+}
+
+async function onUnstageHunk(hunk: Hunk) {
+  if (!staging.selectedPath) {
+    return;
+  }
+  try {
+    await staging.unstageHunk(repoPath(), staging.selectedPath, hunk);
+  } catch (e) {
+    toast.error(e);
   }
 }
 async function onStageAll() {
-  for (const f of staging.unstagedFiles) {
-    await staging.stageFile(repoPath(), f.path);
+  try {
+    await staging.stageFiles(
+      repoPath(),
+      staging.unstagedFiles.map((f) => f.path)
+    );
+  } catch (e) {
+    toast.error(e);
   }
 }
 async function onUnstageAll() {
-  for (const f of staging.stagedFiles) {
-    await staging.unstageFile(repoPath(), f.path);
+  try {
+    await staging.unstageFiles(
+      repoPath(),
+      staging.stagedFiles.map((f) => f.path)
+    );
+  } catch (e) {
+    toast.error(e);
   }
 }
 
@@ -162,14 +220,32 @@ const canCommit = computed(() => {
   return staging.stagedFiles.length > 0 && commitSummary.value.trim().length > 0;
 });
 
+let amendPrefill: { summary: string; description: string } | null = null;
+const amendPushed = ref(false);
+const descInputRef = ref<HTMLTextAreaElement | null>(null);
+
+// Prefill the whole message (not just the subject) so amending never silently drops the body.
 async function onAmendToggle() {
-  if (amend.value && !commitSummary.value) {
-    commitSummary.value = await staging.getLastCommitSubject(repoPath());
+  if (amend.value) {
+    const info = await staging.getAmendInfo(repoPath());
+    amendPushed.value = info.pushed;
+    if (!commitSummary.value && !commitDescription.value) {
+      amendPrefill = { summary: info.summary, description: info.description };
+      commitSummary.value = info.summary;
+      commitDescription.value = info.description;
+    }
+    return;
   }
-  if (!amend.value) {
+  amendPushed.value = false;
+  if (
+    amendPrefill &&
+    commitSummary.value === amendPrefill.summary &&
+    commitDescription.value === amendPrefill.description
+  ) {
     commitSummary.value = '';
     commitDescription.value = '';
   }
+  amendPrefill = null;
 }
 
 async function onCommit() {
@@ -189,9 +265,11 @@ async function onCommit() {
     commitSummary.value = '';
     commitDescription.value = '';
     amend.value = false;
+    amendPrefill = null;
+    amendPushed.value = false;
     toast.success(wasAmend ? `Amended commit on ${branch}` : `Committed to ${branch}`);
   } catch (e) {
-    toast.error(String(e));
+    toast.error(e);
   } finally {
     committing.value = false;
   }
@@ -203,9 +281,24 @@ const STATUS_LABELS: Record<string, string> = {
   D: 'D',
   R: 'R',
   C: 'C',
-  '?': 'U',
+  '?': '?',
   U: '!',
 };
+
+const STATUS_NAMES: Record<string, string> = {
+  M: 'Modified',
+  A: 'Added',
+  D: 'Deleted',
+  R: 'Renamed',
+  C: 'Copied',
+  '?': 'Untracked',
+  U: 'Unmerged',
+};
+
+function statusClass(code: string): string {
+  const c = code.trim();
+  return c === '?' || c === '' ? 'q' : c;
+}
 
 const selectedIsConflict = computed(() => {
   if (!staging.selectedPath) {
@@ -237,6 +330,8 @@ const fileCtxMenuEl = ref<HTMLElement | null>(null);
 async function openFileCtxMenu(e: MouseEvent, path: string, section: FileCtxMenu['section']) {
   e.preventDefault();
   e.stopPropagation();
+  fileMenuReturnFocus =
+    document.activeElement instanceof HTMLElement ? document.activeElement : null;
   fileCtxMenu.value = { x: e.clientX, y: e.clientY, path, section, mode: 'default' };
   await nextTick();
   const menu = fileCtxMenuEl.value;
@@ -244,10 +339,23 @@ async function openFileCtxMenu(e: MouseEvent, path: string, section: FileCtxMenu
     const { x, y } = clampMenuPosition(menu, e.clientX, e.clientY);
     fileCtxMenu.value = { ...fileCtxMenu.value, x, y };
   }
+  focusFirstMenuItem(menu);
 }
+
+let fileMenuReturnFocus: HTMLElement | null = null;
+
+watch(
+  () => fileCtxMenu.value?.mode,
+  () => nextTick(() => keepFocusInMenu(fileCtxMenuEl.value))
+);
 
 function closeFileCtxMenu() {
   fileCtxMenu.value = null;
+  const el = fileMenuReturnFocus;
+  fileMenuReturnFocus = null;
+  if (el?.isConnected) {
+    el.focus();
+  }
 }
 
 function onFileCtxMouseDown(e: MouseEvent) {
@@ -292,11 +400,7 @@ async function ctxDiscardFile() {
     return;
   }
   closeFileCtxMenu();
-  try {
-    await staging.discardFile(repoPath(), m.path);
-  } catch (e) {
-    toast.error(String(e));
-  }
+  await onDiscardFile(m.path);
 }
 
 async function ctxStashFile() {
@@ -310,7 +414,7 @@ async function ctxStashFile() {
     await staging.load(repoPath());
     toast.success(`Stashed ${m.path}`);
   } catch (e) {
-    toast.error(String(e));
+    toast.error(e);
   }
 }
 
@@ -333,7 +437,7 @@ async function ctxIgnore(mode: 'file' | 'ext' | 'dir') {
     await staging.load(repoPath());
     toast.success(`Added "${pattern}" to .gitignore`);
   } catch (e) {
-    toast.error(String(e));
+    toast.error(e);
   }
 }
 
@@ -346,7 +450,7 @@ async function ctxOpenDefaultApp() {
   try {
     await OpenInDefaultApp(repoPath(), m.path);
   } catch (e) {
-    toast.error(String(e));
+    toast.error(e);
   }
 }
 
@@ -359,7 +463,7 @@ async function ctxShowInFinder() {
   try {
     await ShowInFinder(repoPath(), m.path);
   } catch (e) {
-    toast.error(String(e));
+    toast.error(e);
   }
 }
 
@@ -372,7 +476,7 @@ async function ctxOpenInEditor() {
   try {
     await OpenInEditor(repoPath(), m.path);
   } catch (e) {
-    toast.error(String(e));
+    toast.error(e);
   }
 }
 
@@ -395,7 +499,7 @@ async function ctxSavePatch() {
   try {
     await SavePatchFile(repoPath(), m.path);
   } catch (e) {
-    toast.error(String(e));
+    toast.error(e);
   }
 }
 
@@ -418,7 +522,7 @@ async function ctxDeleteFile() {
     }
     toast.success(`Deleted ${path}`);
   } catch (e) {
-    toast.error(String(e));
+    toast.error(e);
   }
 }
 
@@ -431,6 +535,14 @@ const navigableFiles = computed((): NavEntry[] => [
   ...staging.unstagedFiles.map((f) => ({ path: f.path, section: 'unstaged' as const })),
   ...staging.stagedFiles.map((f) => ({ path: f.path, section: 'staged' as const })),
 ]);
+
+// The selected file is the list's Tab stop; with nothing selected the first file is, so the
+// list stays reachable by keyboard.
+function fileTabIndex(path: string, section: NavEntry['section']): number {
+  const i = currentNavIndex.value;
+  const stop = i >= 0 ? navigableFiles.value[i] : navigableFiles.value[0];
+  return stop && stop.path === path && stop.section === section ? 0 : -1;
+}
 
 const currentNavIndex = computed(() => {
   if (!staging.selectedPath) {
@@ -465,10 +577,16 @@ function navigateTo(delta: number) {
   } else {
     onSelectFile(entry.path, entry.section);
   }
+  const listEl = fileListScrollRef.value;
+  const focusFollows =
+    !!listEl &&
+    (listEl.contains(document.activeElement) || document.activeElement === document.body);
   nextTick(() => {
-    fileListScrollRef.value
-      ?.querySelector('.file-item.selected')
-      ?.scrollIntoView({ block: 'nearest' });
+    const selectedEl = fileListScrollRef.value?.querySelector<HTMLElement>('.file-item.selected');
+    selectedEl?.scrollIntoView({ block: 'nearest' });
+    if (focusFollows) {
+      selectedEl?.focus({ preventScroll: true });
+    }
   });
 }
 
@@ -549,7 +667,7 @@ async function doAbortMerge() {
     staging.clearSelection();
     toast.success('Merge aborted');
   } catch (e) {
-    toast.error(String(e));
+    toast.error(e);
   }
 }
 
@@ -574,7 +692,7 @@ async function doContinueRebase() {
     if (staging.isInRebase) {
       toast.success('Conflict resolved — next commit has conflicts, keep resolving');
     } else {
-      toast.error(String(e));
+      toast.error(e);
     }
   }
 }
@@ -591,7 +709,7 @@ async function doAbortRebase() {
     staging.clearSelection();
     toast.success('Rebase aborted');
   } catch (e) {
-    toast.error(String(e));
+    toast.error(e);
   }
 }
 </script>
@@ -600,9 +718,7 @@ async function doAbortRebase() {
   <div class="staging-outer">
     <!-- Merge in progress banner -->
     <div v-if="staging.isInMerge" class="merge-banner">
-      <span class="merge-banner-text"
-        >⚡ Merge in progress — resolve all conflicts, then commit</span
-      >
+      <span class="merge-banner-text">Merge in progress — resolve all conflicts, then commit</span>
       <div v-if="confirmingAbort" class="merge-abort-confirm">
         <span class="merge-abort-confirm-text">Discard all resolutions?</span>
         <button class="merge-abort-btn merge-abort-btn--confirm" @click="doAbortMerge">
@@ -650,13 +766,12 @@ async function doAbortRebase() {
       <!-- File list panel (fixed width, has its own scroll + commit panel) -->
       <div class="file-panel" :style="{ width: fileListWidth + 'px' }">
         <!-- Scrollable file list area -->
-        <div ref="fileListScrollRef" class="file-list-scroll">
-          <div class="staging-toolbar">
-            <button class="toolbar-btn" title="Refresh status" @click="staging.load(repoPath())">
-              ⟳ Refresh
-            </button>
-          </div>
-
+        <div
+          ref="fileListScrollRef"
+          class="file-list-scroll"
+          role="listbox"
+          aria-label="Changed files"
+        >
           <div v-if="staging.loading" class="list-loading">Loading…</div>
           <template v-else>
             <!-- Conflicts section (only shown during a merge) -->
@@ -669,8 +784,14 @@ async function doAbortRebase() {
                 :key="file.path + ':conflict'"
                 class="file-item file-item--conflict"
                 :class="{ selected: staging.selectedPath === file.path }"
+                role="option"
+                :aria-selected="staging.selectedPath === file.path"
+                :tabindex="fileTabIndex(file.path, 'conflict')"
                 @click="onSelectConflict(file.path)"
                 @contextmenu="openFileCtxMenu($event, file.path, 'conflict')"
+                @keydown.shift.f10.prevent="
+                  openFileCtxMenu(menuEventFor($event), file.path, 'conflict')
+                "
               >
                 <span class="status-code sc-conflict">!</span>
                 <span class="file-name" :title="file.path">{{ shortPath(file.path) }}</span>
@@ -680,9 +801,28 @@ async function doAbortRebase() {
             <!-- Unstaged section -->
             <div class="section-header">
               <span>Unstaged ({{ staging.unstagedFiles.length }})</span>
-              <button v-if="staging.unstagedFiles.length" class="section-btn" @click="onStageAll">
-                Stage All
-              </button>
+              <div class="section-actions">
+                <button
+                  class="section-icon-btn"
+                  title="Refresh status"
+                  aria-label="Refresh status"
+                  @click="staging.load(repoPath())"
+                >
+                  <svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true">
+                    <path
+                      d="M10.5 6a4.5 4.5 0 1 1-1.3-3.2M10.5 1.5v2.8H7.7"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="1.3"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                    />
+                  </svg>
+                </button>
+                <button v-if="staging.unstagedFiles.length" class="section-btn" @click="onStageAll">
+                  Stage All
+                </button>
+              </div>
             </div>
             <div v-if="!staging.unstagedFiles.length" class="empty-section">Clean</div>
             <div
@@ -692,16 +832,30 @@ async function doAbortRebase() {
               :class="{
                 selected: staging.selectedPath === file.path && staging.selectedMode === 'unstaged',
               }"
+              role="option"
+              :aria-selected="
+                staging.selectedPath === file.path && staging.selectedMode === 'unstaged'
+              "
+              :tabindex="fileTabIndex(file.path, 'unstaged')"
               @click="onSelectFile(file.path, 'unstaged')"
               @contextmenu="openFileCtxMenu($event, file.path, 'unstaged')"
+              @keydown.shift.f10.prevent="
+                openFileCtxMenu(menuEventFor($event), file.path, 'unstaged')
+              "
             >
-              <span class="status-code" :class="`sc-${file.unstaged.trim() || 'q'}`">
+              <span
+                class="status-code"
+                :class="`sc-${statusClass(file.unstaged)}`"
+                :title="STATUS_NAMES[file.unstaged]"
+              >
                 {{ STATUS_LABELS[file.unstaged] ?? file.unstaged }}
               </span>
               <span class="file-name" :title="file.path">{{ shortPath(file.path) }}</span>
               <button
                 class="inline-btn stage-inline"
-                title="Stage file"
+                tabindex="-1"
+                title="Stage file (Space)"
+                :aria-label="`Stage ${file.path}`"
                 @click.stop="onStageFile(file.path)"
               >
                 +
@@ -723,16 +877,30 @@ async function doAbortRebase() {
               :class="{
                 selected: staging.selectedPath === file.path && staging.selectedMode === 'staged',
               }"
+              role="option"
+              :aria-selected="
+                staging.selectedPath === file.path && staging.selectedMode === 'staged'
+              "
+              :tabindex="fileTabIndex(file.path, 'staged')"
               @click="onSelectFile(file.path, 'staged')"
               @contextmenu="openFileCtxMenu($event, file.path, 'staged')"
+              @keydown.shift.f10.prevent="
+                openFileCtxMenu(menuEventFor($event), file.path, 'staged')
+              "
             >
-              <span class="status-code" :class="`sc-${file.staged.trim() || 'q'}`">
+              <span
+                class="status-code"
+                :class="`sc-${statusClass(file.staged)}`"
+                :title="STATUS_NAMES[file.staged]"
+              >
                 {{ STATUS_LABELS[file.staged] ?? file.staged }}
               </span>
               <span class="file-name" :title="file.path">{{ shortPath(file.path) }}</span>
               <button
                 class="inline-btn unstage-inline"
-                title="Unstage file"
+                tabindex="-1"
+                title="Unstage file (Space)"
+                :aria-label="`Unstage ${file.path}`"
                 @click.stop="onUnstageFile(file.path)"
               >
                 −
@@ -756,27 +924,26 @@ async function doAbortRebase() {
               <span v-if="staging.conflictedFiles.length > 0"
                 >Resolve {{ staging.conflictedFiles.length }} conflict(s) first</span
               >
-              <span v-else>↪ Continue Rebase</span>
+              <span v-else>Continue Rebase</span>
             </button>
           </template>
 
           <template v-else>
-            <label class="amend-row">
-              <input v-model="amend" type="checkbox" @change="onAmendToggle" />
-              <span>Amend previous commit</span>
-            </label>
-
             <div class="summary-row">
-              <textarea
+              <input
                 v-model="commitSummary"
                 class="summary-input"
-                placeholder="Commit summary"
-                rows="2"
+                type="text"
+                placeholder="Summary"
+                aria-label="Commit summary"
                 maxlength="200"
+                spellcheck="true"
+                @keydown.enter.exact.prevent="descInputRef?.focus()"
                 @keydown.meta.enter="onCommit"
               />
               <span
                 class="char-count"
+                aria-hidden="true"
                 :class="{
                   over: summaryRemaining < 0,
                   warn: summaryRemaining < 10 && summaryRemaining >= 0,
@@ -787,12 +954,23 @@ async function doAbortRebase() {
             </div>
 
             <textarea
+              ref="descInputRef"
               v-model="commitDescription"
               class="desc-input"
               placeholder="Description (optional)"
-              rows="2"
+              aria-label="Commit description"
+              rows="3"
               @keydown.meta.enter="onCommit"
             />
+
+            <label class="amend-row">
+              <input v-model="amend" type="checkbox" @change="onAmendToggle" />
+              <span>Amend previous commit</span>
+            </label>
+            <p v-if="amend && amendPushed" class="amend-warning" role="status">
+              This commit is already pushed. Amending rewrites it, so the next push will need a
+              force push.
+            </p>
 
             <button
               class="commit-btn"
@@ -802,8 +980,11 @@ async function doAbortRebase() {
             >
               <span v-if="committing">Committing…</span>
               <span v-else-if="!commitSummary.trim() && !amend">Type a message to commit</span>
+              <span v-else-if="amend">
+                Amend last commit on <strong>{{ currentBranch }}</strong>
+              </span>
               <span v-else>
-                ○ Commit to <strong>{{ currentBranch }}</strong>
+                Commit to <strong>{{ currentBranch }}</strong>
               </span>
             </button>
           </template>
@@ -836,6 +1017,7 @@ async function doAbortRebase() {
           :mode="staging.selectedMode === 'staged' ? 'unstage' : 'stage'"
           :path="staging.selectedPath"
           :diff-loading="staging.diffLoading"
+          :diff-error="staging.diffError"
           @stage-file="onStageFile(staging.selectedPath!)"
           @unstage-file="onUnstageFile(staging.selectedPath!)"
           @discard-file="onDiscardFile(staging.selectedPath!)"
@@ -852,7 +1034,9 @@ async function doAbortRebase() {
       v-if="fileCtxMenu"
       ref="fileCtxMenuEl"
       class="ctx-menu"
+      role="menu"
       :style="{ left: fileCtxMenu.x + 'px', top: fileCtxMenu.y + 'px' }"
+      @keydown="handleMenuKeydown($event, fileCtxMenuEl, closeFileCtxMenu)"
     >
       <div class="ctx-menu-label">{{ fileCtxMenu.path.split('/').pop() }}</div>
 
@@ -860,36 +1044,51 @@ async function doAbortRebase() {
       <template v-if="fileCtxMenu.mode === 'default'">
         <!-- Unstaged-only actions -->
         <template v-if="fileCtxMenu.section === 'unstaged'">
-          <button class="ctx-menu-item ctx-menu-item-primary" @click="ctxStageFile">
+          <button role="menuitem" class="ctx-menu-item ctx-menu-item-primary" @click="ctxStageFile">
             Stage file
           </button>
-          <button class="ctx-menu-item ctx-menu-item-danger" @click="ctxDiscardFile">
+          <button
+            role="menuitem"
+            class="ctx-menu-item ctx-menu-item-danger"
+            @click="ctxDiscardFile"
+          >
             Discard changes
           </button>
           <div class="ctx-menu-divider" />
-          <button class="ctx-menu-item" @click="fileCtxMenu!.mode = 'ignore'">
+          <button role="menuitem" class="ctx-menu-item" @click="fileCtxMenu!.mode = 'ignore'">
             Ignore <span style="float: right; opacity: 0.5">▸</span>
           </button>
-          <button class="ctx-menu-item" @click="ctxStashFile">Stash file</button>
+          <button role="menuitem" class="ctx-menu-item" @click="ctxStashFile">Stash file</button>
           <div class="ctx-menu-divider" />
         </template>
 
         <!-- Staged-only actions -->
         <template v-else-if="fileCtxMenu.section === 'staged'">
-          <button class="ctx-menu-item ctx-menu-item-primary" @click="ctxUnstageFile">
+          <button
+            role="menuitem"
+            class="ctx-menu-item ctx-menu-item-primary"
+            @click="ctxUnstageFile"
+          >
             Unstage file
           </button>
           <div class="ctx-menu-divider" />
         </template>
 
         <!-- Common actions -->
-        <button class="ctx-menu-item" @click="ctxOpenDefaultApp">Open in default app</button>
-        <button class="ctx-menu-item" @click="ctxShowInFinder">Show in Finder</button>
-        <button class="ctx-menu-item" @click="ctxOpenInEditor">Open in editor</button>
+        <button role="menuitem" class="ctx-menu-item" @click="ctxOpenDefaultApp">
+          Open in default app
+        </button>
+        <button role="menuitem" class="ctx-menu-item" @click="ctxShowInFinder">
+          Show in Finder
+        </button>
+        <button role="menuitem" class="ctx-menu-item" @click="ctxOpenInEditor">
+          Open in editor
+        </button>
         <div class="ctx-menu-divider" />
-        <button class="ctx-menu-item" @click="ctxCopyPath">Copy path</button>
+        <button role="menuitem" class="ctx-menu-item" @click="ctxCopyPath">Copy path</button>
         <button
           v-if="fileCtxMenu.section !== 'conflict'"
+          role="menuitem"
           class="ctx-menu-item"
           @click="ctxSavePatch"
         >
@@ -899,7 +1098,7 @@ async function doAbortRebase() {
         <!-- Unstaged: delete -->
         <template v-if="fileCtxMenu.section === 'unstaged'">
           <div class="ctx-menu-divider" />
-          <button class="ctx-menu-item ctx-menu-item-danger" @click="ctxDeleteFile">
+          <button role="menuitem" class="ctx-menu-item ctx-menu-item-danger" @click="ctxDeleteFile">
             Delete file
           </button>
         </template>
@@ -907,10 +1106,15 @@ async function doAbortRebase() {
 
       <!-- Ignore submenu -->
       <template v-else-if="fileCtxMenu.mode === 'ignore'">
-        <button class="ctx-menu-item" @click="fileCtxMenu!.mode = 'default'">← Back</button>
+        <button role="menuitem" class="ctx-menu-item" @click="fileCtxMenu!.mode = 'default'">
+          ← Back
+        </button>
         <div class="ctx-menu-divider" />
-        <button class="ctx-menu-item" @click="ctxIgnore('file')">Ignore this file</button>
+        <button role="menuitem" class="ctx-menu-item" @click="ctxIgnore('file')">
+          Ignore this file
+        </button>
         <button
+          role="menuitem"
           class="ctx-menu-item"
           :disabled="!fileExt(fileCtxMenu.path)"
           @click="ctxIgnore('ext')"
@@ -918,6 +1122,7 @@ async function doAbortRebase() {
           Ignore all *.{{ fileExt(fileCtxMenu.path) }} files
         </button>
         <button
+          role="menuitem"
           class="ctx-menu-item"
           :disabled="!fileDir(fileCtxMenu.path)"
           @click="ctxIgnore('dir')"
@@ -930,12 +1135,12 @@ async function doAbortRebase() {
       <template v-else-if="fileCtxMenu.mode === 'confirm-delete'">
         <div class="ctx-menu-confirm">
           <p class="ctx-menu-confirm-text">
-            Delete "{{ fileCtxMenu.path.split('/').pop() }}" from disk?
+            Delete "{{ fileCtxMenu.path.split('/').pop() }}" from disk? This can't be undone.
           </p>
-          <button class="ctx-menu-item ctx-menu-item-danger" @click="ctxDeleteFile">
-            Yes, delete
-          </button>
-          <button class="ctx-menu-item" @click="closeFileCtxMenu">Cancel</button>
+          <div class="ctx-menu-row">
+            <button class="ctx-menu-btn ctx-menu-btn-danger" @click="ctxDeleteFile">Delete</button>
+            <button class="ctx-menu-btn" @click="closeFileCtxMenu">Cancel</button>
+          </div>
         </div>
       </template>
     </div>
@@ -956,59 +1161,59 @@ async function doAbortRebase() {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 7px 14px;
-  background: #1e1a00;
-  border-bottom: 1px solid #3a3000;
+  padding: var(--space-2) var(--inset-panel);
+  background: var(--warning-soft);
+  border-bottom: 1px solid var(--warning-border);
   flex-shrink: 0;
 }
 
 .merge-banner-text {
-  font-size: 12px;
-  color: #f0c050;
+  font-size: var(--text-row);
+  color: var(--warning);
 }
 
 .merge-abort-confirm {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: var(--space-2);
 }
 
 .merge-abort-confirm-text {
-  font-size: 11px;
-  color: #f09070;
+  font-size: var(--text-meta);
+  color: var(--danger);
 }
 
 .merge-abort-btn {
-  padding: 3px 10px;
-  background: #2a1818;
-  border: 1px solid #4a2020;
+  padding: var(--space-1) var(--space-2);
+  background: var(--danger-soft);
+  border: 1px solid var(--danger-border);
   border-radius: 4px;
-  color: #f07070;
-  font-size: 11px;
+  color: var(--danger);
+  font-size: var(--text-meta);
   cursor: pointer;
 }
 .merge-abort-btn:hover {
-  background: #381e1e;
-  color: #f09090;
+  background: var(--danger-soft-hover);
+  color: var(--danger);
 }
 .merge-abort-btn--confirm {
-  background: #3a1818;
-  border-color: #6a2020;
-  color: #f08080;
+  background: var(--danger-soft);
+  border-color: var(--danger-border);
+  color: var(--danger);
 }
 .merge-abort-btn--confirm:hover {
-  background: #4a1c1c;
-  color: #f0a0a0;
+  background: var(--danger-soft-hover);
+  color: var(--danger);
 }
 .merge-abort-btn--cancel {
   background: transparent;
-  border-color: #2a2a44;
-  color: #556;
+  border-color: var(--border);
+  color: var(--text-tertiary);
   margin-left: 2px;
 }
 .merge-abort-btn--cancel:hover {
-  border-color: #3a3a60;
-  color: #778;
+  border-color: var(--border-strong);
+  color: var(--text-secondary);
 }
 
 /* Rebase banner */
@@ -1016,9 +1221,9 @@ async function doAbortRebase() {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 7px 14px;
-  background: #0e1a28;
-  border-bottom: 1px solid #1a3050;
+  padding: var(--space-2) var(--inset-panel);
+  background: var(--accent-soft);
+  border-bottom: 1px solid var(--accent-border);
   flex-shrink: 0;
   gap: 8px;
 }
@@ -1032,28 +1237,28 @@ async function doAbortRebase() {
 }
 
 .rebase-banner-title {
-  font-size: 12px;
+  font-size: var(--text-row);
   font-weight: 600;
-  color: #4f8ef7;
+  color: var(--accent-text);
   flex-shrink: 0;
 }
 
 .rebase-step {
-  font-size: 11px;
-  color: #7a9abb;
-  font-family: monospace;
+  font-size: var(--text-meta);
+  color: var(--text-secondary);
+  font-family: var(--font-mono);
   flex-shrink: 0;
 }
 
 .rebase-onto {
-  font-size: 11px;
-  color: #5a7a9b;
+  font-size: var(--text-meta);
+  color: var(--text-secondary);
   flex-shrink: 0;
 }
 
 .rebase-msg {
-  font-size: 11px;
-  color: #8aadcc;
+  font-size: var(--text-meta);
+  color: var(--text-primary);
   font-style: italic;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -1061,24 +1266,25 @@ async function doAbortRebase() {
 }
 
 .rebase-action-hint {
-  font-size: 11px;
-  color: #5a7a9b;
+  font-size: var(--text-meta);
+  color: var(--text-secondary);
   padding: 2px 2px 4px;
+  text-align: center;
 }
 
 .rebase-continue-btn {
-  background: #0e2040 !important;
-  color: #4f8ef7 !important;
-  border: 1px solid #1a3a6a !important;
+  background: var(--accent-fill) !important;
+  color: var(--text-on-accent) !important;
+  border: 1px solid var(--accent-fill) !important;
 }
 .rebase-continue-btn:hover:not(:disabled) {
-  background: #132848 !important;
+  background: var(--accent-fill-hover) !important;
 }
 .rebase-continue-btn:disabled {
   cursor: default;
-  color: #556 !important;
-  border-color: #252540 !important;
-  background: #1a1a30 !important;
+  color: var(--text-tertiary) !important;
+  border-color: var(--border) !important;
+  background: var(--surface-control) !important;
 }
 
 .staging-view {
@@ -1093,8 +1299,8 @@ async function doAbortRebase() {
   flex-shrink: 0;
   display: flex;
   flex-direction: column;
-  background: #16213e;
-  border-right: 1px solid #2d2d4e;
+  background: var(--surface-chrome);
+  border-right: 1px solid var(--border);
   overflow: hidden;
   min-height: 0;
 }
@@ -1106,141 +1312,146 @@ async function doAbortRebase() {
   min-height: 0;
 }
 
-.staging-toolbar {
+.section-actions {
   display: flex;
-  gap: 4px;
-  padding: 6px 8px;
-  border-bottom: 1px solid #2d2d4e;
-  flex-shrink: 0;
+  align-items: center;
+  gap: var(--space-1);
 }
 
-.toolbar-btn {
-  padding: 3px 8px;
-  background: #1e2d50;
-  border: 1px solid #2d3d6e;
+.section-icon-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  background: none;
+  border: none;
   border-radius: 4px;
-  color: #8aadee;
-  font-size: 11px;
+  color: var(--text-tertiary);
   cursor: pointer;
 }
-.toolbar-btn:hover {
-  background: #243466;
+.section-icon-btn:hover {
+  background: var(--surface-hover);
+  color: var(--text-primary);
 }
 
 .list-loading {
   padding: 16px;
-  color: #778;
-  font-size: 12px;
+  color: var(--text-secondary);
+  font-size: var(--text-row);
   text-align: center;
 }
 
 .section-header {
+  user-select: none;
+  -webkit-user-select: none;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 6px 10px 4px;
-  font-size: 10px;
+  padding: var(--space-3) var(--inset-panel) var(--space-1);
+  font-size: var(--text-meta);
   font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  color: #778;
+  color: var(--text-secondary);
   flex-shrink: 0;
 }
 .staged-header {
   margin-top: 4px;
-  border-top: 1px solid #1e1e36;
+  border-top: 1px solid var(--border-subtle);
   padding-top: 8px;
 }
 
 .section-btn {
-  font-size: 10px;
+  font-size: var(--text-meta);
   padding: 1px 6px;
   background: transparent;
-  border: 1px solid #445;
+  border: 1px solid var(--border-strong);
   border-radius: 3px;
-  color: #889;
+  color: var(--text-tertiary);
   cursor: pointer;
 }
 .section-btn:hover {
-  border-color: #667;
-  color: #aab;
+  border-color: var(--border-strong);
+  color: var(--text-primary);
 }
 
 .empty-section {
-  padding: 4px 12px 6px;
-  font-size: 11px;
-  color: #667;
+  padding: var(--space-1) var(--inset-panel) var(--space-2);
+  font-size: var(--text-meta);
+  color: var(--text-tertiary);
   font-style: italic;
 }
 
 .file-item {
   display: flex;
   align-items: center;
-  gap: 6px;
-  padding: 4px 8px 4px 10px;
-  font-size: 12px;
+  gap: var(--space-2);
+  padding: 0 var(--inset-panel);
+  font-size: var(--text-row);
   cursor: pointer;
   min-width: 0;
+  position: relative;
+  min-height: var(--row-h);
 }
 .file-item:hover {
-  background: #1e2d50;
+  background: var(--surface-hover);
 }
 .file-item.selected {
-  background: #1e2d54;
+  background: var(--surface-selected);
 }
 
 .status-code {
-  font-size: 10px;
+  font-size: var(--text-meta);
   font-weight: 700;
-  font-family: monospace;
+  font-family: var(--font-mono);
   width: 14px;
   text-align: center;
   flex-shrink: 0;
 }
 .sc-M {
-  color: #f0a050;
+  color: var(--modified);
 }
 .sc-A {
-  color: #4ff7a0;
+  color: var(--add);
 }
 .sc-D {
-  color: #f74f4f;
+  color: var(--del);
 }
 .sc-R {
-  color: #7aadff;
+  color: var(--accent-text);
 }
 .sc-q {
-  color: #5af0f0;
+  color: var(--untracked);
 }
 .sc-conflict {
-  color: #f07070;
+  color: var(--danger);
 }
 
 .conflict-header-section {
-  color: #c06060;
+  color: var(--danger);
 }
 
 .file-item--conflict .file-name {
-  color: #f07070;
+  color: var(--danger);
 }
 .file-item--conflict.selected .file-name {
-  color: #f09090;
+  color: var(--danger);
 }
 .file-item--conflict:hover {
-  background: #2a1818;
+  background: var(--surface-hover);
 }
 
 .file-name {
   flex: 1;
-  font-size: 11px;
-  font-family: monospace;
-  color: #aab;
+  font-size: var(--text-meta);
+  font-family: var(--font-mono);
+  color: var(--text-primary);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 .file-item.selected .file-name {
-  color: #dde;
+  color: var(--text-primary);
 }
 
 .inline-btn {
@@ -1249,7 +1460,7 @@ async function doAbortRebase() {
   height: 18px;
   border-radius: 3px;
   border: none;
-  font-size: 13px;
+  font-size: var(--text-body);
   line-height: 1;
   cursor: pointer;
   display: flex;
@@ -1257,52 +1468,70 @@ async function doAbortRebase() {
   justify-content: center;
   opacity: 0;
   transition: opacity 0.1s;
+  position: absolute;
+  right: var(--space-2);
+  top: 50%;
+  margin-top: -9px;
 }
-.file-item:hover .inline-btn {
+.file-item:hover .inline-btn,
+.file-item:focus-within .inline-btn,
+.file-item.selected .inline-btn {
   opacity: 1;
 }
+.file-item:hover .file-name,
+.file-item:focus-within .file-name,
+.file-item.selected .file-name {
+  padding-right: 22px;
+}
 .stage-inline {
-  background: rgba(79, 247, 160, 0.15);
-  color: #4ff7a0;
+  background: var(--add-soft);
+  color: var(--add);
 }
 .stage-inline:hover {
-  background: rgba(79, 247, 160, 0.3);
+  background: var(--add-soft-strong);
 }
 .unstage-inline {
-  background: rgba(247, 79, 79, 0.15);
-  color: #f74f4f;
+  background: var(--accent-soft);
+  color: var(--accent-text);
 }
 .unstage-inline:hover {
-  background: rgba(247, 79, 79, 0.3);
+  background: var(--accent-soft-strong);
 }
 
 /* ── Commit panel ─────────────────────────── */
 .commit-panel {
   flex-shrink: 0;
-  border-top: 1px solid #1e1e36;
-  background: #111124;
-  padding: 8px;
+  border-top: 1px solid var(--border-subtle);
+  background: var(--surface-raised);
+  padding: var(--inset-panel);
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: var(--space-2);
+}
+
+.amend-warning {
+  margin: 0;
+  font-size: var(--text-meta);
+  line-height: 1.4;
+  color: var(--warning);
 }
 
 .amend-row {
   display: flex;
   align-items: center;
   gap: 6px;
-  font-size: 11px;
-  color: #99aabb;
+  font-size: var(--text-meta);
+  color: var(--text-secondary);
   cursor: pointer;
   user-select: none;
   padding: 0 2px;
 }
 .amend-row input[type='checkbox'] {
-  accent-color: #4f8ef7;
+  accent-color: var(--accent-text);
   cursor: pointer;
 }
 .amend-row:hover span {
-  color: #bbccdd;
+  color: var(--text-primary);
 }
 
 .summary-row {
@@ -1311,47 +1540,47 @@ async function doAbortRebase() {
 
 .summary-input {
   width: 100%;
-  background: #0f0f1a;
-  border: 1px solid #252540;
+  background: var(--surface-field);
+  border: 1px solid var(--border);
   border-radius: 4px;
-  color: #ccc;
-  font-size: 12px;
+  color: var(--text-primary);
+  font-size: var(--text-row);
   padding: 6px 30px 6px 8px;
-  resize: none;
   outline: none;
   font-family: inherit;
   line-height: 1.4;
   box-sizing: border-box;
 }
 .summary-input:focus {
-  border-color: #4f8ef7;
+  border-color: var(--focus-ring);
 }
 .summary-input::placeholder {
-  color: #556;
+  color: var(--text-tertiary);
 }
 
 .char-count {
   position: absolute;
   right: 6px;
-  bottom: 6px;
-  font-size: 10px;
-  color: #667;
+  font-size: var(--text-meta);
+  color: var(--text-tertiary);
   pointer-events: none;
+  top: 50%;
+  transform: translateY(-50%);
 }
 .char-count.warn {
-  color: #f0a050;
+  color: var(--modified);
 }
 .char-count.over {
-  color: #f74f4f;
+  color: var(--del);
 }
 
 .desc-input {
   width: 100%;
-  background: #0f0f1a;
-  border: 1px solid #252540;
+  background: var(--surface-field);
+  border: 1px solid var(--border);
   border-radius: 4px;
-  color: #aaa;
-  font-size: 11px;
+  color: var(--text-secondary);
+  font-size: var(--text-row);
   padding: 5px 8px;
   resize: none;
   outline: none;
@@ -1360,10 +1589,10 @@ async function doAbortRebase() {
   box-sizing: border-box;
 }
 .desc-input:focus {
-  border-color: #3a3a60;
+  border-color: var(--focus-ring);
 }
 .desc-input::placeholder {
-  color: #4a4a66;
+  color: var(--text-tertiary);
 }
 
 .commit-btn {
@@ -1371,23 +1600,24 @@ async function doAbortRebase() {
   padding: 8px;
   border: none;
   border-radius: 5px;
-  font-size: 12px;
+  font-size: var(--text-row);
   font-weight: 500;
   cursor: pointer;
   transition: background 0.15s;
-  background: #1a1a30;
-  color: #778;
+  background: var(--surface-control);
+  color: var(--text-secondary);
+  margin-top: var(--space-1);
 }
 .commit-btn:disabled {
   cursor: default;
 }
 .commit-btn.ready {
-  background: #1e3d28;
-  color: #4ff7a0;
-  border: 1px solid #2a5a38;
+  background: var(--accent-fill);
+  color: var(--text-on-accent);
+  border: 1px solid var(--accent-fill);
 }
 .commit-btn.ready:hover {
-  background: #254830;
+  background: var(--accent-fill-hover);
 }
 .commit-btn strong {
   font-weight: 700;
@@ -1397,12 +1627,12 @@ async function doAbortRebase() {
 .resize-handle {
   width: 4px;
   flex-shrink: 0;
-  background: #1e1e36;
+  background: var(--border-subtle);
   cursor: col-resize;
   transition: background 0.15s;
 }
 .resize-handle:hover {
-  background: #4f8ef7;
+  background: var(--accent-fill);
 }
 
 /* Diff panel */
@@ -1419,8 +1649,9 @@ async function doAbortRebase() {
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #778;
-  font-size: 13px;
+  text-align: center;
+  color: var(--text-secondary);
+  font-size: var(--text-body);
 }
 
 /* Image preview */
@@ -1434,15 +1665,19 @@ async function doAbortRebase() {
 
 .image-preview-header {
   flex-shrink: 0;
-  padding: 7px 12px;
-  font-size: 11px;
-  font-family: monospace;
-  color: #6688aa;
-  border-bottom: 1px solid #1e1e36;
-  background: #0f0f1a;
+  padding: 0 var(--inset-panel);
+  font-size: var(--text-meta);
+  font-family: var(--font-mono);
+  color: var(--text-secondary);
+  border-bottom: 1px solid var(--border-subtle);
+  background: var(--surface-base);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  height: var(--file-header-h);
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
 }
 
 .image-preview-loading,
@@ -1451,8 +1686,8 @@ async function doAbortRebase() {
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #556;
-  font-size: 13px;
+  color: var(--text-tertiary);
+  font-size: var(--text-body);
 }
 
 .image-preview-container {
@@ -1462,7 +1697,7 @@ async function doAbortRebase() {
   justify-content: center;
   overflow: auto;
   padding: 24px;
-  background: #0a0a14;
+  background: var(--surface-sunken);
 }
 
 .image-preview-img {
@@ -1470,6 +1705,6 @@ async function doAbortRebase() {
   max-height: 100%;
   object-fit: contain;
   border-radius: 4px;
-  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.6);
+  border: 1px solid var(--border-subtle);
 }
 </style>

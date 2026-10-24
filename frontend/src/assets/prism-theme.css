@@ -1,13 +1,17 @@
+/* Modelled on Xcode's Default (Dark) syntax colours; green and red stay reserved for added and removed lines. */
 .token.comment,
 .token.prolog,
 .token.doctype,
 .token.cdata {
-  color: #5c7086;
+  color: #85858c;
   font-style: italic;
 }
 
-.token.punctuation {
-  color: #8a94a6;
+.token.punctuation,
+.token.operator,
+.token.entity,
+.token.url {
+  color: #b0b0b8;
 }
 
 .token.property,
@@ -15,41 +19,47 @@
 .token.boolean,
 .token.number,
 .token.constant,
-.token.symbol,
-.token.deleted {
-  color: #d19a66;
+.token.symbol {
+  color: #d9c97c;
 }
 
 .token.selector,
-.token.attr-name,
 .token.string,
-.token.char,
-.token.builtin,
-.token.inserted {
-  color: #9effd0;
+.token.char {
+  color: #e6a86b;
 }
 
-.token.operator,
-.token.entity,
-.token.url {
-  color: #8a94a6;
+.token.attr-name,
+.token.builtin {
+  color: #dabaff;
 }
 
 .token.atrule,
 .token.attr-value,
 .token.keyword {
-  color: #7aadff;
+  color: #ff7ab2;
 }
 
-.token.function,
+.token.function {
+  color: #67b7a4;
+}
+
 .token.class-name {
-  color: #e0c880;
+  color: #5dd8ff;
 }
 
 .token.regex,
 .token.important,
 .token.variable {
-  color: #f0a050;
+  color: #a167e6;
+}
+
+.token.inserted {
+  color: var(--add-fg);
+}
+
+.token.deleted {
+  color: var(--del-fg);
 }
 
 .token.important,

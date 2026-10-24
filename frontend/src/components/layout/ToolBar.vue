@@ -6,14 +6,13 @@ import { useStagingStore } from '../../stores/staging';
 import { useBranchesStore } from '../../stores/branches';
 import { useToastStore } from '../../stores/toast';
 import { useStashStore } from '../../stores/stash';
-import {
-  PushBranch,
-  Stash,
-  StashPop,
-  CreateBranch,
-  OpenTerminal,
-} from '../../../wailsjs/go/main/App';
+import { Stash, StashPop, CreateBranch, OpenTerminal } from '../../../wailsjs/go/main/App';
 import { usePrefsStore } from '../../stores/prefs';
+import { pushWithFeedback } from '../../composables/usePush';
+import { useRepoPickerStore } from '../../stores/repoPicker';
+
+const viewMode = defineModel<'commits' | 'staging'>('viewMode', { required: true });
+const picker = useRepoPickerStore();
 
 const repos = useReposStore();
 const prefsStore = usePrefsStore();
@@ -40,22 +39,18 @@ async function run(op: string, fn: () => Promise<void>, successMsg?: string) {
       toast.success(successMsg);
     }
   } catch (e: unknown) {
-    toast.error(String(e));
+    toast.error(e);
   } finally {
     busy.value = null;
   }
 }
 
 async function onFetch() {
-  await run(
-    'fetch',
-    async () => {
-      await staging.fetchAll(repoPath.value);
-      await commits.load(repoPath.value);
-      branches.load(repoPath.value);
-    },
-    'Fetched successfully'
-  );
+  await run('fetch', async () => {
+    await staging.fetchAll(repoPath.value);
+    await commits.load(repoPath.value);
+    branches.load(repoPath.value);
+  });
 }
 
 const PULL_MODES: { value: string; label: string }[] = [
@@ -104,19 +99,12 @@ async function onPull() {
       await staging.load(repoPath.value);
       await branches.load(repoPath.value);
     },
-    mode === 'fetch' ? 'Fetched successfully' : 'Pulled successfully'
+    mode === 'fetch' ? undefined : 'Pulled successfully'
   );
 }
 
 async function onPush() {
-  await run(
-    'push',
-    async () => {
-      await PushBranch(repoPath.value);
-      branches.load(repoPath.value);
-    },
-    'Pushed successfully'
-  );
+  await run('push', () => pushWithFeedback(repoPath.value));
 }
 
 async function onStash() {
@@ -194,8 +182,47 @@ async function confirmBranch() {
 
 <template>
   <div class="toolbar">
-    <div class="toolbar-inner">
-      <div class="toolbar-side" />
+    <div class="toolbar-inner" :class="{ 'no-repo': !repos.activeRepo }">
+      <div class="toolbar-side toolbar-side--left">
+        <button
+          class="repo-btn"
+          data-repo-picker-anchor
+          :title="repos.activeRepo?.path ?? 'Open a repository'"
+          aria-haspopup="menu"
+          :aria-expanded="picker.open"
+          @click="picker.toggle($event.currentTarget as HTMLElement)"
+        >
+          <span class="repo-btn-name">{{ repos.activeRepo?.name ?? 'Open Repository' }}</span>
+          <svg width="8" height="5" viewBox="0 0 8 5" aria-hidden="true">
+            <path d="M0.5 0.5L4 4L7.5 0.5" fill="none" stroke="currentColor" stroke-width="1.3" />
+          </svg>
+        </button>
+        <div v-if="repos.activeRepo" class="view-switch" role="tablist" aria-label="View">
+          <button
+            class="view-switch-btn"
+            role="tab"
+            :class="{ active: viewMode === 'commits' }"
+            :aria-selected="viewMode === 'commits'"
+            title="Commits (⌘1)"
+            @click="viewMode = 'commits'"
+          >
+            Commits
+          </button>
+          <button
+            class="view-switch-btn"
+            role="tab"
+            :class="{ active: viewMode === 'staging' }"
+            :aria-selected="viewMode === 'staging'"
+            title="Working Tree (⌘2)"
+            @click="viewMode = 'staging'"
+          >
+            Working Tree
+            <span v-if="staging.totalChanges" class="view-switch-badge">
+              {{ staging.totalChanges }}
+            </span>
+          </button>
+        </div>
+      </div>
       <!-- Remote ops group -->
       <div class="btn-group">
         <button
@@ -275,9 +302,7 @@ async function confirmBranch() {
           </button>
 
           <div v-if="showPullMenu" class="pull-menu">
-            <p class="pull-menu-desc">
-              Select a default pull/fetch operation to execute when clicking this button
-            </p>
+            <p class="pull-menu-desc">Default action for the Pull button</p>
             <button
               v-for="opt in PULL_MODES"
               :key="opt.value"
@@ -356,7 +381,7 @@ async function confirmBranch() {
             @keydown.escape="cancelBranch"
           />
           <button class="branch-confirm" @click="confirmBranch">Create</button>
-          <button class="branch-cancel" @click="cancelBranch">✕</button>
+          <button class="branch-cancel" aria-label="Cancel" @click="cancelBranch">✕</button>
         </div>
       </div>
 
@@ -468,22 +493,126 @@ async function confirmBranch() {
 
 <style scoped>
 .toolbar {
-  flex-shrink: 0;
-  background: #0c0c1a;
-  border-bottom: 1px solid #1e1e36;
   user-select: none;
+  -webkit-user-select: none;
+  flex-shrink: 0;
+  background: var(--surface-chrome);
+  border-bottom: 1px solid var(--border-subtle);
+  /* This row is the window's title bar (hidden-inset), so empty space drags the window. */
+  --wails-draggable: drag;
+}
+
+.toolbar button,
+.toolbar input,
+.pull-menu,
+.branch-popover {
+  --wails-draggable: no-drag;
 }
 
 .toolbar-inner {
   display: flex;
   align-items: center;
-  height: 48px;
-  padding: 0 8px;
+  height: var(--toolbar-h);
+  padding: 0 var(--inset-panel) 0 var(--traffic-light-inset);
   gap: 2px;
+}
+
+/* Without a repo there is nothing to act on; show only the repo button and Settings. */
+.toolbar-inner.no-repo > .btn-group,
+.toolbar-inner.no-repo > .separator {
+  display: none;
 }
 
 .toolbar-side {
   flex: 1;
+  min-width: 0;
+}
+
+.toolbar-side--left {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.repo-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  max-width: 200px;
+  height: 28px;
+  padding: 0 var(--space-2);
+  background: none;
+  border: none;
+  border-radius: 5px;
+  color: var(--text-primary);
+  font-size: var(--text-body);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.repo-btn:hover {
+  background: var(--surface-hover);
+}
+
+.repo-btn-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.repo-btn svg {
+  flex-shrink: 0;
+  color: var(--text-tertiary);
+}
+
+/* macOS-style segmented control */
+.view-switch {
+  display: flex;
+  flex-shrink: 0;
+  padding: 2px;
+  gap: 2px;
+  background: var(--surface-sunken);
+  border: 1px solid var(--border-subtle);
+  border-radius: 7px;
+}
+
+.view-switch-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  height: 22px;
+  padding: 0 var(--space-3);
+  background: none;
+  border: none;
+  border-radius: 5px;
+  color: var(--text-secondary);
+  font-size: var(--text-row);
+  font-weight: 500;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.view-switch-btn:hover:not(.active) {
+  color: var(--text-primary);
+}
+
+.view-switch-btn.active {
+  background: var(--surface-control-hover);
+  color: var(--text-primary);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+}
+
+.view-switch-badge {
+  min-width: 16px;
+  padding: 0 5px;
+  border-radius: 8px;
+  background: var(--accent-fill);
+  color: var(--text-on-accent);
+  font-size: var(--text-meta);
+  font-weight: 600;
+  line-height: 16px;
+  text-align: center;
 }
 
 .toolbar-side--right {
@@ -500,7 +629,7 @@ async function confirmBranch() {
 .separator {
   width: 1px;
   height: 24px;
-  background: #1e1e36;
+  background: var(--border);
   margin: 0 6px;
   flex-shrink: 0;
 }
@@ -515,7 +644,7 @@ async function confirmBranch() {
   border: none;
   background: transparent;
   border-radius: 5px;
-  color: #778;
+  color: var(--text-secondary);
   cursor: pointer;
   min-width: 52px;
   transition:
@@ -524,13 +653,13 @@ async function confirmBranch() {
 }
 
 .tbtn:hover:not(:disabled) {
-  background: #14142a;
-  color: #bbc;
+  background: var(--surface-hover);
+  color: var(--text-primary);
 }
 
 .tbtn.active {
-  background: #14142a;
-  color: #4f8ef7;
+  background: var(--surface-control);
+  color: var(--accent-text);
 }
 
 .tbtn:disabled {
@@ -546,9 +675,8 @@ async function confirmBranch() {
 }
 
 .tbtn-label {
-  font-size: 10px;
+  font-size: var(--text-meta);
   font-weight: 500;
-  letter-spacing: 0.02em;
 }
 
 /* Spin animation for loading state */
@@ -577,7 +705,7 @@ async function confirmBranch() {
   padding: 0;
   border: none;
   background: transparent;
-  color: #667;
+  color: var(--text-tertiary);
   cursor: pointer;
   border-radius: 4px;
   margin-left: 1px;
@@ -585,8 +713,8 @@ async function confirmBranch() {
 
 .pull-mode-toggle:hover:not(:disabled),
 .pull-mode-toggle.active {
-  color: #bbc;
-  background: #14142a;
+  color: var(--text-primary);
+  background: var(--surface-control);
 }
 
 .pull-mode-toggle:disabled {
@@ -599,19 +727,19 @@ async function confirmBranch() {
   top: calc(100% + 6px);
   left: 0;
   width: 320px;
-  background: #23233c;
-  border: 1px solid #34345a;
+  background: var(--surface-overlay);
+  border: 1px solid var(--border);
   border-radius: 8px;
   padding: 12px;
   z-index: 100;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
+  box-shadow: var(--shadow-popover);
 }
 
 .pull-menu-desc {
   margin: 0 0 10px;
-  font-size: 12px;
+  font-size: var(--text-row);
   line-height: 1.4;
-  color: #99a;
+  color: var(--text-secondary);
 }
 
 .pull-menu-item {
@@ -623,19 +751,19 @@ async function confirmBranch() {
   border: none;
   border-radius: 5px;
   background: transparent;
-  color: #ccd;
-  font-size: 12.5px;
+  color: var(--text-primary);
+  font-size: var(--text-row);
   text-align: left;
   cursor: pointer;
 }
 
 .pull-menu-item:hover {
-  background: #2c2c4a;
+  background: var(--surface-hover);
 }
 
 .pull-menu-item.selected {
-  background: #3a5a44;
-  color: #fff;
+  background: var(--surface-control);
+  color: var(--text-primary);
 }
 
 .pull-menu-radio {
@@ -643,13 +771,13 @@ async function confirmBranch() {
   width: 12px;
   height: 12px;
   border-radius: 50%;
-  border: 1.5px solid #778;
+  border: 1.5px solid var(--border-strong);
   box-sizing: border-box;
   position: relative;
 }
 
 .pull-menu-item.selected .pull-menu-radio {
-  border-color: #fff;
+  border-color: var(--accent-text);
 }
 
 .pull-menu-item.selected .pull-menu-radio::after {
@@ -657,7 +785,7 @@ async function confirmBranch() {
   position: absolute;
   inset: 2px;
   border-radius: 50%;
-  background: #fff;
+  background: var(--accent-text);
 }
 
 /* Branch popover */
@@ -668,58 +796,58 @@ async function confirmBranch() {
   display: flex;
   align-items: center;
   gap: 4px;
-  background: #1a1a2e;
-  border: 1px solid #2d2d50;
+  background: var(--surface-overlay);
+  border: 1px solid var(--border);
   border-radius: 6px;
   padding: 6px 8px;
   z-index: 100;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+  box-shadow: var(--shadow-popover);
   min-width: 220px;
 }
 
 .branch-input {
   flex: 1;
-  background: #0f0f1a;
-  border: 1px solid #2d2d50;
+  background: var(--surface-field);
+  border: 1px solid var(--border);
   border-radius: 4px;
-  color: #ccc;
-  font-size: 12px;
+  color: var(--text-primary);
+  font-size: var(--text-row);
   padding: 4px 8px;
   outline: none;
-  font-family: monospace;
+  font-family: var(--font-mono);
 }
 .branch-input:focus {
-  border-color: #4f8ef7;
+  border-color: var(--focus-ring);
 }
 .branch-input::placeholder {
-  color: #667;
+  color: var(--text-tertiary);
 }
 
 .branch-confirm {
   padding: 4px 10px;
-  background: #4f8ef7;
+  background: var(--accent-fill);
   border: none;
   border-radius: 4px;
-  color: white;
-  font-size: 11px;
+  color: var(--text-on-accent);
+  font-size: var(--text-meta);
   cursor: pointer;
   white-space: nowrap;
 }
 .branch-confirm:hover {
-  background: #6aa0f8;
+  background: var(--accent-fill-hover);
 }
 
 .branch-cancel {
   padding: 4px 6px;
   background: transparent;
-  border: 1px solid #445;
+  border: 1px solid var(--border-strong);
   border-radius: 4px;
-  color: #889;
-  font-size: 11px;
+  color: var(--text-tertiary);
+  font-size: var(--text-meta);
   cursor: pointer;
 }
 .branch-cancel:hover {
-  color: #aab;
-  border-color: #667;
+  color: var(--text-primary);
+  border-color: var(--border-strong);
 }
 </style>

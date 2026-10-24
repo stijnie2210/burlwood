@@ -1,8 +1,10 @@
-import { defineStore } from 'pinia';
+import { acceptHMRUpdate, defineStore } from 'pinia';
 import { ref, computed } from 'vue';
 import { GetCommitGraph, GetCommitDiff } from '../../wailsjs/go/main/App';
 import type { graph, repo } from '../../wailsjs/go/models';
 import { usePrefsStore } from './prefs';
+import { isActive } from './repos';
+import { describeGitError } from '../utils/gitErrors';
 
 export type GraphRow = graph.GraphRow;
 export type FileDiff = repo.FileDiff;
@@ -20,29 +22,48 @@ export const useCommitsStore = defineStore('commits', () => {
   const selectedFileIndex = ref<number | null>(null);
   const diff = ref<FileDiff[]>([]);
   const diffLoading = ref(false);
+  const diffError = ref<string | null>(null);
   const currentRepoPath = ref<string | null>(null);
 
   const maxColumn = computed(() => rows.value.reduce((m, r) => Math.max(m, r.maxColumn), 0));
 
+  // Reloading the repo that is already shown is a quiet refresh: rows swap in place and the
+  // selection survives, so routine operations (fetch, push, stash, commit) don't lose your place.
   async function load(repoPath: string) {
-    if (!repoPath) {
+    if (!repoPath || !isActive(repoPath)) {
       return;
     }
     const initialLimit = usePrefsStore().prefs.commitGraphLimit;
-    loading.value = true;
-    loadedLimit.value = initialLimit;
-    hasMore.value = false;
+    const refresh = currentRepoPath.value === repoPath && rows.value.length > 0;
+    const limit = refresh ? Math.max(initialLimit, loadedLimit.value) : initialLimit;
+    if (!refresh) {
+      loading.value = true;
+      rows.value = [];
+      hasMore.value = false;
+      selectedHash.value = null;
+      selectedFileIndex.value = null;
+      diff.value = [];
+    }
     error.value = null;
-    selectedHash.value = null;
-    diff.value = [];
     currentRepoPath.value = repoPath;
     try {
-      const result = await GetCommitGraph(repoPath, initialLimit);
+      const result = await GetCommitGraph(repoPath, limit);
+      if (currentRepoPath.value !== repoPath) {
+        return;
+      }
       rows.value = result;
-      hasMore.value = result.length === initialLimit;
+      loadedLimit.value = limit;
+      hasMore.value = result.length === limit;
+      if (selectedHash.value && !result.some((r) => r.hash === selectedHash.value)) {
+        selectedHash.value = null;
+        selectedFileIndex.value = null;
+        diff.value = [];
+      }
     } catch (e) {
       error.value = String(e);
-      rows.value = [];
+      if (!refresh) {
+        rows.value = [];
+      }
     } finally {
       loading.value = false;
     }
@@ -77,8 +98,16 @@ export const useCommitsStore = defineStore('commits', () => {
     selectedFileIndex.value = null;
     diffLoading.value = true;
     diff.value = [];
+    diffError.value = null;
     try {
-      diff.value = await GetCommitDiff(repoPath, hash);
+      const result = await GetCommitDiff(repoPath, hash);
+      if (currentRepoPath.value === repoPath && selectedHash.value === hash) {
+        diff.value = result;
+      }
+    } catch (e) {
+      if (currentRepoPath.value === repoPath) {
+        diffError.value = describeGitError(e).message;
+      }
     } finally {
       diffLoading.value = false;
     }
@@ -104,6 +133,7 @@ export const useCommitsStore = defineStore('commits', () => {
     selectedFileIndex,
     diff,
     diffLoading,
+    diffError,
     maxColumn,
     load,
     loadMore,
@@ -113,3 +143,9 @@ export const useCommitsStore = defineStore('commits', () => {
     clear,
   };
 });
+
+// Without this, editing a store during `wails dev` keeps the old instance (and its old logic)
+// running until a full reload.
+if (import.meta.hot) {
+  import.meta.hot.accept(acceptHMRUpdate(useCommitsStore, import.meta.hot));
+}

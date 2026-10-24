@@ -1,31 +1,31 @@
 .label {
   padding: 1px 5px;
   border-radius: 3px;
-  font-size: 10px;
+  font-size: var(--text-meta);
   font-weight: 500;
   white-space: nowrap;
 }
 .label--head {
-  background: #4f8ef7;
-  color: #fff;
+  background: var(--accent-fill);
+  color: var(--text-on-accent);
 }
 .label--branch {
-  background: #2a3a5e;
-  color: #7aadff;
-  border: 1px solid #3a5080;
+  background: var(--accent-soft);
+  color: var(--accent-text);
+  border: 1px solid var(--accent-border);
 }
 .label--remote {
-  background: #2a4a3a;
-  color: #7affb8;
-  border: 1px solid #3a6050;
+  background: var(--surface-control);
+  color: var(--text-secondary);
+  border: 1px solid var(--border-strong);
 }
 .label--tag {
-  background: #4a3a20;
-  color: #ffcc66;
-  border: 1px solid #6a5030;
+  background: var(--tag-soft);
+  color: var(--tag);
+  border: 1px solid var(--tag-border);
 }
 .label--stash {
-  background: #2a2040;
-  color: #bb88ff;
-  border: 1px solid #4a3070;
+  background: var(--stash-soft);
+  color: var(--stash);
+  border: 1px solid var(--stash-border);
 }

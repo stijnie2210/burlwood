@@ -1,4 +1,4 @@
-import { defineStore } from 'pinia';
+import { acceptHMRUpdate, defineStore } from 'pinia';
 import { ref, computed } from 'vue';
 import {
   GetStatus,
@@ -8,17 +8,23 @@ import {
   StageHunk,
   UnstageHunk,
   DiscardFile,
+  StageFiles,
+  UnstageFiles,
+  UndoDiscard,
   FetchAll,
   PullBranch,
   Commit,
-  GetLastCommitSubject,
+  GetAmendInfo,
   IsInMerge,
   GetMergeMessage,
   IsInRebase,
   GetRebaseState,
   SyncAutostash,
 } from '../../wailsjs/go/main/App';
-import type { repo } from '../../wailsjs/go/models';
+import type { gitcli, repo } from '../../wailsjs/go/models';
+import { describeGitError } from '../utils/gitErrors';
+import { useToastStore } from './toast';
+import { isActive } from './repos';
 
 export type FileStatus = repo.FileStatus;
 export type FileDiff = repo.FileDiff;
@@ -59,6 +65,7 @@ export const useStagingStore = defineStore('staging', () => {
   const selectedMode = ref<'staged' | 'unstaged'>('unstaged');
   const diff = ref<FileDiff[]>([]);
   const diffLoading = ref(false);
+  const diffError = ref<string | null>(null);
   const isInMerge = ref(false);
   const mergeMessage = ref('');
   const isInRebase = ref(false);
@@ -78,11 +85,17 @@ export const useStagingStore = defineStore('staging', () => {
 
   const totalChanges = computed(() => files.value.length);
 
+  let loadedRepoPath: string | null = null;
+
+  // Only the first load of a repo shows the loading state; later loads swap the list in place.
   async function load(repoPath: string) {
-    if (!repoPath) {
+    if (!repoPath || !isActive(repoPath)) {
       return;
     }
-    loading.value = true;
+    if (loadedRepoPath !== repoPath) {
+      clear();
+      loading.value = true;
+    }
     try {
       try {
         await SyncAutostash(repoPath);
@@ -97,14 +110,40 @@ export const useStagingStore = defineStore('staging', () => {
         IsInRebase(repoPath),
         GetRebaseState(repoPath),
       ]);
+      if (!isActive(repoPath)) {
+        return;
+      }
       files.value = statusResult;
       isInMerge.value = mergeState;
       mergeMessage.value = mergeMsg;
       isInRebase.value = rebaseActive;
       rebaseState.value = rebaseInfo;
+      loadedRepoPath = repoPath;
+    } catch (e) {
+      if (isActive(repoPath)) {
+        useToastStore().error(e);
+      }
     } finally {
-      loading.value = false;
+      if (isActive(repoPath)) {
+        loading.value = false;
+      }
     }
+  }
+
+  // Background refresh (window focus): also re-reads the open diff, since the file may have
+  // been edited elsewhere, without flashing the diff's loading state.
+  async function refresh(repoPath: string) {
+    await load(repoPath);
+    const path = selectedPath.value;
+    if (!path || !repoPath) {
+      return;
+    }
+    const stillChanged = files.value.some((f) => f.path === path);
+    if (!stillChanged) {
+      clearSelection();
+      return;
+    }
+    await reloadDiff(repoPath);
   }
 
   async function selectFile(repoPath: string, path: string, mode: 'staged' | 'unstaged') {
@@ -112,10 +151,36 @@ export const useStagingStore = defineStore('staging', () => {
     selectedMode.value = mode;
     diffLoading.value = true;
     diff.value = [];
+    diffError.value = null;
     try {
-      diff.value = await GetWorkingDiff(repoPath, path, mode === 'staged');
+      const result = await GetWorkingDiff(repoPath, path, mode === 'staged');
+      if (isActive(repoPath) && selectedPath.value === path) {
+        diff.value = result;
+      }
+    } catch (e) {
+      if (isActive(repoPath)) {
+        diffError.value = describeGitError(e).message;
+      }
     } finally {
       diffLoading.value = false;
+    }
+  }
+
+  // Swaps the open diff in place (no loading state), so staging a hunk keeps your scroll position.
+  async function reloadDiff(repoPath: string) {
+    const path = selectedPath.value;
+    if (!path) {
+      return;
+    }
+    try {
+      const result = await GetWorkingDiff(repoPath, path, selectedMode.value === 'staged');
+      if (!isActive(repoPath) || selectedPath.value !== path) {
+        return;
+      }
+      diff.value = result;
+      diffError.value = null;
+    } catch (e) {
+      diffError.value = describeGitError(e).message;
     }
   }
 
@@ -129,12 +194,22 @@ export const useStagingStore = defineStore('staging', () => {
     await load(repoPath);
   }
 
+  async function stageFiles(repoPath: string, paths: string[]) {
+    await StageFiles(repoPath, paths);
+    await load(repoPath);
+  }
+
+  async function unstageFiles(repoPath: string, paths: string[]) {
+    await UnstageFiles(repoPath, paths);
+    await load(repoPath);
+  }
+
   async function stageHunk(repoPath: string, path: string, hunk: Hunk) {
     const patch = buildHunkPatch(path, hunk);
     await StageHunk(repoPath, patch);
     await load(repoPath);
     if (selectedPath.value === path) {
-      await selectFile(repoPath, path, 'unstaged');
+      await reloadDiff(repoPath);
     }
   }
 
@@ -143,17 +218,22 @@ export const useStagingStore = defineStore('staging', () => {
     await UnstageHunk(repoPath, patch);
     await load(repoPath);
     if (selectedPath.value === path) {
-      await selectFile(repoPath, path, 'staged');
+      await reloadDiff(repoPath);
     }
   }
 
-  async function discardFile(repoPath: string, path: string) {
-    await DiscardFile(repoPath, path);
+  async function discardFile(repoPath: string, path: string): Promise<gitcli.DiscardSnapshot> {
+    const snapshot = await DiscardFile(repoPath, path);
     await load(repoPath);
     if (selectedPath.value === path) {
       diff.value = [];
       selectedPath.value = null;
     }
+    return snapshot;
+  }
+
+  async function undoDiscard(repoPath: string, snapshot: gitcli.DiscardSnapshot) {
+    await UndoDiscard(repoPath, snapshot);
   }
 
   async function fetchAll(repoPath: string) {
@@ -176,8 +256,8 @@ export const useStagingStore = defineStore('staging', () => {
     await load(repoPath);
   }
 
-  async function getLastCommitSubject(repoPath: string): Promise<string> {
-    return GetLastCommitSubject(repoPath);
+  async function getAmendInfo(repoPath: string): Promise<gitcli.AmendInfo> {
+    return GetAmendInfo(repoPath);
   }
 
   function clearSelection() {
@@ -192,6 +272,7 @@ export const useStagingStore = defineStore('staging', () => {
   }
 
   function clear() {
+    loadedRepoPath = null;
     files.value = [];
     selectedPath.value = null;
     diff.value = [];
@@ -208,6 +289,7 @@ export const useStagingStore = defineStore('staging', () => {
     selectedMode,
     diff,
     diffLoading,
+    diffError,
     isInMerge,
     mergeMessage,
     isInRebase,
@@ -220,15 +302,25 @@ export const useStagingStore = defineStore('staging', () => {
     selectFile,
     stageFile,
     unstageFile,
+    stageFiles,
+    unstageFiles,
     stageHunk,
     unstageHunk,
     discardFile,
+    undoDiscard,
     fetchAll,
     pullBranch,
     commit,
-    getLastCommitSubject,
+    getAmendInfo,
     clearSelection,
+    refresh,
     setSelectedConflict,
     clear,
   };
 });
+
+// Without this, editing a store during `wails dev` keeps the old instance (and its old logic)
+// running until a full reload.
+if (import.meta.hot) {
+  import.meta.hot.accept(acceptHMRUpdate(useStagingStore, import.meta.hot));
+}

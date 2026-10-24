@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"os/exec"
+	"strings"
 )
 
 type Result struct {
@@ -69,4 +70,14 @@ func RunWithInput(repoPath string, stdin []byte, args ...string) (Result, error)
 	}
 
 	return result, nil
+}
+
+// RepoRoot resolves any folder inside a working tree to its top level, so opening a
+// subfolder opens the repository instead of failing.
+func RepoRoot(path string) (string, error) {
+	out, err := Run(path, "rev-parse", "--show-toplevel")
+	if err != nil {
+		return "", fmt.Errorf("%s isn't inside a git repository", path)
+	}
+	return strings.TrimSpace(out.Stdout), nil
 }

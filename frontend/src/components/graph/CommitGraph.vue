@@ -2,6 +2,7 @@
 import { ref, computed, watch, nextTick, onMounted, onUnmounted } from 'vue';
 import { useVirtualizer } from '@tanstack/vue-virtual';
 import { useCommitsStore } from '../../stores/commits';
+import type { GraphRow } from '../../stores/commits';
 import { useReposStore } from '../../stores/repos';
 import { useToastStore } from '../../stores/toast';
 import { CELL_W } from './graphRenderer';
@@ -24,13 +25,38 @@ const filteredRows = computed(() => {
   if (!q) {
     return commits.rows;
   }
-  return commits.rows.filter(
-    (r) =>
-      r.hash.startsWith(q) ||
-      r.subject.toLowerCase().includes(q) ||
-      r.author.toLowerCase().includes(q)
-  );
+  // Lane edges describe neighbouring rows, which a filtered list no longer has; show dots only.
+  return commits.rows
+    .filter(
+      (r) =>
+        r.hash.startsWith(q) ||
+        r.subject.toLowerCase().includes(q) ||
+        r.author.toLowerCase().includes(q)
+    )
+    .map((r) => ({ ...r, edges: [], edgesIn: [] }));
 });
+
+// A quiet refresh can insert new commits above the viewport; keep the top visible commit in place.
+watch(
+  () => commits.rows,
+  (next, prev) => {
+    const el = parentRef.value;
+    if (!el || !prev?.length || next === prev || searchQuery.value.trim()) {
+      return;
+    }
+    const topIndex = Math.floor(el.scrollTop / ROW_H);
+    const topHash = prev[topIndex]?.hash;
+    const newIndex = topHash ? next.findIndex((r) => r.hash === topHash) : -1;
+    if (newIndex < 0 || newIndex === topIndex) {
+      return;
+    }
+    const offset = el.scrollTop - topIndex * ROW_H;
+    nextTick(() => {
+      el.scrollTop = newIndex * ROW_H + offset;
+    });
+  },
+  { flush: 'pre' }
+);
 
 const selectedIndex = computed(() =>
   commits.selectedHash ? filteredRows.value.findIndex((r) => r.hash === commits.selectedHash) : -1
@@ -48,18 +74,6 @@ const virtualizer = useVirtualizer(
 const items = computed(() => virtualizer.value.getVirtualItems());
 const totalSize = computed(() => virtualizer.value.getTotalSize());
 const graphWidth = computed(() => (commits.maxColumn + 2) * CELL_W);
-
-watch(
-  () => repos.activeRepo?.path,
-  (path) => {
-    if (path) {
-      commits.load(path);
-    } else {
-      commits.clear();
-    }
-  },
-  { immediate: true }
-);
 
 // Scroll to top when search results change so first match is visible
 watch(filteredRows, () => {
@@ -142,8 +156,30 @@ function onScroll() {
   }
 }
 
-onMounted(() => window.addEventListener('keydown', onGlobalKeyDown));
-onUnmounted(() => window.removeEventListener('keydown', onGlobalKeyDown));
+onMounted(() => {
+  window.addEventListener('keydown', onGlobalKeyDown);
+  window.addEventListener('gitgood:find', openSearch);
+});
+onUnmounted(() => {
+  window.removeEventListener('keydown', onGlobalKeyDown);
+  window.removeEventListener('gitgood:find', openSearch);
+});
+
+function rowLabel(row: GraphRow | undefined): string | undefined {
+  if (!row) {
+    return undefined;
+  }
+  const refs = row.labels.map((l) => (l.type === 'remote' ? `${l.remote}/${l.name}` : l.name));
+  return [
+    row.subject,
+    refs.length ? `refs ${refs.join(', ')}` : '',
+    row.author,
+    row.date,
+    row.shortHash,
+  ]
+    .filter(Boolean)
+    .join(', ');
+}
 
 function onRowClick(index: number) {
   const row = filteredRows.value[index];
@@ -155,12 +191,31 @@ function onRowClick(index: number) {
 // Context menu
 const menu = ref<{ x: number; y: number; index: number } | null>(null);
 
+let menuReturnFocus: HTMLElement | null = null;
+
 function onRowContextMenu(index: number, e: MouseEvent) {
+  menuReturnFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null;
   menu.value = { x: e.clientX, y: e.clientY, index };
+}
+
+function openMenuForSelected() {
+  const idx = selectedIndex.value;
+  const rowEl = idx >= 0 ? document.getElementById(`commit-row-${idx}`) : null;
+  if (!rowEl) {
+    return;
+  }
+  const rect = rowEl.getBoundingClientRect();
+  menuReturnFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+  menu.value = { x: rect.left + 120, y: rect.bottom, index: idx };
 }
 
 function closeMenu() {
   menu.value = null;
+  const el = menuReturnFocus;
+  menuReturnFocus = null;
+  if (el?.isConnected) {
+    el.focus();
+  }
 }
 
 async function onMenuRefresh() {
@@ -185,10 +240,26 @@ async function onMenuRefresh() {
       <span v-if="searchQuery.trim()" class="search-count">
         {{ filteredRows.length }} result{{ filteredRows.length === 1 ? '' : 's' }}
       </span>
-      <button class="search-close" @click="closeSearch">×</button>
+      <button
+        class="search-close"
+        aria-label="Close search"
+        title="Close search (Esc)"
+        @click="closeSearch"
+      >
+        ×
+      </button>
     </div>
 
-    <div ref="parentRef" class="graph-scroller" @scroll="onScroll">
+    <div
+      ref="parentRef"
+      class="graph-scroller"
+      role="listbox"
+      aria-label="Commits"
+      tabindex="0"
+      :aria-activedescendant="selectedIndex >= 0 ? `commit-row-${selectedIndex}` : undefined"
+      @scroll="onScroll"
+      @keydown.shift.f10.prevent="openMenuForSelected"
+    >
       <div v-if="commits.loading" class="loading">Loading commits…</div>
 
       <div v-else-if="commits.error" class="load-error">
@@ -203,7 +274,13 @@ async function onMenuRefresh() {
       <div v-else :style="{ height: `${totalSize}px`, position: 'relative' }">
         <div
           v-for="item in items"
+          :id="`commit-row-${item.index}`"
           :key="item.index"
+          role="option"
+          :aria-selected="commits.selectedHash === filteredRows[item.index]?.hash"
+          :aria-posinset="item.index + 1"
+          :aria-setsize="filteredRows.length"
+          :aria-label="rowLabel(filteredRows[item.index])"
           :style="{
             position: 'absolute',
             top: 0,
@@ -259,59 +336,60 @@ async function onMenuRefresh() {
   align-items: center;
   gap: 8px;
   padding: 5px 10px;
-  background: #0d0d1e;
-  border-bottom: 1px solid #2d2d4e;
+  background: var(--surface-raised);
+  border-bottom: 1px solid var(--border);
   flex-shrink: 0;
 }
 
 .search-input {
   flex: 1;
-  background: #1a1a2e;
-  border: 1px solid #2d2d4e;
+  background: var(--surface-field);
+  border: 1px solid var(--border);
   border-radius: 4px;
-  color: #e0e0e0;
-  font-size: 13px;
+  color: var(--text-primary);
+  font-size: var(--text-body);
   padding: 3px 8px;
   outline: none;
 }
 
 .search-input:focus {
-  border-color: #4f8ef7;
+  border-color: var(--focus-ring);
 }
 
 .search-count {
-  font-size: 12px;
-  color: #556;
+  font-size: var(--text-row);
+  color: var(--text-tertiary);
   white-space: nowrap;
 }
 
 .search-close {
   background: none;
   border: none;
-  color: #556;
+  color: var(--text-tertiary);
   cursor: pointer;
-  font-size: 18px;
+  font-size: 16px;
   line-height: 1;
   padding: 0 2px;
 }
 
 .search-close:hover {
-  color: #aaa;
+  color: var(--text-secondary);
 }
 
 .graph-scroller {
+  container: graph / inline-size;
   flex: 1;
   overflow-y: auto;
   overflow-x: auto;
-  background: #0f0f1a;
+  background: var(--surface-base);
   min-height: 0;
 }
 
 .loading {
   padding: 24px;
-  color: #555;
+  color: var(--text-tertiary);
   text-align: center;
-  font-size: 13px;
+  font-size: var(--text-body);
 }
 
 .load-error {
@@ -319,34 +397,34 @@ async function onMenuRefresh() {
   display: flex;
   flex-direction: column;
   gap: 8px;
-  color: #f74f4f;
-  font-size: 13px;
+  color: var(--del);
+  font-size: var(--text-body);
 }
 .load-error code {
-  font-size: 11px;
-  color: #a05050;
+  font-size: var(--text-meta);
+  color: var(--danger);
   word-break: break-all;
-  font-family: monospace;
+  font-family: var(--font-mono);
 }
 
 .no-results {
   padding: 24px;
-  color: #555;
+  color: var(--text-tertiary);
   text-align: center;
-  font-size: 13px;
+  font-size: var(--text-body);
 }
 
 .loading-more {
   padding: 12px;
-  color: #445;
+  color: var(--text-tertiary);
   text-align: center;
-  font-size: 12px;
+  font-size: var(--text-row);
 }
 
 .load-end {
   padding: 12px;
-  color: #334;
+  color: var(--text-tertiary);
   text-align: center;
-  font-size: 11px;
+  font-size: var(--text-meta);
 }
 </style>

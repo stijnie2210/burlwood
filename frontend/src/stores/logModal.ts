@@ -1,4 +1,4 @@
-import { defineStore } from 'pinia';
+import { acceptHMRUpdate, defineStore } from 'pinia';
 import { ref } from 'vue';
 
 export const useLogModalStore = defineStore('logModal', () => {
@@ -18,3 +18,9 @@ export const useLogModalStore = defineStore('logModal', () => {
 
   return { open, title, content, show, close };
 });
+
+// Without this, editing a store during `wails dev` keeps the old instance (and its old logic)
+// running until a full reload.
+if (import.meta.hot) {
+  import.meta.hot.accept(acceptHMRUpdate(useLogModalStore, import.meta.hot));
+}

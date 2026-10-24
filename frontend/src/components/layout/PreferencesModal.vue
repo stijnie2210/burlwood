@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue';
 import { usePrefsStore } from '../../stores/prefs';
+import { useDialog } from '../../composables/useDialog';
 import type { AppPrefs } from '../../stores/prefs';
 
 const prefs = usePrefsStore();
@@ -49,15 +50,26 @@ function onOverlayClick(e: MouseEvent) {
     onCancel();
   }
 }
+
+const panelRef = ref<HTMLElement | null>(null);
+const { onKeydown } = useDialog(() => prefs.modalOpen, panelRef, onCancel);
 </script>
 
 <template>
   <Teleport to="body">
     <div v-if="prefs.modalOpen" class="prefs-overlay" @click="onOverlayClick">
-      <div class="prefs-panel">
+      <div
+        ref="panelRef"
+        class="prefs-panel"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="prefs-title"
+        tabindex="-1"
+        @keydown="onKeydown"
+      >
         <div class="prefs-header">
-          <span class="prefs-title">Preferences</span>
-          <button class="prefs-close" @click="onCancel">✕</button>
+          <span id="prefs-title" class="prefs-title">Settings</span>
+          <button class="prefs-close" aria-label="Close settings" @click="onCancel">✕</button>
         </div>
 
         <div class="prefs-body">
@@ -66,8 +78,9 @@ function onOverlayClick(e: MouseEvent) {
             <h3 class="prefs-section-title">General</h3>
 
             <div class="prefs-field prefs-field--stacked">
-              <label class="prefs-label">External editor</label>
+              <label class="prefs-label" for="prefs-editor">External editor</label>
               <input
+                id="prefs-editor"
                 v-model="draft.editor"
                 class="prefs-input"
                 placeholder="e.g. code  (empty = use $VISUAL / $EDITOR)"
@@ -94,7 +107,11 @@ function onOverlayClick(e: MouseEvent) {
             <div class="prefs-row">
               <span class="prefs-label">Enable auto-fetch</span>
               <label class="toggle">
-                <input v-model="draft.autoFetchEnabled" type="checkbox" />
+                <input
+                  v-model="draft.autoFetchEnabled"
+                  aria-label="Enable auto-fetch"
+                  type="checkbox"
+                />
                 <span class="toggle-track"><span class="toggle-thumb" /></span>
               </label>
             </div>
@@ -103,6 +120,7 @@ function onOverlayClick(e: MouseEvent) {
               <span class="prefs-label">Interval</span>
               <select
                 v-model="draft.autoFetchIntervalSecs"
+                aria-label="Auto-fetch interval"
                 class="prefs-select"
                 :disabled="!draft.autoFetchEnabled"
               >
@@ -119,7 +137,11 @@ function onOverlayClick(e: MouseEvent) {
 
             <div class="prefs-row">
               <span class="prefs-label">Initial commit limit</span>
-              <select v-model="draft.commitGraphLimit" class="prefs-select">
+              <select
+                v-model="draft.commitGraphLimit"
+                aria-label="Initial commit limit"
+                class="prefs-select"
+              >
                 <option v-for="n in LIMIT_OPTIONS" :key="n" :value="n">
                   {{ n.toLocaleString() }}
                 </option>
@@ -133,7 +155,11 @@ function onOverlayClick(e: MouseEvent) {
 
             <div class="prefs-row">
               <span class="prefs-label">Context lines</span>
-              <select v-model="draft.diffContextLines" class="prefs-select">
+              <select
+                v-model="draft.diffContextLines"
+                aria-label="Context lines"
+                class="prefs-select"
+              >
                 <option v-for="n in CONTEXT_OPTIONS" :key="n" :value="n">{{ n }}</option>
               </select>
             </div>
@@ -180,14 +206,14 @@ function onOverlayClick(e: MouseEvent) {
 }
 
 .prefs-panel {
-  background: #1a1a2e;
-  border: 1px solid #252545;
+  background: var(--surface-overlay);
+  border: 1px solid var(--border);
   border-radius: 10px;
   width: 460px;
   max-height: 82vh;
   display: flex;
   flex-direction: column;
-  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.7);
+  box-shadow: var(--shadow-modal);
 }
 
 /* Header */
@@ -196,29 +222,29 @@ function onOverlayClick(e: MouseEvent) {
   align-items: center;
   justify-content: space-between;
   padding: 14px 20px;
-  border-bottom: 1px solid #222238;
+  border-bottom: 1px solid var(--border-subtle);
   flex-shrink: 0;
 }
 
 .prefs-title {
-  font-size: 14px;
+  font-size: var(--text-title);
   font-weight: 600;
-  color: #dde;
+  color: var(--text-primary);
 }
 
 .prefs-close {
   background: transparent;
   border: none;
-  color: #556;
-  font-size: 12px;
+  color: var(--text-tertiary);
+  font-size: var(--text-row);
   cursor: pointer;
   padding: 3px 7px;
   border-radius: 4px;
   line-height: 1;
 }
 .prefs-close:hover {
-  color: #99a;
-  background: #222238;
+  color: var(--text-secondary);
+  background: var(--surface-hover);
 }
 
 /* Body */
@@ -230,18 +256,16 @@ function onOverlayClick(e: MouseEvent) {
 
 .prefs-section {
   padding: 14px 20px;
-  border-bottom: 1px solid #1e1e34;
+  border-bottom: 1px solid var(--border-subtle);
 }
 .prefs-section:last-child {
   border-bottom: none;
 }
 
 .prefs-section-title {
-  font-size: 10px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
-  color: #4a4a6a;
+  font-size: var(--text-meta);
+  font-weight: 600;
+  color: var(--text-tertiary);
   margin-bottom: 12px;
 }
 
@@ -269,48 +293,48 @@ function onOverlayClick(e: MouseEvent) {
 }
 
 .prefs-label {
-  font-size: 13px;
-  color: #99a;
+  font-size: var(--text-body);
+  color: var(--text-secondary);
   flex-shrink: 0;
 }
 
 /* Text input */
 .prefs-input {
   width: 100%;
-  background: #12122a;
-  border: 1px solid #252545;
+  background: var(--surface-field);
+  border: 1px solid var(--border);
   border-radius: 6px;
-  color: #ccd;
-  font-size: 12px;
-  font-family: monospace;
+  color: var(--text-primary);
+  font-size: var(--text-row);
+  font-family: var(--font-mono);
   padding: 7px 10px;
   outline: none;
 }
 .prefs-input:focus {
-  border-color: #4f8ef7;
+  border-color: var(--focus-ring);
 }
 .prefs-input::placeholder {
-  color: #3a3a5a;
+  color: var(--text-tertiary);
 }
 
 /* Select */
 .prefs-select {
   appearance: none;
   -webkit-appearance: none;
-  background: #12122a
+  background: var(--surface-field)
     url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath d='M2 4l4 4 4-4' fill='none' stroke='%23556' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E")
     no-repeat right 10px center;
-  border: 1px solid #252545;
+  border: 1px solid var(--border);
   border-radius: 6px;
-  color: #ccd;
-  font-size: 13px;
+  color: var(--text-primary);
+  font-size: var(--text-body);
   padding: 10px 32px 10px 12px;
   outline: none;
   cursor: pointer;
   min-width: 160px;
 }
 .prefs-select:focus {
-  border-color: #4f8ef7;
+  border-color: var(--focus-ring);
 }
 .prefs-select:disabled {
   cursor: default;
@@ -325,24 +349,24 @@ function onOverlayClick(e: MouseEvent) {
 
 .preset-btn {
   padding: 4px 11px;
-  background: #12122a;
-  border: 1px solid #252545;
+  background: var(--surface-field);
+  border: 1px solid var(--border);
   border-radius: 20px;
-  color: #667;
-  font-size: 11px;
+  color: var(--text-tertiary);
+  font-size: var(--text-meta);
   cursor: pointer;
   transition:
     color 0.1s,
     border-color 0.1s;
 }
 .preset-btn:hover {
-  color: #99a;
-  border-color: #3a3a5a;
+  color: var(--text-secondary);
+  border-color: var(--border-strong);
 }
 .preset-btn.active {
-  border-color: #4f8ef7;
-  color: #4f8ef7;
-  background: rgba(79, 142, 247, 0.1);
+  border-color: var(--focus-ring);
+  color: var(--accent-text);
+  background: var(--accent-soft);
 }
 
 /* Toggle switch */
@@ -360,23 +384,27 @@ function onOverlayClick(e: MouseEvent) {
 .toggle-track {
   width: 34px;
   height: 18px;
-  background: #1e1e36;
-  border: 1px solid #2d2d50;
+  background: var(--surface-control);
+  border: 1px solid var(--border);
   border-radius: 9px;
   position: relative;
   transition:
     background 0.15s,
     border-color 0.15s;
 }
+.toggle input:focus-visible + .toggle-track {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
+}
 .toggle input:checked + .toggle-track {
-  background: #4f8ef7;
-  border-color: #4f8ef7;
+  background: var(--accent-fill);
+  border-color: var(--focus-ring);
 }
 .toggle-thumb {
   position: absolute;
   width: 12px;
   height: 12px;
-  background: #556;
+  background: var(--text-secondary);
   border-radius: 50%;
   top: 2px;
   left: 2px;
@@ -386,7 +414,7 @@ function onOverlayClick(e: MouseEvent) {
 }
 .toggle input:checked + .toggle-track .toggle-thumb {
   left: 18px;
-  background: #fff;
+  background: var(--text-on-accent);
 }
 
 /* Radio group */
@@ -402,15 +430,15 @@ function onOverlayClick(e: MouseEvent) {
   cursor: pointer;
 }
 .radio-option input {
-  accent-color: #4f8ef7;
+  accent-color: var(--accent-text);
   cursor: pointer;
 }
 .radio-label {
-  font-size: 12px;
-  color: #99a;
+  font-size: var(--text-row);
+  color: var(--text-secondary);
 }
 .radio-label em {
-  color: #4a4a6a;
+  color: var(--text-tertiary);
   font-style: normal;
   margin-left: 3px;
 }
@@ -421,35 +449,35 @@ function onOverlayClick(e: MouseEvent) {
   justify-content: flex-end;
   gap: 8px;
   padding: 12px 20px;
-  border-top: 1px solid #222238;
+  border-top: 1px solid var(--border-subtle);
   flex-shrink: 0;
 }
 
 .prefs-btn-cancel {
   padding: 6px 16px;
   background: transparent;
-  border: 1px solid #252545;
+  border: 1px solid var(--border);
   border-radius: 6px;
-  color: #667;
-  font-size: 12px;
+  color: var(--text-tertiary);
+  font-size: var(--text-row);
   cursor: pointer;
 }
 .prefs-btn-cancel:hover {
-  color: #99a;
-  border-color: #3a3a5a;
+  color: var(--text-secondary);
+  border-color: var(--border-strong);
 }
 
 .prefs-btn-save {
   padding: 6px 20px;
-  background: #4f8ef7;
+  background: var(--accent-fill);
   border: none;
   border-radius: 6px;
-  color: #fff;
-  font-size: 12px;
+  color: var(--text-on-accent);
+  font-size: var(--text-row);
   font-weight: 600;
   cursor: pointer;
 }
 .prefs-btn-save:hover {
-  background: #6aa0f8;
+  background: var(--accent-fill-hover);
 }
 </style>

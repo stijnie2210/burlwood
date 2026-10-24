@@ -41,13 +41,17 @@ func (a *App) beforeClose(ctx context.Context) bool {
 	return false
 }
 
-func (a *App) OpenRepository(path string) error {
-	if err := a.manager.Open(path); err != nil {
-		return err
+// Returns the repository root, which differs from path when a subfolder was picked.
+func (a *App) OpenRepository(path string) (string, error) {
+	root, err := gitcli.RepoRoot(path)
+	if err != nil {
+		return "", err
 	}
-	abs, _ := filepath.Abs(path)
-	_ = repo.SaveRecentRepo(abs)
-	return nil
+	if err := a.manager.Open(root); err != nil {
+		return "", err
+	}
+	_ = repo.SaveRecentRepo(root)
+	return root, nil
 }
 
 func (a *App) CloseRepository(path string) {
@@ -113,6 +117,14 @@ func (a *App) UnstageFile(repoPath, path string) error {
 	return a.manager.UnstageFile(repoPath, path)
 }
 
+func (a *App) StageFiles(repoPath string, paths []string) error {
+	return a.manager.StageFiles(repoPath, paths)
+}
+
+func (a *App) UnstageFiles(repoPath string, paths []string) error {
+	return a.manager.UnstageFiles(repoPath, paths)
+}
+
 func (a *App) StageHunk(repoPath, patch string) error {
 	return a.manager.StageHunk(repoPath, patch)
 }
@@ -121,8 +133,12 @@ func (a *App) UnstageHunk(repoPath, patch string) error {
 	return a.manager.UnstageHunk(repoPath, patch)
 }
 
-func (a *App) DiscardFile(repoPath, path string) error {
+func (a *App) DiscardFile(repoPath, path string) (gitcli.DiscardSnapshot, error) {
 	return a.manager.DiscardFile(repoPath, path)
+}
+
+func (a *App) UndoDiscard(repoPath string, snap gitcli.DiscardSnapshot) error {
+	return a.manager.UndoDiscard(repoPath, snap)
 }
 
 func (a *App) FetchAll(repoPath string) error {
@@ -137,8 +153,8 @@ func (a *App) SyncAutostash(repoPath string) error {
 	return a.manager.SyncAutostash(repoPath)
 }
 
-func (a *App) PushBranch(repoPath string) error {
-	return a.manager.PushBranch(repoPath)
+func (a *App) PushBranch(repoPath, branch string, force bool) (gitcli.PushResult, error) {
+	return gitcli.PushBranch(repoPath, branch, force)
 }
 
 func (a *App) Stash(repoPath string) error {
@@ -161,8 +177,8 @@ func (a *App) Commit(repoPath, message string, amend bool) error {
 	return a.manager.Commit(repoPath, message, amend)
 }
 
-func (a *App) GetLastCommitSubject(repoPath string) (string, error) {
-	return a.manager.GetLastCommitSubject(repoPath)
+func (a *App) GetAmendInfo(repoPath string) (gitcli.AmendInfo, error) {
+	return a.manager.GetAmendInfo(repoPath)
 }
 
 func (a *App) CheckoutRef(repoPath, ref string) error {
@@ -187,6 +203,14 @@ func (a *App) MoveTag(repoPath, name, hash string) error {
 
 func (a *App) ResetBranch(repoPath, hash, mode string) error {
 	return gitcli.ResetBranch(repoPath, hash, mode)
+}
+
+func (a *App) HardResetBranch(repoPath, hash string) (gitcli.ResetUndo, error) {
+	return gitcli.HardResetWithUndo(repoPath, hash)
+}
+
+func (a *App) UndoHardReset(repoPath string, undo gitcli.ResetUndo) error {
+	return gitcli.UndoHardReset(repoPath, undo)
 }
 
 func (a *App) IsInMerge(repoPath string) (bool, error) {
@@ -239,10 +263,6 @@ func (a *App) DeleteBranch(repoPath, name string, force bool) error {
 
 func (a *App) RenameBranch(repoPath, oldName, newName string) error {
 	return gitcli.RenameBranch(repoPath, oldName, newName)
-}
-
-func (a *App) PushNamedBranch(repoPath, name string) error {
-	return gitcli.PushNamedBranch(repoPath, name)
 }
 
 func (a *App) PushTag(repoPath, tagName string) error {

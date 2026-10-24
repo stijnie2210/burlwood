@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { clampMenuPosition } from './useContextMenu';
+import { clampMenuPosition, handleMenuKeydown } from './useContextMenu';
 
 function makeEl(width: number, height: number): HTMLElement {
   const el = document.createElement('div');
@@ -55,5 +55,48 @@ describe('clampMenuPosition', () => {
     // x=910 + 100 + 20 = 1030 > 1000 — should flip with padding=20
     const result = clampMenuPosition(el, 910, 100, 20);
     expect(result.x).toBe(910 - 100); // 810
+  });
+});
+
+describe('handleMenuKeydown', () => {
+  function makeMenu(): HTMLElement {
+    const menu = document.createElement('div');
+    menu.innerHTML = '<button>One</button><button disabled>Off</button><button>Two</button>';
+    document.body.appendChild(menu);
+    return menu;
+  }
+
+  function key(k: string): KeyboardEvent {
+    return new KeyboardEvent('keydown', { key: k, cancelable: true });
+  }
+
+  it('moves focus down and wraps, skipping disabled items', () => {
+    const menu = makeMenu();
+    const [one, , two] = Array.from(menu.querySelectorAll('button'));
+    one.focus();
+    expect(handleMenuKeydown(key('ArrowDown'), menu, () => {})).toBe(true);
+    expect(document.activeElement).toBe(two);
+    handleMenuKeydown(key('ArrowDown'), menu, () => {});
+    expect(document.activeElement).toBe(one);
+    menu.remove();
+  });
+
+  it('moves focus up from the first item to the last', () => {
+    const menu = makeMenu();
+    const buttons = menu.querySelectorAll('button');
+    buttons[0].focus();
+    handleMenuKeydown(key('ArrowUp'), menu, () => {});
+    expect(document.activeElement).toBe(buttons[2]);
+    menu.remove();
+  });
+
+  it('closes on Escape and ignores other keys', () => {
+    const menu = makeMenu();
+    let closed = false;
+    expect(handleMenuKeydown(key('a'), menu, () => (closed = true))).toBe(false);
+    expect(closed).toBe(false);
+    expect(handleMenuKeydown(key('Escape'), menu, () => (closed = true))).toBe(true);
+    expect(closed).toBe(true);
+    menu.remove();
   });
 });

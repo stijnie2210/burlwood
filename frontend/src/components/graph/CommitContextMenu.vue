@@ -1,8 +1,17 @@
 <script setup lang="ts">
-import { ref, nextTick, onMounted, onUnmounted } from 'vue';
-import { clampMenuPosition } from '../../composables/useContextMenu';
+import { ref, nextTick, onMounted, onUnmounted, watch } from 'vue';
+import {
+  clampMenuPosition,
+  focusFirstMenuItem,
+  handleMenuKeydown,
+  keepFocusInMenu,
+} from '../../composables/useContextMenu';
 import type { GraphRow } from '../../stores/commits';
 import { useToastStore } from '../../stores/toast';
+import { useCommitsStore } from '../../stores/commits';
+import { useBranchesStore } from '../../stores/branches';
+import { useStagingStore } from '../../stores/staging';
+import { useReposStore } from '../../stores/repos';
 import {
   CheckoutRef,
   CreateBranchAt,
@@ -12,6 +21,8 @@ import {
   PushTag,
   ForcePushTag,
   ResetBranch,
+  HardResetBranch,
+  UndoHardReset,
 } from '../../../wailsjs/go/main/App';
 
 const props = defineProps<{
@@ -30,6 +41,7 @@ const toast = useToastStore();
 
 type Mode = 'menu' | 'branch' | 'tag' | 'move-tag' | 'tag-created' | 'revert-confirm';
 const mode = ref<Mode>('menu');
+watch(mode, () => nextTick(() => keepFocusInMenu(menuEl.value)));
 const inputVal = ref('');
 const tagMoved = ref(false);
 const inputEl = ref<HTMLInputElement | null>(null);
@@ -47,6 +59,7 @@ onMounted(() => {
 
   document.addEventListener('mousedown', onOutside, true);
   document.addEventListener('keydown', onKey, true);
+  focusFirstMenuItem(el);
 });
 
 onUnmounted(() => {
@@ -60,10 +73,13 @@ function onOutside(e: MouseEvent) {
   }
 }
 
+// Capture phase, so arrow keys move through the menu instead of the commit selection behind it.
 function onKey(e: KeyboardEvent) {
   if (e.key === 'Escape') {
     emit('close');
+    return;
   }
+  handleMenuKeydown(e, menuEl.value, () => emit('close'));
 }
 
 // ── Actions ──────────────────────────────────────────────────────────────────
@@ -80,7 +96,7 @@ async function checkout() {
     toast.success(`Checked out ${props.row.shortHash} (detached HEAD)`);
     emit('refresh');
   } catch (e) {
-    toast.error(String(e));
+    toast.error(e);
   }
   emit('close');
 }
@@ -101,7 +117,7 @@ async function confirmBranch() {
     toast.success(`Branch '${name}' created at ${props.row.shortHash}`);
     emit('refresh');
   } catch (e) {
-    toast.error(String(e));
+    toast.error(e);
   }
   emit('close');
 }
@@ -120,20 +136,58 @@ async function revert(commitImmediately: boolean) {
     );
     emit('refresh');
   } catch (e) {
-    toast.error(String(e));
+    toast.error(e);
   }
   emit('close');
 }
 
 async function reset(resetMode: 'soft' | 'mixed' | 'hard') {
+  if (resetMode === 'hard') {
+    await hardReset();
+    return;
+  }
   try {
     await ResetBranch(props.repoPath, props.row.hash, resetMode);
     toast.success(`Branch reset (${resetMode}) to ${props.row.shortHash}`);
     emit('refresh');
   } catch (e) {
-    toast.error(String(e));
+    toast.error(e);
   }
   emit('close');
+}
+
+async function hardReset() {
+  const repo = props.repoPath;
+  const short = props.row.shortHash;
+  try {
+    const undo = await HardResetBranch(repo, props.row.hash);
+    await reloadRepo(repo);
+    const lost = undo.stash ? ', local changes discarded' : '';
+    toast.withUndo(`Hard reset to ${short}${lost}`, async () => {
+      try {
+        await UndoHardReset(repo, undo);
+        toast.success(`Reset undone, back at ${undo.head.slice(0, 7)}`);
+      } catch (e) {
+        toast.error(e);
+      }
+      await reloadRepo(repo);
+    });
+  } catch (e) {
+    toast.error(e);
+  }
+  emit('close');
+}
+
+// The menu is unmounted by the time Undo is clicked, so stores are reloaded directly.
+async function reloadRepo(repo: string) {
+  if (useReposStore().activeRepo?.path !== repo) {
+    return;
+  }
+  await Promise.all([
+    useCommitsStore().load(repo),
+    useBranchesStore().load(repo),
+    useStagingStore().load(repo),
+  ]);
 }
 
 function openTagInput() {
@@ -160,7 +214,7 @@ async function confirmMoveTag() {
     emit('refresh');
     mode.value = 'tag-created';
   } catch (e) {
-    toast.error(String(e));
+    toast.error(e);
     emit('close');
   }
 }
@@ -175,7 +229,7 @@ async function confirmTag() {
     emit('refresh');
     mode.value = 'tag-created';
   } catch (e) {
-    toast.error(String(e));
+    toast.error(e);
     emit('close');
   }
 }
@@ -188,9 +242,9 @@ async function pushCreatedTag() {
     } else {
       await PushTag(props.repoPath, name);
     }
-    toast.success(`Tag '${name}' pushed`);
+    toast.success(tagMoved.value ? `Tag '${name}' force-pushed` : `Tag '${name}' pushed`);
   } catch (e) {
-    toast.error(String(e));
+    toast.error(e);
   }
   emit('close');
 }
@@ -200,153 +254,184 @@ async function pushTag(name: string) {
     await PushTag(props.repoPath, name);
     toast.success(`Tag '${name}' pushed`);
   } catch (e) {
-    toast.error(String(e));
+    toast.error(e);
   }
   emit('close');
 }
 </script>
 
 <template>
-  <div ref="menuEl" class="ctx-menu" :style="style" @click.stop>
-    <!-- ── Revert confirmation ──────────────────── -->
-    <template v-if="mode === 'revert-confirm'">
-      <div class="ctx-input-header">Revert {{ row.shortHash }}</div>
-      <div class="ctx-confirm-question">Commit the reverted changes immediately?</div>
-      <div class="ctx-confirm-row">
-        <button class="ctx-confirm-btn ctx-confirm-btn--yes" @click="revert(true)">Yes</button>
-        <button class="ctx-confirm-btn ctx-confirm-btn--no" @click="revert(false)">No</button>
-        <button class="ctx-confirm-btn ctx-confirm-btn--cancel" @click="emit('close')">
-          Cancel
-        </button>
-      </div>
-    </template>
-
-    <!-- ── Branch input ─────────────────────────── -->
-    <template v-else-if="mode === 'branch'">
-      <div class="ctx-input-header">Create branch at {{ row.shortHash }}</div>
-      <div class="ctx-input-row">
-        <input
-          ref="inputEl"
-          v-model="inputVal"
-          class="ctx-input"
-          placeholder="branch-name"
-          @keydown.enter="confirmBranch"
-          @keydown.escape="emit('close')"
-        />
-        <button class="ctx-confirm" @click="confirmBranch">Create</button>
-      </div>
-    </template>
-
-    <!-- ── Tag input ────────────────────────────── -->
-    <template v-else-if="mode === 'tag'">
-      <div class="ctx-input-header">Create tag at {{ row.shortHash }}</div>
-      <div class="ctx-input-row">
-        <input
-          ref="inputEl"
-          v-model="inputVal"
-          class="ctx-input"
-          placeholder="tag-name"
-          @keydown.enter="confirmTag"
-          @keydown.escape="emit('close')"
-        />
-        <button class="ctx-confirm" @click="confirmTag">Create</button>
-      </div>
-    </template>
-
-    <!-- ── Move tag input ────────────────────────────── -->
-    <template v-else-if="mode === 'move-tag'">
-      <div class="ctx-input-header">Move tag to {{ row.shortHash }}</div>
-      <div class="ctx-input-row">
-        <input
-          ref="inputEl"
-          v-model="inputVal"
-          class="ctx-input"
-          placeholder="existing-tag-name"
-          @keydown.enter="confirmMoveTag"
-          @keydown.escape="emit('close')"
-        />
-        <button class="ctx-confirm" @click="confirmMoveTag">Move</button>
-      </div>
-    </template>
-
-    <!-- ── Tag created ────────────────────────────── -->
-    <template v-else-if="mode === 'tag-created'">
-      <div class="ctx-input-header">Tag '{{ inputVal }}' {{ tagMoved ? 'moved' : 'created' }}</div>
-      <div class="ctx-confirm-row">
-        <button class="ctx-confirm-btn ctx-confirm-btn--yes" @click="pushCreatedTag">
-          Push tag
-        </button>
-        <button class="ctx-confirm-btn ctx-confirm-btn--cancel" @click="emit('close')">Done</button>
-      </div>
-    </template>
-
-    <!-- ── Main menu ────────────────────────────── -->
-    <template v-else>
-      <div class="ctx-header">{{ row.shortHash }} — {{ row.subject }}</div>
-
-      <div class="ctx-divider" />
-
-      <button class="ctx-item" @click="copyHash(false)">Copy short SHA</button>
-      <button class="ctx-item" @click="copyHash(true)">Copy full SHA</button>
-
-      <div class="ctx-divider" />
-
-      <button class="ctx-item" @click="checkout">Checkout commit</button>
-      <button class="ctx-item" @click="openBranchInput">Create branch here…</button>
-
-      <div class="ctx-divider" />
-
-      <button class="ctx-item" @click="openRevertConfirm">Revert commit</button>
-
-      <div class="ctx-divider" />
-
-      <div class="ctx-group-label">Reset branch to here</div>
-      <button class="ctx-item ctx-item--indent" @click="reset('soft')">Soft — keep staged</button>
-      <button class="ctx-item ctx-item--indent" @click="reset('mixed')">
-        Mixed — keep working tree
-      </button>
-      <button class="ctx-item ctx-item--indent ctx-item--danger" @click="reset('hard')">
-        Hard — discard all changes
-      </button>
-
-      <div class="ctx-divider" />
-
-      <button class="ctx-item" @click="openTagInput">Create tag here…</button>
-      <button class="ctx-item" @click="openMoveTagInput">Move tag here…</button>
-
-      <template v-if="row.labels.some((l) => l.type === 'tag')">
-        <div class="ctx-divider" />
-        <button
-          v-for="l in row.labels.filter((l) => l.type === 'tag')"
-          :key="l.name"
-          class="ctx-item"
-          @click="pushTag(l.name)"
-        >
-          Push tag '{{ l.name }}'
-        </button>
+  <Teleport to="body">
+    <div ref="menuEl" class="ctx-menu" role="menu" :style="style" @click.stop>
+      <!-- ── Revert confirmation ──────────────────── -->
+      <template v-if="mode === 'revert-confirm'">
+        <div class="ctx-input-header">Revert {{ row.shortHash }}</div>
+        <div class="ctx-choices">
+          <button class="ctx-choice" @click="revert(true)">
+            <span class="ctx-choice-title">Revert and commit</span>
+            <span class="ctx-choice-desc"
+              >Creates a new commit that undoes {{ row.shortHash }}</span
+            >
+          </button>
+          <button class="ctx-choice" @click="revert(false)">
+            <span class="ctx-choice-title">Stage the revert</span>
+            <span class="ctx-choice-desc"
+              >Leaves the changes staged so you can edit them first</span
+            >
+          </button>
+        </div>
       </template>
-    </template>
-  </div>
+
+      <!-- ── Branch input ─────────────────────────── -->
+      <template v-else-if="mode === 'branch'">
+        <div class="ctx-input-header">Create branch at {{ row.shortHash }}</div>
+        <div class="ctx-input-row">
+          <input
+            ref="inputEl"
+            v-model="inputVal"
+            class="ctx-input"
+            placeholder="branch-name"
+            @keydown.enter="confirmBranch"
+            @keydown.escape="emit('close')"
+          />
+          <button class="ctx-confirm" @click="confirmBranch">Create</button>
+        </div>
+      </template>
+
+      <!-- ── Tag input ────────────────────────────── -->
+      <template v-else-if="mode === 'tag'">
+        <div class="ctx-input-header">Create tag at {{ row.shortHash }}</div>
+        <div class="ctx-input-row">
+          <input
+            ref="inputEl"
+            v-model="inputVal"
+            class="ctx-input"
+            placeholder="tag-name"
+            @keydown.enter="confirmTag"
+            @keydown.escape="emit('close')"
+          />
+          <button class="ctx-confirm" @click="confirmTag">Create</button>
+        </div>
+      </template>
+
+      <!-- ── Move tag input ────────────────────────────── -->
+      <template v-else-if="mode === 'move-tag'">
+        <div class="ctx-input-header">Move tag to {{ row.shortHash }}</div>
+        <div class="ctx-input-row">
+          <input
+            ref="inputEl"
+            v-model="inputVal"
+            class="ctx-input"
+            placeholder="existing-tag-name"
+            @keydown.enter="confirmMoveTag"
+            @keydown.escape="emit('close')"
+          />
+          <button class="ctx-confirm" @click="confirmMoveTag">Move</button>
+        </div>
+      </template>
+
+      <!-- ── Tag created ────────────────────────────── -->
+      <template v-else-if="mode === 'tag-created'">
+        <div class="ctx-input-header">
+          Tag '{{ inputVal }}' {{ tagMoved ? 'moved' : 'created' }}
+        </div>
+        <div v-if="tagMoved" class="ctx-confirm-question">
+          The remote still points '{{ inputVal }}' at the old commit. Force-pushing replaces it
+          there, and anyone who already fetched it keeps the old one.
+        </div>
+        <div class="ctx-confirm-row">
+          <button
+            v-if="tagMoved"
+            class="ctx-confirm-btn ctx-confirm-btn--danger"
+            @click="pushCreatedTag"
+          >
+            Force-push tag
+          </button>
+          <button v-else class="ctx-confirm-btn ctx-confirm-btn--yes" @click="pushCreatedTag">
+            Push tag
+          </button>
+          <button class="ctx-confirm-btn ctx-confirm-btn--cancel" @click="emit('close')">
+            Done
+          </button>
+        </div>
+      </template>
+
+      <!-- ── Main menu ────────────────────────────── -->
+      <template v-else>
+        <div class="ctx-header">{{ row.shortHash }} — {{ row.subject }}</div>
+
+        <div class="ctx-divider" />
+
+        <button role="menuitem" class="ctx-item" @click="copyHash(false)">Copy short SHA</button>
+        <button role="menuitem" class="ctx-item" @click="copyHash(true)">Copy full SHA</button>
+
+        <div class="ctx-divider" />
+
+        <button role="menuitem" class="ctx-item" @click="checkout">Checkout commit</button>
+        <button role="menuitem" class="ctx-item" @click="openBranchInput">
+          Create branch here…
+        </button>
+
+        <div class="ctx-divider" />
+
+        <button role="menuitem" class="ctx-item" @click="openRevertConfirm">Revert commit</button>
+
+        <div class="ctx-divider" />
+
+        <div class="ctx-group-label">Reset branch to here</div>
+        <button role="menuitem" class="ctx-item ctx-item--indent" @click="reset('soft')">
+          Soft — keep staged
+        </button>
+        <button role="menuitem" class="ctx-item ctx-item--indent" @click="reset('mixed')">
+          Mixed — keep working tree
+        </button>
+        <button
+          role="menuitem"
+          class="ctx-item ctx-item--indent ctx-item--danger"
+          @click="reset('hard')"
+        >
+          Hard — discard all changes
+        </button>
+
+        <div class="ctx-divider" />
+
+        <button role="menuitem" class="ctx-item" @click="openTagInput">Create tag here…</button>
+        <button role="menuitem" class="ctx-item" @click="openMoveTagInput">Move tag here…</button>
+
+        <template v-if="row.labels.some((l) => l.type === 'tag')">
+          <div class="ctx-divider" />
+          <button
+            v-for="l in row.labels.filter((l) => l.type === 'tag')"
+            :key="l.name"
+            class="ctx-item"
+            @click="pushTag(l.name)"
+          >
+            Push tag '{{ l.name }}'
+          </button>
+        </template>
+      </template>
+    </div>
+  </Teleport>
 </template>
 
 <style scoped>
 .ctx-menu {
   position: fixed;
-  z-index: 1000;
+  z-index: 9999;
   min-width: 230px;
-  background: #141428;
-  border: 1px solid #2a2a50;
+  background: var(--surface-overlay);
+  border: 1px solid var(--border);
   border-radius: 7px;
   padding: 4px 0;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6);
+  box-shadow: var(--shadow-popover);
   user-select: none;
 }
 
 .ctx-header {
   padding: 6px 12px 5px;
-  font-size: 10px;
-  color: #445;
-  font-family: monospace;
+  font-size: var(--text-meta);
+  color: var(--text-tertiary);
+  font-family: var(--font-mono);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -355,7 +440,7 @@ async function pushTag(name: string) {
 
 .ctx-divider {
   height: 1px;
-  background: #1e1e38;
+  background: var(--border-subtle);
   margin: 3px 0;
 }
 
@@ -366,47 +451,84 @@ async function pushTag(name: string) {
   background: none;
   border: none;
   text-align: left;
-  color: #bbc;
-  font-size: 12px;
+  color: var(--text-primary);
+  font-size: var(--text-row);
   cursor: pointer;
   white-space: nowrap;
 }
+.ctx-item:focus-visible,
 .ctx-item:hover {
-  background: #1e1e42;
-  color: #eef;
+  outline: none;
+  background: var(--accent-fill);
+  color: var(--text-on-accent);
 }
 
 .ctx-item--indent {
   padding-left: 22px;
-  color: #99a;
-  font-size: 11px;
+  color: var(--text-secondary);
+  font-size: var(--text-meta);
 }
+.ctx-item--indent:focus-visible,
 .ctx-item--indent:hover {
-  color: #ccd;
+  color: var(--text-on-accent);
 }
 
 .ctx-item--danger {
-  color: #f08080;
+  color: var(--danger);
 }
+.ctx-item--danger:focus-visible,
 .ctx-item--danger:hover {
-  background: #2a1818;
-  color: #f74f4f;
+  background: var(--accent-fill);
+  color: var(--text-on-accent);
 }
 
 .ctx-group-label {
   padding: 5px 14px 2px;
-  font-size: 9px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  color: #445;
+  font-size: var(--text-meta);
+  font-weight: 600;
+  color: var(--text-tertiary);
 }
 
-/* Revert confirm */
+.ctx-choices {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 2px 6px 6px;
+}
+
+.ctx-choice {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 7px 10px;
+  background: none;
+  border: 1px solid transparent;
+  border-radius: 5px;
+  text-align: left;
+  cursor: pointer;
+}
+.ctx-choice:hover {
+  background: var(--surface-hover);
+  border-color: var(--border);
+}
+
+.ctx-choice-title {
+  font-size: var(--text-row);
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.ctx-choice-desc {
+  font-size: var(--text-meta);
+  color: var(--text-secondary);
+  line-height: 1.35;
+}
+
 .ctx-confirm-question {
+  max-width: 260px;
   padding: 4px 12px 8px;
-  font-size: 12px;
-  color: #bbc;
+  font-size: var(--text-row);
+  color: var(--text-primary);
   line-height: 1.4;
 }
 
@@ -420,44 +542,44 @@ async function pushTag(name: string) {
   flex: 1;
   padding: 5px 0;
   border-radius: 4px;
-  font-size: 11px;
+  font-size: var(--text-meta);
   font-weight: 600;
   cursor: pointer;
   border: 1px solid transparent;
 }
 
 .ctx-confirm-btn--yes {
-  background: #1e3d28;
-  color: #4ff7a0;
-  border-color: #2a5a38;
+  background: var(--accent-fill);
+  color: var(--text-on-accent);
+  border-color: var(--accent-fill);
 }
 .ctx-confirm-btn--yes:hover {
-  background: #254830;
+  background: var(--accent-fill-hover);
 }
-.ctx-confirm-btn--no {
-  background: #1a2848;
-  color: #7aadff;
-  border-color: #2a3a60;
+.ctx-confirm-btn--danger {
+  background: var(--danger-fill);
+  color: var(--text-on-accent);
+  border-color: var(--danger-fill);
 }
-.ctx-confirm-btn--no:hover {
-  background: #1e3060;
+.ctx-confirm-btn--danger:hover {
+  background: var(--danger-fill-hover);
 }
 .ctx-confirm-btn--cancel {
   background: transparent;
-  color: #667;
-  border-color: #334;
+  color: var(--text-tertiary);
+  border-color: var(--border);
 }
 .ctx-confirm-btn--cancel:hover {
-  color: #889;
-  border-color: #556;
+  color: var(--text-tertiary);
+  border-color: var(--border-strong);
 }
 
 /* Input mode */
 .ctx-input-header {
   padding: 8px 12px 4px;
-  font-size: 11px;
-  color: #667;
-  font-family: monospace;
+  font-size: var(--text-meta);
+  color: var(--text-tertiary);
+  font-family: var(--font-mono);
 }
 
 .ctx-input-row {
@@ -468,33 +590,33 @@ async function pushTag(name: string) {
 
 .ctx-input {
   flex: 1;
-  background: #0f0f1a;
-  border: 1px solid #2d2d50;
+  background: var(--surface-field);
+  border: 1px solid var(--border);
   border-radius: 4px;
-  color: #ccc;
-  font-size: 12px;
+  color: var(--text-primary);
+  font-size: var(--text-row);
   padding: 4px 8px;
   outline: none;
-  font-family: monospace;
+  font-family: var(--font-mono);
 }
 .ctx-input:focus {
-  border-color: #4f8ef7;
+  border-color: var(--focus-ring);
 }
 .ctx-input::placeholder {
-  color: #334;
+  color: var(--text-tertiary);
 }
 
 .ctx-confirm {
   padding: 4px 10px;
-  background: #4f8ef7;
+  background: var(--accent-fill);
   border: none;
   border-radius: 4px;
-  color: white;
-  font-size: 11px;
+  color: var(--text-on-accent);
+  font-size: var(--text-meta);
   cursor: pointer;
   white-space: nowrap;
 }
 .ctx-confirm:hover {
-  background: #6aa0f8;
+  background: var(--accent-fill-hover);
 }
 </style>

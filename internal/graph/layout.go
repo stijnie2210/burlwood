@@ -1,8 +1,9 @@
 package graph
 
+// Muted and kept clear of the add/delete green and red so lanes never read as diff state.
 var laneColors = []string{
-	"#4f8ef7", "#f7964f", "#4ff7a0", "#f74f4f", "#c74ff7",
-	"#f7d44f", "#4ff7f7", "#f74fca", "#7ef74f", "#ff9f43",
+	"#6aa5f0", "#e3a35c", "#b48be8", "#4fbfb5", "#e88aac",
+	"#c9b75b", "#8fa0c0",
 }
 
 type Label struct {

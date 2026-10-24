@@ -1,7 +1,10 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from 'vue';
 import { useToastStore } from '../../stores/toast';
+import { useStagingStore } from '../../stores/staging';
 import { GetConflictContent, ResolveConflict } from '../../../wailsjs/go/main/App';
+import { parseConflicts, hasConflictMarkers } from '../../utils/conflicts';
+import type { ContextChunk, ParsedConflict } from '../../utils/conflicts';
 
 const props = defineProps<{
   repoPath: string;
@@ -13,18 +16,14 @@ const emit = defineEmits<{
 }>();
 
 const toast = useToastStore();
+// During a rebase git swaps the meaning: "ours" is the branch being rebased onto.
+const staging = useStagingStore();
 const loading = ref(true);
 const saving = ref(false);
 
 type SelectedLine = { side: 'ours' | 'theirs'; index: number };
 
-type ContextChunk = { type: 'context'; lines: string[] };
-type ConflictChunk = {
-  type: 'conflict';
-  ours: string[];
-  theirs: string[];
-  oursLabel: string;
-  theirsLabel: string;
+type ConflictChunk = ParsedConflict & {
   accepted: 'ours' | 'theirs' | 'custom' | null;
   selection: SelectedLine[];
   textOverride: string | null; // set when user manually edits preview; null = derive from selection
@@ -49,9 +48,11 @@ async function loadConflict() {
   chunks.value = [];
   try {
     const content = await GetConflictContent(props.repoPath, props.path);
-    chunks.value = parseConflicts(content.working);
+    chunks.value = parseConflicts(content.working).map((c) =>
+      c.type === 'context' ? c : { ...c, accepted: null, selection: [], textOverride: null }
+    );
   } catch (e) {
-    toast.error(String(e));
+    toast.error(e);
   } finally {
     loading.value = false;
   }
@@ -59,64 +60,6 @@ async function loadConflict() {
 
 onMounted(loadConflict);
 watch(() => props.path, loadConflict);
-
-function parseConflicts(text: string): Chunk[] {
-  const result: Chunk[] = [];
-  const lines = text.split('\n');
-
-  let state: 'context' | 'ours' | 'theirs' = 'context';
-  let contextLines: string[] = [];
-  let oursLines: string[] = [];
-  let theirsLines: string[] = [];
-  let oursLabel = 'HEAD';
-
-  for (const line of lines) {
-    if (line.startsWith('<<<<<<< ')) {
-      if (contextLines.length) {
-        result.push({ type: 'context', lines: [...contextLines] });
-      }
-      contextLines = [];
-      oursLabel = line.slice(8);
-      oursLines = [];
-      state = 'ours';
-    } else if (line === '=======' && state === 'ours') {
-      state = 'theirs';
-      theirsLines = [];
-    } else if (line.startsWith('>>>>>>> ') && state === 'theirs') {
-      const theirsLabel = line.slice(8);
-      result.push({
-        type: 'conflict',
-        ours: [...oursLines],
-        theirs: [...theirsLines],
-        oursLabel,
-        theirsLabel,
-        accepted: null,
-        selection: [],
-        textOverride: null,
-      });
-      oursLines = [];
-      theirsLines = [];
-      state = 'context';
-    } else {
-      if (state === 'context') {
-        contextLines.push(line);
-      } else if (state === 'ours') {
-        oursLines.push(line);
-      } else {
-        theirsLines.push(line);
-      }
-    }
-  }
-
-  while (contextLines.length && contextLines[contextLines.length - 1] === '') {
-    contextLines.pop();
-  }
-  if (contextLines.length) {
-    result.push({ type: 'context', lines: contextLines });
-  }
-
-  return result;
-}
 
 function asConflict(c: Chunk): ConflictChunk {
   return c as ConflictChunk;
@@ -187,6 +130,16 @@ function acceptAll(side: 'ours' | 'theirs') {
   }
 }
 
+function focusSiblingLine(e: KeyboardEvent, dir: 1 | -1) {
+  const el = e.currentTarget as HTMLElement;
+  const next = (
+    dir === 1 ? el.nextElementSibling : el.previousElementSibling
+  ) as HTMLElement | null;
+  if (next?.getAttribute('role') === 'checkbox') {
+    next.focus();
+  }
+}
+
 // ── Preview / manual edit ────────────────────────────────────────────────────
 
 function previewText(chunk: ConflictChunk): string {
@@ -232,13 +185,18 @@ async function saveAndStage() {
   if (unresolvedCount.value > 0 || saving.value) {
     return;
   }
+  const resolved = buildResolved();
+  if (hasConflictMarkers(resolved)) {
+    toast.error('The result still contains conflict markers. Edit the preview before saving.');
+    return;
+  }
   saving.value = true;
   try {
-    await ResolveConflict(props.repoPath, props.path, buildResolved());
+    await ResolveConflict(props.repoPath, props.path, resolved);
     toast.success(`Resolved ${props.path.split('/').pop()}`);
     emit('resolved');
   } catch (e) {
-    toast.error(String(e));
+    toast.error(e);
   } finally {
     saving.value = false;
   }
@@ -274,26 +232,38 @@ async function saveAndStage() {
         >
           <!-- Ours side -->
           <div class="cv-side-header cv-ours-header">
-            <span class="cv-side-label">Ours — {{ asConflict(chunk).oursLabel }}</span>
+            <span class="cv-side-label">
+              Ours — {{ asConflict(chunk).oursLabel }}
+              <span v-if="staging.isInRebase" class="cv-side-hint"
+                >the branch you're rebasing onto</span
+              >
+            </span>
             <button
               class="cv-quick-btn cv-quick-ours"
               :class="{ active: asConflict(chunk).accepted === 'ours' }"
               @click="acceptSide(asConflict(chunk), 'ours')"
             >
-              {{ asConflict(chunk).accepted === 'ours' ? '✓ All Ours' : 'Accept All Ours' }}
+              {{ asConflict(chunk).accepted === 'ours' ? 'Using Ours' : 'Use Ours' }}
             </button>
           </div>
-          <div class="cv-lines cv-lines--ours">
+          <div class="cv-lines cv-lines--ours" role="group" :aria-label="`Ours lines`">
             <div
               v-for="(line, li) in asConflict(chunk).ours"
               :key="'o' + li"
               class="cv-line"
               :class="{ 'cv-line--selected': isLineSelected(asConflict(chunk), 'ours', li) }"
+              role="checkbox"
+              :aria-checked="isLineSelected(asConflict(chunk), 'ours', li)"
+              :tabindex="li === 0 ? 0 : -1"
               :title="
                 isLineSelected(asConflict(chunk), 'ours', li)
-                  ? 'Click to deselect'
-                  : 'Click to include this line'
+                  ? 'Click or Space to deselect'
+                  : 'Click or Space to include this line'
               "
+              @keydown.space.prevent.stop="toggleLine(asConflict(chunk), 'ours', li)"
+              @keydown.enter.prevent.stop="toggleLine(asConflict(chunk), 'ours', li)"
+              @keydown.down.prevent.stop="focusSiblingLine($event, 1)"
+              @keydown.up.prevent.stop="focusSiblingLine($event, -1)"
               @click="toggleLine(asConflict(chunk), 'ours', li)"
             >
               <span class="cv-line-badge">
@@ -311,30 +281,58 @@ async function saveAndStage() {
             </div>
           </div>
 
+          <!-- Base (diff3/zdiff3): read-only reference, never written into the result -->
+          <template v-if="asConflict(chunk).base">
+            <div class="cv-side-header cv-base-header">
+              <span class="cv-side-label">
+                Base{{ asConflict(chunk).baseLabel ? ` — ${asConflict(chunk).baseLabel}` : '' }}
+              </span>
+            </div>
+            <div class="cv-lines cv-lines--base">
+              <div v-for="(line, li) in asConflict(chunk).base" :key="'b' + li" class="cv-line">
+                <span class="cv-line-badge" />
+                <code class="cv-line-content">{{ line || ' ' }}</code>
+              </div>
+              <div v-if="asConflict(chunk).base!.length === 0" class="cv-line cv-line--empty">
+                (empty)
+              </div>
+            </div>
+          </template>
+
           <div class="cv-separator" />
 
           <!-- Theirs side -->
           <div class="cv-side-header cv-theirs-header">
-            <span class="cv-side-label">Theirs — {{ asConflict(chunk).theirsLabel }}</span>
+            <span class="cv-side-label">
+              Theirs — {{ asConflict(chunk).theirsLabel }}
+              <span v-if="staging.isInRebase" class="cv-side-hint">your commit being replayed</span>
+            </span>
             <button
               class="cv-quick-btn cv-quick-theirs"
               :class="{ active: asConflict(chunk).accepted === 'theirs' }"
               @click="acceptSide(asConflict(chunk), 'theirs')"
             >
-              {{ asConflict(chunk).accepted === 'theirs' ? '✓ All Theirs' : 'Accept All Theirs' }}
+              {{ asConflict(chunk).accepted === 'theirs' ? 'Using Theirs' : 'Use Theirs' }}
             </button>
           </div>
-          <div class="cv-lines cv-lines--theirs">
+          <div class="cv-lines cv-lines--theirs" role="group" :aria-label="`Theirs lines`">
             <div
               v-for="(line, li) in asConflict(chunk).theirs"
               :key="'t' + li"
               class="cv-line"
               :class="{ 'cv-line--selected': isLineSelected(asConflict(chunk), 'theirs', li) }"
+              role="checkbox"
+              :aria-checked="isLineSelected(asConflict(chunk), 'theirs', li)"
+              :tabindex="li === 0 ? 0 : -1"
               :title="
                 isLineSelected(asConflict(chunk), 'theirs', li)
-                  ? 'Click to deselect'
-                  : 'Click to include this line'
+                  ? 'Click or Space to deselect'
+                  : 'Click or Space to include this line'
               "
+              @keydown.space.prevent.stop="toggleLine(asConflict(chunk), 'theirs', li)"
+              @keydown.enter.prevent.stop="toggleLine(asConflict(chunk), 'theirs', li)"
+              @keydown.down.prevent.stop="focusSiblingLine($event, 1)"
+              @keydown.up.prevent.stop="focusSiblingLine($event, -1)"
               @click="toggleLine(asConflict(chunk), 'theirs', li)"
             >
               <span class="cv-line-badge">
@@ -386,8 +384,8 @@ async function saveAndStage() {
 
     <!-- Footer -->
     <div v-if="!loading" class="cv-footer">
-      <button class="cv-footer-btn" @click="acceptAll('ours')">Accept All Ours</button>
-      <button class="cv-footer-btn" @click="acceptAll('theirs')">Accept All Theirs</button>
+      <button class="cv-footer-btn" @click="acceptAll('ours')">Ours for every conflict</button>
+      <button class="cv-footer-btn" @click="acceptAll('theirs')">Theirs for every conflict</button>
       <div class="cv-footer-spacer" />
       <button
         class="cv-save-btn"
@@ -408,7 +406,23 @@ async function saveAndStage() {
   flex-direction: column;
   overflow: hidden;
   min-width: 0;
-  background: #0a0a14;
+  background: var(--surface-sunken);
+}
+
+.cv-side-hint {
+  margin-left: var(--space-2);
+  font-weight: 400;
+  color: var(--text-tertiary);
+}
+
+/* Base section (diff3) */
+.cv-base-header {
+  background: var(--surface-raised);
+  border-top: 1px solid var(--border-subtle);
+}
+.cv-lines--base .cv-line {
+  cursor: default;
+  color: var(--text-tertiary);
 }
 
 /* Header */
@@ -417,15 +431,15 @@ async function saveAndStage() {
   align-items: center;
   gap: 12px;
   padding: 8px 14px;
-  background: #0f0f1a;
-  border-bottom: 1px solid #1e1e38;
+  background: var(--surface-base);
+  border-bottom: 1px solid var(--border-subtle);
   flex-shrink: 0;
 }
 
 .cv-filepath {
-  font-family: monospace;
-  font-size: 12px;
-  color: #8899cc;
+  font-family: var(--font-mono);
+  font-size: var(--text-row);
+  color: var(--text-primary);
   flex: 1;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -433,12 +447,12 @@ async function saveAndStage() {
 }
 
 .cv-status {
-  font-size: 11px;
-  color: #f0a050;
+  font-size: var(--text-meta);
+  color: var(--modified);
   white-space: nowrap;
 }
 .cv-status.resolved {
-  color: #4ff7a0;
+  color: var(--add);
 }
 
 .cv-loading {
@@ -446,8 +460,8 @@ async function saveAndStage() {
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #445;
-  font-size: 13px;
+  color: var(--text-tertiary);
+  font-size: var(--text-body);
 }
 
 /* Body */
@@ -461,24 +475,25 @@ async function saveAndStage() {
 .cv-context {
   margin: 0;
   padding: 3px 14px;
-  font-family: monospace;
-  font-size: 11px;
+  font-family: var(--font-mono);
+  font-size: var(--text-meta);
   line-height: 1.5;
-  color: #445;
-  background: #0a0a14;
+  color: var(--text-tertiary);
+  background: var(--surface-sunken);
   white-space: pre-wrap;
   word-break: break-all;
+  tab-size: 4;
 }
 
 /* Conflict block */
 .cv-conflict {
   margin: 8px 10px;
-  border: 1px solid #2e1515;
+  border: 1px solid var(--danger-border);
   border-radius: 6px;
   overflow: hidden;
 }
 .cv-conflict--resolved {
-  border-color: #1a3a2a;
+  border-color: var(--add-border);
 }
 
 /* Side header */
@@ -487,21 +502,21 @@ async function saveAndStage() {
   align-items: center;
   justify-content: space-between;
   padding: 5px 8px 5px 10px;
-  border-bottom: 1px solid #1e1e38;
+  border-bottom: 1px solid var(--border-subtle);
 }
 .cv-ours-header {
-  background: #121e16;
-  border-color: #1a2e20;
+  background: var(--ours-soft);
+  border-color: var(--ours-border);
 }
 .cv-theirs-header {
-  background: #1a1318;
-  border-color: #2a1820;
+  background: var(--theirs-soft);
+  border-color: var(--theirs-border);
 }
 
 .cv-side-label {
-  font-family: monospace;
-  font-size: 10px;
-  color: #556;
+  font-family: var(--font-mono);
+  font-size: var(--text-meta);
+  color: var(--text-tertiary);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -512,35 +527,35 @@ async function saveAndStage() {
   flex-shrink: 0;
   padding: 2px 9px;
   border-radius: 3px;
-  font-size: 10px;
+  font-size: var(--text-meta);
   font-weight: 600;
   cursor: pointer;
   border: 1px solid transparent;
   transition: background 0.1s;
 }
 .cv-quick-ours {
-  background: #1a2e20;
-  color: #5db880;
-  border-color: #2a4a30;
+  background: var(--ours-soft);
+  color: var(--ours);
+  border-color: var(--ours-border);
 }
 .cv-quick-ours:hover {
-  background: #1e3828;
+  background: var(--ours-soft-strong);
 }
 .cv-quick-ours.active {
-  background: #1e3828;
-  color: #4ff7a0;
+  background: var(--ours-soft-strong);
+  color: var(--ours);
 }
 .cv-quick-theirs {
-  background: #1a1a30;
-  color: #5580bb;
-  border-color: #252548;
+  background: var(--theirs-soft);
+  color: var(--theirs);
+  border-color: var(--theirs-border);
 }
 .cv-quick-theirs:hover {
-  background: #1e1e3a;
+  background: var(--theirs-soft);
 }
 .cv-quick-theirs.active {
-  background: #1e2248;
-  color: #7aadff;
+  background: var(--theirs-soft-strong);
+  color: var(--theirs);
 }
 
 /* Line list */
@@ -548,10 +563,10 @@ async function saveAndStage() {
   padding: 3px 0;
 }
 .cv-lines--ours {
-  background: rgba(79, 247, 160, 0.025);
+  background: var(--ours-line-bg);
 }
 .cv-lines--theirs {
-  background: rgba(122, 173, 255, 0.025);
+  background: var(--theirs-line-bg);
 }
 
 /* Individual line */
@@ -569,15 +584,15 @@ async function saveAndStage() {
   background: rgba(255, 255, 255, 0.04);
 }
 .cv-lines--ours .cv-line--selected {
-  background: rgba(79, 247, 160, 0.12);
+  background: var(--ours-soft);
 }
 .cv-lines--theirs .cv-line--selected {
-  background: rgba(122, 173, 255, 0.12);
+  background: var(--theirs-soft);
 }
 
 .cv-line--empty {
-  font-size: 10px;
-  color: #334;
+  font-size: var(--text-meta);
+  color: var(--text-tertiary);
   font-style: italic;
   padding: 4px 10px;
   cursor: default;
@@ -588,11 +603,11 @@ async function saveAndStage() {
   width: 22px;
   flex-shrink: 0;
   text-align: center;
-  font-size: 10px;
+  font-size: var(--text-meta);
   line-height: 20px;
 }
 .cv-badge-dot {
-  color: #2a2a44;
+  color: var(--border-strong);
 }
 .cv-badge-num {
   display: inline-block;
@@ -600,38 +615,39 @@ async function saveAndStage() {
   height: 16px;
   line-height: 16px;
   border-radius: 50%;
-  font-size: 9px;
+  font-size: var(--text-meta);
   font-weight: 700;
   text-align: center;
 }
 .cv-badge-num.ours {
-  background: rgba(79, 247, 160, 0.25);
-  color: #4ff7a0;
+  background: var(--ours-soft-strong);
+  color: var(--ours);
 }
 .cv-badge-num.theirs {
-  background: rgba(122, 173, 255, 0.25);
-  color: #7aadff;
+  background: var(--theirs-soft-strong);
+  color: var(--theirs);
 }
 
 /* Line content */
 .cv-line-content {
-  font-family: monospace;
-  font-size: 11px;
+  font-family: var(--font-mono);
+  font-size: var(--text-meta);
   line-height: 1.55;
   white-space: pre-wrap;
   word-break: break-all;
+  tab-size: 4;
 }
 .cv-lines--ours .cv-line-content {
-  color: #8de8a8;
+  color: var(--ours-fg);
 }
 .cv-lines--theirs .cv-line-content {
-  color: #7aadff;
+  color: var(--theirs-fg);
 }
 
 /* Separator between ours/theirs */
 .cv-separator {
   height: 1px;
-  background: #1e1e30;
+  background: var(--border-subtle);
 }
 
 /* Preview / editor */
@@ -640,13 +656,11 @@ async function saveAndStage() {
   align-items: center;
   justify-content: space-between;
   padding: 5px 10px 4px;
-  background: #0e0e20;
-  border-top: 1px solid #1e1e38;
-  font-size: 9px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  color: #445;
+  background: var(--surface-raised);
+  border-top: 1px solid var(--border-subtle);
+  font-size: var(--text-meta);
+  font-weight: 600;
+  color: var(--text-tertiary);
 }
 
 .cv-preview-actions {
@@ -656,33 +670,31 @@ async function saveAndStage() {
 
 .cv-edited-badge {
   margin-left: 5px;
-  font-size: 8px;
+  font-size: var(--text-meta);
   font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  color: #f0a050;
-  background: rgba(240, 160, 80, 0.12);
-  border: 1px solid rgba(240, 160, 80, 0.25);
+  color: var(--modified);
+  background: var(--warning-soft);
+  border: 1px solid var(--warning-border);
   border-radius: 3px;
   padding: 0 4px;
   vertical-align: middle;
 }
 
 .cv-clear-btn {
-  font-size: 10px;
+  font-size: var(--text-meta);
   padding: 1px 6px;
   background: transparent;
-  border: 1px solid #252540;
+  border: 1px solid var(--border);
   border-radius: 3px;
-  color: #556;
+  color: var(--text-tertiary);
   cursor: pointer;
   text-transform: none;
   font-weight: 400;
   letter-spacing: 0;
 }
 .cv-clear-btn:hover {
-  border-color: #4f8ef7;
-  color: #7aadff;
+  border-color: var(--focus-ring);
+  color: var(--accent-text);
 }
 
 .cv-preview-editor {
@@ -691,12 +703,12 @@ async function saveAndStage() {
   min-height: 60px;
   max-height: 240px;
   resize: vertical;
-  background: #0d0d1e;
+  background: var(--surface-field);
   border: none;
-  border-top: 1px solid #181830;
-  color: #b0c8e8;
-  font-family: monospace;
-  font-size: 11px;
+  border-top: 1px solid var(--border);
+  color: var(--text-primary);
+  font-family: var(--font-mono);
+  font-size: var(--text-meta);
   line-height: 1.55;
   padding: 6px 10px 6px 26px;
   outline: none;
@@ -704,8 +716,8 @@ async function saveAndStage() {
   overflow-y: auto;
 }
 .cv-preview-editor:focus {
-  background: #0e0e22;
-  border-top-color: #4f8ef7;
+  background: var(--surface-field);
+  border-top-color: var(--focus-ring);
 }
 
 /* Footer */
@@ -714,8 +726,8 @@ async function saveAndStage() {
   align-items: center;
   gap: 6px;
   padding: 8px 12px;
-  background: #0f0f1a;
-  border-top: 1px solid #1e1e38;
+  background: var(--surface-base);
+  border-top: 1px solid var(--border-subtle);
   flex-shrink: 0;
 }
 .cv-footer-spacer {
@@ -724,39 +736,39 @@ async function saveAndStage() {
 
 .cv-footer-btn {
   padding: 4px 10px;
-  background: #141428;
-  border: 1px solid #2d2d50;
+  background: var(--surface-control);
+  border: 1px solid var(--border);
   border-radius: 4px;
-  color: #667;
-  font-size: 11px;
+  color: var(--text-tertiary);
+  font-size: var(--text-meta);
   cursor: pointer;
 }
 .cv-footer-btn:hover {
-  background: #1a1a36;
-  color: #889;
-  border-color: #3a3a68;
+  background: var(--surface-control-hover);
+  color: var(--text-tertiary);
+  border-color: var(--border-strong);
 }
 
 .cv-save-btn {
   padding: 5px 16px;
   border-radius: 4px;
-  font-size: 12px;
+  font-size: var(--text-row);
   font-weight: 600;
   cursor: pointer;
-  border: 1px solid #252540;
-  background: #1a1a30;
-  color: #445;
+  border: 1px solid var(--border);
+  background: var(--surface-control);
+  color: var(--text-tertiary);
   transition: background 0.15s;
 }
 .cv-save-btn:disabled {
   cursor: default;
 }
 .cv-save-btn--ready {
-  background: #1e3d28;
-  color: #4ff7a0;
-  border-color: #2a5a38;
+  background: var(--accent-fill);
+  color: var(--text-on-accent);
+  border-color: var(--accent-fill);
 }
 .cv-save-btn--ready:hover {
-  background: #254830;
+  background: var(--accent-fill-hover);
 }
 </style>

@@ -2,12 +2,14 @@
 import { computed } from 'vue';
 import type { FileDiff, Hunk } from '../../stores/staging';
 import { highlightLine, languageForPath } from '../../utils/highlight';
+import { useLineBudget } from '../../composables/useLineBudget';
 
 const props = defineProps<{
   diffs: FileDiff[];
   mode: 'stage' | 'unstage';
   path: string;
   diffLoading: boolean;
+  diffError?: string | null;
 }>();
 
 const lang = computed(() => languageForPath(props.path));
@@ -32,6 +34,11 @@ const flatHunks = computed(() => {
 });
 
 const isBinary = computed(() => props.diffs.some((d) => d.isBinary));
+
+const { visible, hiddenLines, revealAll } = useLineBudget(
+  () => flatHunks.value,
+  () => `${props.path}:${props.mode}`
+);
 </script>
 
 <template>
@@ -63,6 +70,10 @@ const isBinary = computed(() => props.diffs.some((d) => d.isBinary));
     <!-- Loading state -->
     <div v-if="diffLoading" class="hunk-loading">Loading diff…</div>
 
+    <div v-else-if="diffError" class="hunk-empty hunk-error" role="alert">
+      Couldn't load this diff. {{ diffError }}
+    </div>
+
     <!-- Binary file notice -->
     <div v-else-if="isBinary" class="hunk-empty">Binary file — no diff available</div>
 
@@ -71,22 +82,24 @@ const isBinary = computed(() => props.diffs.some((d) => d.isBinary));
 
     <!-- Hunks -->
     <div v-else class="hunks-scroll">
-      <div v-for="(hunk, hi) in flatHunks" :key="hunk.header + hi" class="hunk-block">
+      <div v-for="(entry, hi) in visible" :key="entry.hunk.header + hi" class="hunk-block">
         <div class="hunk-header-row">
-          <span class="hunk-header-text">{{ hunk.header }}</span>
-          <button
-            v-if="mode === 'stage'"
-            class="hunk-btn stage-btn"
-            @click="emit('stage-hunk', hunk)"
-          >
-            Stage Hunk
-          </button>
-          <button v-else class="hunk-btn unstage-btn" @click="emit('unstage-hunk', hunk)">
-            Unstage Hunk
-          </button>
+          <span class="hunk-header-text">{{ entry.hunk.header }}</span>
+          <template v-if="!entry.truncated">
+            <button
+              v-if="mode === 'stage'"
+              class="hunk-btn stage-btn"
+              @click="emit('stage-hunk', entry.hunk)"
+            >
+              Stage Hunk
+            </button>
+            <button v-else class="hunk-btn unstage-btn" @click="emit('unstage-hunk', entry.hunk)">
+              Unstage Hunk
+            </button>
+          </template>
         </div>
         <div
-          v-for="(line, li) in hunk.lines"
+          v-for="(line, li) in entry.lines"
           :key="li"
           class="diff-line"
           :class="`diff-line--${line.type}`"
@@ -99,6 +112,9 @@ const isBinary = computed(() => props.diffs.some((d) => d.isBinary));
           <span class="diff-content" v-html="highlightLine(line.content, lang)"></span>
         </div>
       </div>
+      <button v-if="hiddenLines" class="diff-show-all" @click="revealAll">
+        Show {{ hiddenLines.toLocaleString() }} more lines
+      </button>
     </div>
   </div>
 </template>
@@ -109,26 +125,28 @@ const isBinary = computed(() => props.diffs.some((d) => d.isBinary));
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  background: #0d0d18;
-  font-size: 12px;
+  background: var(--surface-sunken);
+  font-size: var(--text-row);
   min-width: 0;
 }
 
 .file-action-bar {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 7px 12px;
-  background: #111124;
-  border-bottom: 1px solid #1e1e36;
+  gap: var(--space-2);
+  padding: 0 var(--inset-panel);
+  background: var(--surface-raised);
+  border-bottom: 1px solid var(--border-subtle);
   flex-shrink: 0;
+  height: var(--file-header-h);
+  box-sizing: border-box;
 }
 
 .file-action-path {
   flex: 1;
-  font-family: monospace;
-  font-size: 12px;
-  color: #ccc;
+  font-family: var(--font-mono);
+  font-size: var(--text-row);
+  color: var(--text-primary);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -144,42 +162,46 @@ const isBinary = computed(() => props.diffs.some((d) => d.isBinary));
   padding: 3px 10px;
   border-radius: 4px;
   border: 1px solid;
-  font-size: 11px;
+  font-size: var(--text-meta);
   cursor: pointer;
   font-weight: 500;
 }
 
 .action-btn.stage-btn {
-  background: rgba(79, 247, 160, 0.12);
-  border-color: #3a8a60;
-  color: #4ff7a0;
+  background: var(--add-soft);
+  border-color: var(--add-border);
+  color: var(--add);
 }
 .action-btn.stage-btn:hover {
-  background: rgba(79, 247, 160, 0.22);
+  background: var(--add-soft-strong);
 }
 .action-btn.unstage-btn {
-  background: rgba(79, 140, 247, 0.12);
-  border-color: #3a5e8a;
-  color: #7aadff;
+  background: var(--accent-soft);
+  border-color: var(--accent-border);
+  color: var(--accent-text);
 }
 .action-btn.unstage-btn:hover {
-  background: rgba(79, 140, 247, 0.22);
+  background: var(--accent-soft-strong);
 }
 .action-btn.discard-btn {
-  background: rgba(247, 79, 79, 0.1);
-  border-color: #7a3a3a;
-  color: #f79090;
+  background: var(--danger-soft);
+  border-color: var(--danger-border);
+  color: var(--danger);
 }
 .action-btn.discard-btn:hover {
-  background: rgba(247, 79, 79, 0.2);
+  background: var(--danger-soft-hover);
 }
 
 .hunk-loading,
 .hunk-empty {
   padding: 24px;
-  color: #778;
+  color: var(--text-secondary);
   text-align: center;
-  font-size: 13px;
+  font-size: var(--text-body);
+}
+
+.hunk-error {
+  color: var(--danger);
 }
 
 .hunks-scroll {
@@ -188,92 +210,93 @@ const isBinary = computed(() => props.diffs.some((d) => d.isBinary));
 }
 
 .hunk-block {
-  border-bottom: 1px solid #131328;
+  border-bottom: 1px solid var(--border-subtle);
 }
 
 .hunk-header-row {
   display: flex;
   align-items: center;
   padding: 3px 10px;
-  background: #0e0e20;
-  border-top: 1px solid #1a1a30;
-  border-bottom: 1px solid #1a1a30;
+  background: var(--surface-raised);
+  border-top: 1px solid var(--border-subtle);
+  border-bottom: 1px solid var(--border-subtle);
   gap: 8px;
 }
 
 .hunk-header-text {
   flex: 1;
-  font-family: monospace;
-  font-size: 11px;
-  color: #5577aa;
+  font-family: var(--font-mono);
+  font-size: var(--text-meta);
+  color: var(--text-tertiary);
 }
 
 .hunk-btn {
   padding: 2px 8px;
   border-radius: 3px;
   border: 1px solid;
-  font-size: 10px;
+  font-size: var(--text-meta);
   cursor: pointer;
   flex-shrink: 0;
   font-weight: 500;
 }
 .hunk-btn.stage-btn {
-  background: rgba(79, 247, 160, 0.08);
-  border-color: #2a6040;
-  color: #4ff7a0;
+  background: var(--add-soft);
+  border-color: var(--add-border);
+  color: var(--add);
 }
 .hunk-btn.stage-btn:hover {
-  background: rgba(79, 247, 160, 0.18);
+  background: var(--add-soft-strong);
 }
 .hunk-btn.unstage-btn {
-  background: rgba(79, 140, 247, 0.08);
-  border-color: #2a4060;
-  color: #7aadff;
+  background: var(--accent-soft);
+  border-color: var(--accent-border);
+  color: var(--accent-text);
 }
 .hunk-btn.unstage-btn:hover {
-  background: rgba(79, 140, 247, 0.18);
+  background: var(--accent-soft-strong);
 }
 
 .diff-line {
   display: flex;
-  font-family: monospace;
-  font-size: 11px;
-  line-height: 18px;
+  font-family: var(--font-mono);
+  font-size: var(--text-row);
+  line-height: 19px;
   white-space: pre;
+  tab-size: 4;
 }
 .diff-line--add {
-  background: rgba(79, 247, 160, 0.06);
+  background: var(--add-line-bg);
 }
 .diff-line--del {
-  background: rgba(247, 79, 79, 0.08);
+  background: var(--del-line-bg);
 }
 .diff-line--context {
-  color: #7788aa;
+  color: var(--text-secondary);
 }
 
 .diff-gutter {
   width: 14px;
   text-align: center;
   flex-shrink: 0;
-  color: #4a5570;
+  color: var(--text-tertiary);
   user-select: none;
 }
 .diff-line--add .diff-gutter {
-  color: #4ff7a0;
+  color: var(--add);
 }
 .diff-line--del .diff-gutter {
-  color: #f74f4f;
+  color: var(--del);
 }
 
 .diff-lineno {
-  width: 36px;
+  width: 44px;
   text-align: right;
-  padding-right: 6px;
-  color: #4a5570;
+  padding-right: var(--space-2);
+  color: var(--text-tertiary);
   flex-shrink: 0;
   user-select: none;
-  font-size: 10px;
-  line-height: 18px;
+  font-size: var(--text-meta);
+  line-height: 19px;
 }
 .diff-line--add .diff-lineno.old {
   color: transparent;
@@ -284,12 +307,27 @@ const isBinary = computed(() => props.diffs.some((d) => d.isBinary));
 
 .diff-content {
   padding-left: 6px;
-  color: #ccc;
+  color: var(--text-primary);
 }
 .diff-line--add .diff-content {
-  color: #9effd0;
+  color: var(--add-fg);
 }
 .diff-line--del .diff-content {
-  color: #ff9090;
+  color: var(--del-fg);
+}
+.diff-show-all {
+  display: block;
+  width: 100%;
+  padding: 8px;
+  background: var(--surface-raised);
+  border: none;
+  border-top: 1px solid var(--border-subtle);
+  color: var(--text-secondary);
+  font-size: var(--text-row);
+  cursor: pointer;
+}
+.diff-show-all:hover {
+  background: var(--surface-control);
+  color: var(--text-primary);
 }
 </style>

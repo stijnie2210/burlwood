@@ -1,4 +1,5 @@
-import { defineStore } from 'pinia';
+import { acceptHMRUpdate, defineStore } from 'pinia';
+import { useToastStore } from './toast';
 import { ref, computed } from 'vue';
 import {
   OpenRepository,
@@ -12,6 +13,11 @@ import {
 export interface RepoTab {
   path: string;
   name: string;
+}
+
+// Stores call this after every await: a response for a repo that's no longer active is stale.
+export function isActive(repoPath: string): boolean {
+  return useReposStore().activeRepo?.path === repoPath;
 }
 
 export const useReposStore = defineStore('repos', () => {
@@ -41,9 +47,9 @@ export const useReposStore = defineStore('repos', () => {
     }
     for (const tab of session.tabs) {
       try {
-        await OpenRepository(tab.path);
-        if (!tabs.value.find((t) => t.path === tab.path)) {
-          tabs.value.push({ path: tab.path, name: tab.name });
+        const root = await OpenRepository(tab.path);
+        if (!tabs.value.find((t) => t.path === root)) {
+          tabs.value.push({ path: root, name: tab.name });
         }
       } catch {
         // repo no longer accessible, skip
@@ -54,8 +60,15 @@ export const useReposStore = defineStore('repos', () => {
     }
   }
 
-  async function openRepo(path: string) {
-    await OpenRepository(path);
+  // Errors are shown here (not thrown), so every "open" entry point reports a bad folder.
+  async function openRepo(picked: string): Promise<boolean> {
+    let path: string;
+    try {
+      path = await OpenRepository(picked);
+    } catch (e) {
+      useToastStore().error(e);
+      return false;
+    }
     const name = path.split('/').pop() ?? path;
     const existing = tabs.value.findIndex((t) => t.path === path);
     if (existing >= 0) {
@@ -65,6 +78,7 @@ export const useReposStore = defineStore('repos', () => {
       activeIndex.value = tabs.value.length - 1;
     }
     persistSession();
+    return true;
   }
 
   async function pickAndOpen() {
@@ -104,3 +118,9 @@ export const useReposStore = defineStore('repos', () => {
     setActive,
   };
 });
+
+// Without this, editing a store during `wails dev` keeps the old instance (and its old logic)
+// running until a full reload.
+if (import.meta.hot) {
+  import.meta.hot.accept(acceptHMRUpdate(useReposStore, import.meta.hot));
+}

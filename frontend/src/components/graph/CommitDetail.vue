@@ -31,7 +31,7 @@ const displayDate = computed(() => {
         <span class="meta-hash">{{ selectedRow.shortHash }}</span>
         <span
           v-for="l in selectedRow.labels"
-          :key="l.name"
+          :key="`${l.type}:${l.remote ?? ''}:${l.name}`"
           class="label"
           :class="`label--${l.type}`"
           >{{ l.type === 'remote' ? `${l.remote}/${l.name}` : l.name }}</span
@@ -56,49 +56,51 @@ const displayDate = computed(() => {
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  font-size: 12px;
-  background: #0d0d18;
-  border-left: 1px solid #1e1e36;
+  font-size: var(--text-row);
+  background: var(--surface-chrome);
+  border-left: 1px solid var(--border-subtle);
   min-width: 200px;
   height: 100%;
 }
 
 .commit-meta {
-  padding: 10px 12px;
-  border-bottom: 1px solid #1e1e36;
+  padding: var(--space-3) var(--inset-panel) var(--space-4);
+  border-bottom: 1px solid var(--border-subtle);
   flex-shrink: 0;
 }
 
 .meta-row {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: var(--space-1);
   flex-wrap: wrap;
-  margin-bottom: 5px;
+  margin-bottom: var(--space-2);
 }
 
 .meta-hash {
-  font-family: monospace;
-  font-size: 11px;
-  color: #555;
+  font-family: var(--font-mono);
+  font-size: var(--text-meta);
+  color: var(--text-tertiary);
 }
 
 .meta-subject {
-  font-size: 13px;
-  color: #e0e0e0;
-  font-weight: 500;
-  margin-bottom: 3px;
+  font-size: var(--text-title);
+  color: var(--text-primary);
+  font-weight: 600;
+  margin-bottom: var(--space-2);
+  line-height: 1.35;
+  overflow-wrap: anywhere;
 }
 .meta-info {
   display: flex;
-  gap: 12px;
-  color: #666;
-  font-size: 11px;
+  gap: var(--space-3);
+  color: var(--text-tertiary);
+  font-size: var(--text-row);
 }
 
 .loading {
   padding: 16px;
-  color: #555;
+  color: var(--text-tertiary);
   text-align: center;
 }
 </style>

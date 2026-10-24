@@ -74,6 +74,10 @@ export function GetAheadBehind(arg1) {
   return window['go']['main']['App']['GetAheadBehind'](arg1);
 }
 
+export function GetAmendInfo(arg1) {
+  return window['go']['main']['App']['GetAmendInfo'](arg1);
+}
+
 export function GetCommitDiff(arg1, arg2) {
   return window['go']['main']['App']['GetCommitDiff'](arg1, arg2);
 }
@@ -94,10 +98,6 @@ export function GetFileBase64(arg1, arg2) {
   return window['go']['main']['App']['GetFileBase64'](arg1, arg2);
 }
 
-export function GetLastCommitSubject(arg1) {
-  return window['go']['main']['App']['GetLastCommitSubject'](arg1);
-}
-
 export function GetMergeMessage(arg1) {
   return window['go']['main']['App']['GetMergeMessage'](arg1);
 }
@@ -116,6 +116,10 @@ export function GetStatus(arg1) {
 
 export function GetWorkingDiff(arg1, arg2, arg3) {
   return window['go']['main']['App']['GetWorkingDiff'](arg1, arg2, arg3);
+}
+
+export function HardResetBranch(arg1, arg2) {
+  return window['go']['main']['App']['HardResetBranch'](arg1, arg2);
 }
 
 export function IsInMerge(arg1) {
@@ -178,12 +182,8 @@ export function PullBranch(arg1, arg2) {
   return window['go']['main']['App']['PullBranch'](arg1, arg2);
 }
 
-export function PushBranch(arg1) {
-  return window['go']['main']['App']['PushBranch'](arg1);
-}
-
-export function PushNamedBranch(arg1, arg2) {
-  return window['go']['main']['App']['PushNamedBranch'](arg1, arg2);
+export function PushBranch(arg1, arg2, arg3) {
+  return window['go']['main']['App']['PushBranch'](arg1, arg2, arg3);
 }
 
 export function PushTag(arg1, arg2) {
@@ -230,6 +230,10 @@ export function StageFile(arg1, arg2) {
   return window['go']['main']['App']['StageFile'](arg1, arg2);
 }
 
+export function StageFiles(arg1, arg2) {
+  return window['go']['main']['App']['StageFiles'](arg1, arg2);
+}
+
 export function StageHunk(arg1, arg2) {
   return window['go']['main']['App']['StageHunk'](arg1, arg2);
 }
@@ -258,8 +262,20 @@ export function SyncAutostash(arg1) {
   return window['go']['main']['App']['SyncAutostash'](arg1);
 }
 
+export function UndoDiscard(arg1, arg2) {
+  return window['go']['main']['App']['UndoDiscard'](arg1, arg2);
+}
+
+export function UndoHardReset(arg1, arg2) {
+  return window['go']['main']['App']['UndoHardReset'](arg1, arg2);
+}
+
 export function UnstageFile(arg1, arg2) {
   return window['go']['main']['App']['UnstageFile'](arg1, arg2);
+}
+
+export function UnstageFiles(arg1, arg2) {
+  return window['go']['main']['App']['UnstageFiles'](arg1, arg2);
 }
 
 export function UnstageHunk(arg1, arg2) {

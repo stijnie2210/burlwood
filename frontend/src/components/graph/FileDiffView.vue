@@ -3,6 +3,7 @@ import { computed, onMounted, onUnmounted, ref, watch } from 'vue';
 import { useDetailWidth } from '../../composables/useDetailWidth';
 import { isImageFile, imageDataUrl } from '../../utils/imageUtils';
 import { highlightLine, languageForPath } from '../../utils/highlight';
+import { useLineBudget } from '../../composables/useLineBudget';
 
 const fileListWidth = useDetailWidth();
 
@@ -29,6 +30,11 @@ const repos = useReposStore();
 
 const file = computed(() =>
   commits.selectedFileIndex !== null ? commits.diff[commits.selectedFileIndex] : null
+);
+
+const { visible, hiddenLines, revealAll } = useLineBudget(
+  () => file.value?.hunks ?? [],
+  () => `${commits.selectedHash}:${commits.selectedFileIndex}`
 );
 
 const selectedRow = computed(
@@ -152,10 +158,10 @@ onUnmounted(() => document.removeEventListener('keydown', onKeyDown));
         </template>
         <template v-else>
           <div v-if="file.hunks.length === 0" class="fdv-notice">No changes</div>
-          <div v-for="(hunk, hi) in file.hunks" :key="hunk.header + hi" class="fdv-hunk">
-            <div class="fdv-hunk-header">{{ hunk.header }}</div>
+          <div v-for="(entry, hi) in visible" :key="entry.hunk.header + hi" class="fdv-hunk">
+            <div class="fdv-hunk-header">{{ entry.hunk.header }}</div>
             <div
-              v-for="(line, li) in hunk.lines"
+              v-for="(line, li) in entry.lines"
               :key="li"
               class="diff-line"
               :class="`diff-line--${line.type}`"
@@ -168,6 +174,9 @@ onUnmounted(() => document.removeEventListener('keydown', onKeyDown));
               <span class="diff-content" v-html="highlightLine(line.content, lang)"></span>
             </div>
           </div>
+          <button v-if="hiddenLines" class="diff-show-all" @click="revealAll">
+            Show {{ hiddenLines.toLocaleString() }} more lines
+          </button>
         </template>
       </div>
 
@@ -190,18 +199,18 @@ onUnmounted(() => document.removeEventListener('keydown', onKeyDown));
   flex-direction: column;
   height: 100%;
   overflow: hidden;
-  background: #0f0f1a;
+  background: var(--surface-base);
 }
 
 /* ── Header ── */
 .fdv-header {
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 0 12px;
-  height: 38px;
-  background: #0a0a14;
-  border-bottom: 1px solid #1e1e36;
+  gap: var(--space-3);
+  padding: 0 var(--inset-panel);
+  height: var(--file-header-h);
+  background: var(--surface-raised);
+  border-bottom: 1px solid var(--border-subtle);
   flex-shrink: 0;
   min-width: 0;
 }
@@ -211,11 +220,11 @@ onUnmounted(() => document.removeEventListener('keydown', onKeyDown));
   align-items: center;
   gap: 4px;
   padding: 4px 10px;
-  background: #16162a;
-  border: 1px solid #2a2a44;
+  background: var(--surface-control);
+  border: 1px solid var(--border);
   border-radius: 4px;
-  color: #888;
-  font-size: 12px;
+  color: var(--text-secondary);
+  font-size: var(--text-row);
   cursor: pointer;
   flex-shrink: 0;
   transition:
@@ -223,8 +232,8 @@ onUnmounted(() => document.removeEventListener('keydown', onKeyDown));
     border-color 0.15s;
 }
 .fdv-back:hover {
-  color: #ccc;
-  border-color: #4f8ef7;
+  color: var(--text-primary);
+  border-color: var(--focus-ring);
 }
 
 .fdv-back-arrow {
@@ -239,9 +248,9 @@ onUnmounted(() => document.removeEventListener('keydown', onKeyDown));
 }
 
 .fdv-filepath {
-  font-family: monospace;
-  font-size: 12px;
-  color: #ccc;
+  font-family: var(--font-mono);
+  font-size: var(--text-row);
+  color: var(--text-primary);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -258,15 +267,15 @@ onUnmounted(() => document.removeEventListener('keydown', onKeyDown));
 }
 
 .fdv-chip-hash {
-  font-family: monospace;
-  font-size: 11px;
-  color: #555;
+  font-family: var(--font-mono);
+  font-size: var(--text-meta);
+  color: var(--text-tertiary);
   flex-shrink: 0;
 }
 
 .fdv-chip-subject {
-  font-size: 11px;
-  color: #555;
+  font-size: var(--text-meta);
+  color: var(--text-tertiary);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -284,12 +293,13 @@ onUnmounted(() => document.removeEventListener('keydown', onKeyDown));
   flex: 1;
   overflow-y: auto;
   min-width: 0;
+  background: var(--surface-sunken);
 }
 
 .fdv-notice {
   padding: 24px;
-  color: #555;
-  font-size: 12px;
+  color: var(--text-tertiary);
+  font-size: var(--text-row);
   text-align: center;
 }
 
@@ -298,7 +308,7 @@ onUnmounted(() => document.removeEventListener('keydown', onKeyDown));
   align-items: center;
   justify-content: center;
   padding: 32px;
-  background: #0a0a14;
+  background: var(--surface-sunken);
 }
 
 .fdv-img {
@@ -306,63 +316,64 @@ onUnmounted(() => document.removeEventListener('keydown', onKeyDown));
   max-height: 600px;
   object-fit: contain;
   border-radius: 4px;
-  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.6);
+  border: 1px solid var(--border-subtle);
 }
 
 .fdv-hunk {
-  border-bottom: 1px solid #0e0e1c;
+  border-bottom: 1px solid var(--border-subtle);
 }
 
 .fdv-hunk-header {
   padding: 3px 12px;
-  font-family: monospace;
-  font-size: 11px;
-  color: #5577aa;
-  background: #0e0e20;
-  border-top: 1px solid #1a1a30;
-  border-bottom: 1px solid #1a1a30;
+  font-family: var(--font-mono);
+  font-size: var(--text-meta);
+  color: var(--text-tertiary);
+  background: var(--surface-raised);
+  border-top: 1px solid var(--border-subtle);
+  border-bottom: 1px solid var(--border-subtle);
 }
 
 /* ── Diff line styles ── */
 .diff-line {
   display: flex;
-  font-family: monospace;
-  font-size: 12px;
+  font-family: var(--font-mono);
+  font-size: var(--text-row);
   line-height: 19px;
   white-space: pre;
+  tab-size: 4;
 }
 .diff-line--add {
-  background: rgba(79, 247, 160, 0.06);
+  background: var(--add-line-bg);
 }
 .diff-line--del {
-  background: rgba(247, 79, 79, 0.08);
+  background: var(--del-line-bg);
 }
 .diff-line--context {
-  color: #555;
+  color: var(--text-secondary);
 }
 
 .diff-gutter {
   width: 14px;
   text-align: center;
   flex-shrink: 0;
-  color: #333;
+  color: var(--text-tertiary);
   user-select: none;
 }
 .diff-line--add .diff-gutter {
-  color: #4ff7a0;
+  color: var(--add);
 }
 .diff-line--del .diff-gutter {
-  color: #f74f4f;
+  color: var(--del);
 }
 
 .diff-lineno {
-  width: 40px;
+  width: 44px;
   text-align: right;
   padding-right: 8px;
-  color: #333;
+  color: var(--text-tertiary);
   flex-shrink: 0;
   user-select: none;
-  font-size: 10px;
+  font-size: var(--text-meta);
   line-height: 19px;
 }
 .diff-line--add .diff-lineno.old {
@@ -374,21 +385,21 @@ onUnmounted(() => document.removeEventListener('keydown', onKeyDown));
 
 .diff-content {
   padding-left: 6px;
-  color: #ccc;
+  color: var(--text-primary);
   overflow: visible;
 }
 .diff-line--add .diff-content {
-  color: #9effd0;
+  color: var(--add-fg);
 }
 .diff-line--del .diff-content {
-  color: #ff9090;
+  color: var(--del-fg);
 }
 
 /* ── File list sidebar ── */
 .fdv-files {
   flex-shrink: 0;
-  border-left: 1px solid #1e1e36;
-  background: #0d0d18;
+  border-left: 1px solid var(--border-subtle);
+  background: var(--surface-base);
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -397,21 +408,34 @@ onUnmounted(() => document.removeEventListener('keydown', onKeyDown));
 .resize-handle {
   width: 4px;
   flex-shrink: 0;
-  background: #1e1e36;
+  background: var(--border-subtle);
   cursor: col-resize;
   transition: background 0.15s;
 }
 .resize-handle:hover {
-  background: #4f8ef7;
+  background: var(--accent-fill);
 }
 
 .fdv-files-title {
   padding: 8px 12px;
-  font-size: 11px;
-  color: #555;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  border-bottom: 1px solid #1e1e36;
+  font-size: var(--text-meta);
+  color: var(--text-tertiary);
+  border-bottom: 1px solid var(--border-subtle);
   flex-shrink: 0;
+}
+.diff-show-all {
+  display: block;
+  width: 100%;
+  padding: 8px;
+  background: var(--surface-raised);
+  border: none;
+  border-top: 1px solid var(--border-subtle);
+  color: var(--text-secondary);
+  font-size: var(--text-row);
+  cursor: pointer;
+}
+.diff-show-all:hover {
+  background: var(--surface-control);
+  color: var(--text-primary);
 }
 </style>

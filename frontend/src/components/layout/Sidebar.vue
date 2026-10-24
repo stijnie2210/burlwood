@@ -1,18 +1,24 @@
 <script setup lang="ts">
-import { watch, ref, nextTick, onMounted, onUnmounted } from 'vue';
-import { clampMenuPosition } from '../../composables/useContextMenu';
+import { watch, ref, computed, nextTick, onMounted, onUnmounted } from 'vue';
+import {
+  clampMenuPosition,
+  focusFirstMenuItem,
+  handleMenuKeydown,
+  keepFocusInMenu,
+  menuEventFor,
+} from '../../composables/useContextMenu';
 import { useReposStore } from '../../stores/repos';
 import { useBranchesStore } from '../../stores/branches';
 import { useCommitsStore } from '../../stores/commits';
 import { useStagingStore } from '../../stores/staging';
 import { useToastStore } from '../../stores/toast';
+import { pushWithFeedback } from '../../composables/usePush';
 import { useStashStore } from '../../stores/stash';
 import type { StashEntry } from '../../stores/stash';
 import {
   StartRebase,
   DeleteBranch,
   RenameBranch,
-  PushNamedBranch,
   ApplyStash,
   DropStash,
   PopStash,
@@ -33,6 +39,18 @@ interface CollapsedState {
   remote: boolean;
   stashes: boolean;
 }
+
+const branchFilter = ref('');
+const filteredLocal = computed(() => {
+  const q = branchFilter.value.trim().toLowerCase();
+  return q ? branches.local.filter((b) => b.name.toLowerCase().includes(q)) : branches.local;
+});
+const filteredRemote = computed(() => {
+  const q = branchFilter.value.trim().toLowerCase();
+  return q
+    ? branches.remote.filter((b) => `${b.remote}/${b.name}`.toLowerCase().includes(q))
+    : branches.remote;
+});
 
 const collapsed = ref<CollapsedState>({ local: false, remote: false, stashes: false });
 const remoteHeight = ref(200);
@@ -133,13 +151,13 @@ async function switchTo(target: string, trackRemote: boolean) {
       toast.success(result.message);
     }
   } catch (e: unknown) {
-    toast.error(String(e));
+    toast.error(e);
   }
 }
 
 // ── Context menu ──────────────────────────────────────────────────────────
 
-type CtxMode = 'default' | 'rename' | 'confirm-delete';
+type CtxMode = 'default' | 'rename' | 'confirm-delete' | 'confirm-force-delete';
 
 interface CtxMenu {
   x: number;
@@ -165,6 +183,7 @@ async function openCtxMenu(
 ) {
   e.preventDefault();
   e.stopPropagation();
+  rememberMenuFocus();
   ctxMenu.value = {
     x: e.clientX,
     y: e.clientY,
@@ -181,10 +200,45 @@ async function openCtxMenu(
     const { x, y } = clampMenuPosition(menu, e.clientX, e.clientY);
     ctxMenu.value = { ...ctxMenu.value, x, y };
   }
+  focusFirstMenuItem(menu);
 }
 
 function closeCtxMenu() {
   ctxMenu.value = null;
+  restoreMenuFocus();
+}
+
+let menuReturnFocus: HTMLElement | null = null;
+
+function rememberMenuFocus() {
+  menuReturnFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+}
+
+function restoreMenuFocus() {
+  const el = menuReturnFocus;
+  menuReturnFocus = null;
+  if (el?.isConnected) {
+    el.focus();
+  }
+}
+
+// One Tab stop per list; arrow keys move within it.
+const roving = ref({ local: 0, remote: 0, stash: 0 });
+function rovingTab(list: 'local' | 'remote' | 'stash', i: number, length: number) {
+  return i === Math.min(roving.value[list], length - 1) ? 0 : -1;
+}
+
+watch(
+  () => ctxMenu.value?.mode,
+  () => nextTick(() => keepFocusInMenu(branchCtxMenuEl.value))
+);
+
+function focusSiblingItem(e: KeyboardEvent, dir: 1 | -1) {
+  const li = e.currentTarget as HTMLElement;
+  const next = (
+    dir === 1 ? li.nextElementSibling : li.previousElementSibling
+  ) as HTMLElement | null;
+  next?.focus();
 }
 
 function onWindowMouseDown(e: MouseEvent) {
@@ -209,14 +263,17 @@ async function rebaseOnto(target: string) {
     await StartRebase(repoPath, target);
     await Promise.all([branches.load(repoPath), commits.load(repoPath), staging.load(repoPath)]);
     toast.success('Rebased onto ' + target);
-  } catch {
+  } catch (e) {
     await staging.load(repoPath);
     if (staging.isInRebase) {
       await Promise.all([branches.load(repoPath), commits.load(repoPath)]);
-      toast.success('Rebase started — switch to Working Tree to resolve conflicts');
+      toast.push(
+        `Rebase onto ${target} stopped on a conflict. Resolve it in the Working Tree (⌘2), then continue.`,
+        'info',
+        0
+      );
     } else {
-      await staging.load(repoPath);
-      toast.error('Rebase failed — check Working Tree view for details');
+      toast.error(e);
     }
   }
 }
@@ -229,10 +286,9 @@ async function pushBranch() {
     return;
   }
   try {
-    await PushNamedBranch(repoPath, menu.target);
-    toast.success('Pushed ' + menu.label);
+    await pushWithFeedback(repoPath, menu.target);
   } catch (e: unknown) {
-    toast.error(String(e));
+    toast.error(e);
   }
 }
 
@@ -275,7 +331,7 @@ async function confirmRename() {
     await branches.load(repoPath);
     toast.success('Renamed to ' + newName);
   } catch (e: unknown) {
-    toast.error(String(e));
+    toast.error(e);
   }
 }
 
@@ -289,21 +345,33 @@ function startDelete() {
 async function confirmDelete(force: boolean) {
   const menu = ctxMenu.value;
   const repoPath = repos.activeRepo?.path;
-  closeCtxMenu();
   if (!menu || !repoPath) {
+    closeCtxMenu();
     return;
   }
   try {
     await DeleteBranch(repoPath, menu.target, force);
+    closeCtxMenu();
     await branches.load(repoPath);
-    toast.success('Deleted ' + menu.label);
+    toast.success((force ? 'Force deleted ' : 'Deleted ') + menu.label);
   } catch (e: unknown) {
     const msg = String(e);
-    if (!force && msg.toLowerCase().includes('not fully merged')) {
-      toast.error('"' + menu.label + '" is not fully merged. Use force delete if you\'re sure.');
-    } else {
-      toast.error(msg);
+    if (
+      !force &&
+      msg.toLowerCase().includes('not fully merged') &&
+      ctxMenu.value?.target === menu.target
+    ) {
+      ctxMenu.value.mode = 'confirm-force-delete';
+      await nextTick();
+      const el = branchCtxMenuEl.value;
+      if (el && ctxMenu.value) {
+        const { x, y } = clampMenuPosition(el, ctxMenu.value.x, ctxMenu.value.y);
+        ctxMenu.value = { ...ctxMenu.value, x, y };
+      }
+      return;
     }
+    closeCtxMenu();
+    toast.error(msg);
   }
 }
 
@@ -344,9 +412,15 @@ const stashCtxMenu = ref<StashCtxMenu | null>(null);
 const stashRenameInputRef = ref<HTMLInputElement | null>(null);
 const stashCtxMenuEl = ref<HTMLElement | null>(null);
 
+watch(
+  () => stashCtxMenu.value?.mode,
+  () => nextTick(() => keepFocusInMenu(stashCtxMenuEl.value))
+);
+
 async function openStashCtxMenu(e: MouseEvent, entry: StashEntry) {
   e.preventDefault();
   e.stopPropagation();
+  rememberMenuFocus();
   stashCtxMenu.value = {
     x: e.clientX,
     y: e.clientY,
@@ -362,10 +436,12 @@ async function openStashCtxMenu(e: MouseEvent, entry: StashEntry) {
     const { x, y } = clampMenuPosition(menu, e.clientX, e.clientY);
     stashCtxMenu.value = { ...stashCtxMenu.value, x, y };
   }
+  focusFirstMenuItem(menu);
 }
 
 function closeStashCtxMenu() {
   stashCtxMenu.value = null;
+  restoreMenuFocus();
 }
 
 async function applyStash() {
@@ -380,7 +456,7 @@ async function applyStash() {
     await Promise.all([stash.load(repoPath), staging.load(repoPath)]);
     toast.success('Applied ' + menu.ref);
   } catch (e: unknown) {
-    toast.error(String(e));
+    toast.error(e);
   }
 }
 
@@ -396,7 +472,7 @@ async function popStash() {
     await Promise.all([stash.load(repoPath), staging.load(repoPath), commits.load(repoPath)]);
     toast.success('Popped ' + menu.ref);
   } catch (e: unknown) {
-    toast.error(String(e));
+    toast.error(e);
   }
 }
 
@@ -419,7 +495,7 @@ async function confirmStashDrop() {
     await Promise.all([stash.load(repoPath), commits.load(repoPath)]);
     toast.success('Dropped ' + menu.ref);
   } catch (e: unknown) {
-    toast.error(String(e));
+    toast.error(e);
   }
 }
 
@@ -451,7 +527,7 @@ async function confirmStashRename() {
     await Promise.all([stash.load(repoPath), commits.load(repoPath)]);
     toast.success('Renamed stash');
   } catch (e: unknown) {
-    toast.error(String(e));
+    toast.error(e);
   }
 }
 </script>
@@ -460,38 +536,75 @@ async function confirmStashRename() {
   <aside class="sidebar" v-bind="$attrs">
     <div v-if="!repos.activeRepo" class="empty-state">
       <p>No repository open</p>
-      <button @click="repos.pickAndOpen()">Open Repository</button>
     </div>
 
     <div v-else class="sidebar-content">
-      <section class="branch-section">
-        <h3 class="section-title section-title--toggle" @click="toggleSection('local')">
-          <span class="section-chevron">{{ collapsed.local ? '▸' : '▾' }}</span>
-          Local Branches
+      <div class="branch-filter-row">
+        <input
+          v-model="branchFilter"
+          class="branch-filter"
+          type="search"
+          placeholder="Filter branches"
+          aria-label="Filter branches"
+          @keydown.esc="branchFilter = ''"
+        />
+      </div>
+      <section class="branch-section local-section">
+        <h3 class="section-title">
+          <button
+            type="button"
+            class="section-title--toggle"
+            :aria-expanded="!collapsed.local"
+            @click="toggleSection('local')"
+          >
+            <span class="section-chevron" aria-hidden="true">{{
+              collapsed.local ? '▸' : '▾'
+            }}</span>
+            Local Branches
+          </button>
         </h3>
-        <ul v-if="!collapsed.local" class="branch-list">
+        <ul
+          v-if="!collapsed.local"
+          class="branch-list local-list"
+          role="listbox"
+          aria-label="Local branches"
+        >
           <li
-            v-for="b in branches.local"
+            v-for="(b, i) in filteredLocal"
             :key="b.name"
             class="branch-item"
             :class="{ current: b.isCurrent }"
-            :title="b.isCurrent ? b.name + ' (current)' : 'Double-click to switch to ' + b.name"
+            role="option"
+            :aria-current="b.isCurrent ? 'true' : undefined"
+            :title="
+              b.isCurrent ? b.name + ' (current)' : 'Double-click or Enter to switch to ' + b.name
+            "
+            :tabindex="rovingTab('local', i, filteredLocal.length)"
+            @focus="roving.local = i"
             @dblclick="switchTo(b.name, false)"
+            @keydown.enter="switchTo(b.name, false)"
+            @keydown.up.prevent.stop="focusSiblingItem($event, -1)"
+            @keydown.down.prevent.stop="focusSiblingItem($event, 1)"
+            @keydown.shift.f10.prevent="
+              openCtxMenu(menuEventFor($event), b.name, b.name, true, b.isCurrent)
+            "
             @contextmenu="openCtxMenu($event, b.name, b.name, true, b.isCurrent)"
           >
-            <span class="branch-icon">{{ b.isCurrent ? '●' : '○' }}</span>
+            <span class="branch-icon" aria-hidden="true">{{ b.isCurrent ? '●' : '○' }}</span>
             <span class="branch-name">{{ b.name }}</span>
             <template v-if="b.isCurrent">
               <span
                 v-if="branches.aheadBehind.ahead > 0"
                 class="sync-badge ahead"
                 title="Commits to push"
+                :aria-label="`${branches.aheadBehind.ahead} to push`"
                 >↑{{ branches.aheadBehind.ahead }}</span
               >
               <span
                 v-if="branches.aheadBehind.behind > 0"
                 class="sync-badge behind"
                 title="Commits to pull"
+                :aria-label="`${branches.aheadBehind.behind} to pull`"
                 >↓{{ branches.aheadBehind.behind }}</span
               >
             </template>
@@ -500,28 +613,55 @@ async function confirmStashRename() {
       </section>
 
       <section class="branch-section">
-        <h3 class="section-title section-title--toggle" @click="toggleSection('remote')">
-          <span class="section-chevron">{{ collapsed.remote ? '▸' : '▾' }}</span>
-          Remote Branches
+        <h3 class="section-title">
+          <button
+            type="button"
+            class="section-title--toggle"
+            :aria-expanded="!collapsed.remote"
+            @click="toggleSection('remote')"
+          >
+            <span class="section-chevron" aria-hidden="true">{{
+              collapsed.remote ? '▸' : '▾'
+            }}</span>
+            Remote Branches
+          </button>
         </h3>
         <ul
           v-if="!collapsed.remote"
           class="branch-list remote-list"
+          role="listbox"
+          aria-label="Remote branches"
           :style="{ maxHeight: remoteHeight + 'px' }"
         >
           <li
-            v-for="b in branches.remote"
+            v-for="(b, i) in filteredRemote"
             :key="`${b.remote}/${b.name}`"
             class="branch-item remote"
-            :title="'Double-click to check out ' + b.remote + '/' + b.name"
+            role="option"
+            :title="'Double-click or Enter to check out ' + b.remote + '/' + b.name"
+            :tabindex="rovingTab('remote', i, filteredRemote.length)"
+            @focus="roving.remote = i"
             @dblclick="switchTo(b.remote + '/' + b.name, true)"
+            @keydown.enter="switchTo(b.remote + '/' + b.name, true)"
+            @keydown.up.prevent.stop="focusSiblingItem($event, -1)"
+            @keydown.down.prevent.stop="focusSiblingItem($event, 1)"
+            @keydown.shift.f10.prevent="
+              openCtxMenu(
+                menuEventFor($event),
+                b.remote + '/' + b.name,
+                b.remote + '/' + b.name,
+                false,
+                false
+              )
+            "
             @contextmenu="
               openCtxMenu($event, b.remote + '/' + b.name, b.remote + '/' + b.name, false, false)
             "
           >
-            <span class="branch-icon">↑</span>
-            <span class="remote-label">{{ b.remote }}</span
-            >/{{ b.name }}
+            <span class="branch-icon" aria-hidden="true">○</span>
+            <span class="branch-name"
+              ><span class="remote-label">{{ b.remote }}/</span>{{ b.name }}</span
+            >
           </li>
         </ul>
       </section>
@@ -529,18 +669,40 @@ async function confirmStashRename() {
       <div class="section-divider" @mousedown="onSectionDividerDown" />
 
       <section class="branch-section stash-section">
-        <h3 class="section-title section-title--toggle" @click="toggleSection('stashes')">
-          <span class="section-chevron">{{ collapsed.stashes ? '▸' : '▾' }}</span>
-          Stashes
+        <h3 class="section-title">
+          <button
+            type="button"
+            class="section-title--toggle"
+            :aria-expanded="!collapsed.stashes"
+            @click="toggleSection('stashes')"
+          >
+            <span class="section-chevron" aria-hidden="true">{{
+              collapsed.stashes ? '▸' : '▾'
+            }}</span>
+            Stashes
+          </button>
         </h3>
-        <ul v-if="!collapsed.stashes && stash.entries.length > 0" class="branch-list stash-list">
+        <ul
+          v-if="!collapsed.stashes && stash.entries.length > 0"
+          class="branch-list stash-list"
+          role="listbox"
+          aria-label="Stashes"
+        >
           <li
-            v-for="entry in stash.entries"
+            v-for="(entry, i) in stash.entries"
             :key="entry.ref"
             class="branch-item stash-item"
             :class="{ 'stash-selected': commits.selectedHash === entry.hash }"
+            role="option"
+            :aria-selected="commits.selectedHash === entry.hash"
             :title="entry.message"
+            :tabindex="rovingTab('stash', i, stash.entries.length)"
+            @focus="roving.stash = i"
             @click="selectStash(entry)"
+            @keydown.enter="selectStash(entry)"
+            @keydown.up.prevent.stop="focusSiblingItem($event, -1)"
+            @keydown.down.prevent.stop="focusSiblingItem($event, 1)"
+            @keydown.shift.f10.prevent="openStashCtxMenu(menuEventFor($event), entry)"
             @contextmenu="openStashCtxMenu($event, entry)"
           >
             <span class="stash-index">{{ entry.index }}</span>
@@ -559,7 +721,9 @@ async function confirmStashRename() {
       v-if="ctxMenu"
       ref="branchCtxMenuEl"
       class="ctx-menu"
+      role="menu"
       :style="{ left: ctxMenu.x + 'px', top: ctxMenu.y + 'px' }"
+      @keydown="handleMenuKeydown($event, branchCtxMenuEl, closeCtxMenu)"
     >
       <div class="ctx-menu-label">{{ ctxMenu.label }}</div>
 
@@ -567,6 +731,7 @@ async function confirmStashRename() {
       <template v-if="ctxMenu.mode === 'default'">
         <button
           v-if="!ctxMenu.isCurrent"
+          role="menuitem"
           class="ctx-menu-item ctx-menu-item-primary"
           @click="
             switchTo(ctxMenu!.target, !ctxMenu!.isLocal);
@@ -575,15 +740,20 @@ async function confirmStashRename() {
         >
           Checkout
         </button>
-        <button v-if="ctxMenu.isLocal" class="ctx-menu-item" @click="pushBranch()">Push</button>
-        <button class="ctx-menu-item" @click="copyBranchName()">Copy branch name</button>
-        <button class="ctx-menu-item" @click="rebaseOnto(ctxMenu!.target)">
+        <button v-if="ctxMenu.isLocal" role="menuitem" class="ctx-menu-item" @click="pushBranch()">
+          Push
+        </button>
+        <button role="menuitem" class="ctx-menu-item" @click="copyBranchName()">
+          Copy branch name
+        </button>
+        <button role="menuitem" class="ctx-menu-item" @click="rebaseOnto(ctxMenu!.target)">
           Rebase current branch onto this
         </button>
         <template v-if="ctxMenu.isLocal">
           <div class="ctx-menu-divider" />
-          <button class="ctx-menu-item" @click="startRename()">Rename</button>
+          <button role="menuitem" class="ctx-menu-item" @click="startRename()">Rename</button>
           <button
+            role="menuitem"
             class="ctx-menu-item ctx-menu-item-danger"
             :disabled="ctxMenu.isCurrent"
             :title="ctxMenu.isCurrent ? 'Cannot delete the current branch' : ''"
@@ -615,14 +785,30 @@ async function confirmStashRename() {
       <!-- Delete confirmation mode -->
       <template v-else-if="ctxMenu.mode === 'confirm-delete'">
         <div class="ctx-menu-confirm">
-          <p class="ctx-menu-confirm-text">Delete "{{ ctxMenu.label }}"?</p>
-          <button class="ctx-menu-item ctx-menu-item-danger" @click="confirmDelete(false)">
-            Delete
-          </button>
-          <button class="ctx-menu-item ctx-menu-item-danger" @click="confirmDelete(true)">
-            Force Delete
-          </button>
-          <button class="ctx-menu-item" @click="closeCtxMenu()">Cancel</button>
+          <p class="ctx-menu-confirm-text">
+            Delete "{{ ctxMenu.label }}"? Git only deletes it if its commits are merged.
+          </p>
+          <div class="ctx-menu-row">
+            <button class="ctx-menu-btn ctx-menu-btn-danger-soft" @click="confirmDelete(false)">
+              Delete
+            </button>
+            <button class="ctx-menu-btn" @click="closeCtxMenu()">Cancel</button>
+          </div>
+        </div>
+      </template>
+
+      <template v-else-if="ctxMenu.mode === 'confirm-force-delete'">
+        <div class="ctx-menu-confirm">
+          <p class="ctx-menu-confirm-text ctx-menu-confirm-text--warn">
+            "{{ ctxMenu.label }}" has commits that aren't merged into any other branch. Force
+            deleting it leaves them reachable only through the reflog.
+          </p>
+          <div class="ctx-menu-row">
+            <button class="ctx-menu-btn ctx-menu-btn-danger" @click="confirmDelete(true)">
+              Force delete
+            </button>
+            <button class="ctx-menu-btn" @click="closeCtxMenu()">Keep branch</button>
+          </div>
         </div>
       </template>
     </div>
@@ -634,16 +820,26 @@ async function confirmStashRename() {
       v-if="stashCtxMenu"
       ref="stashCtxMenuEl"
       class="ctx-menu"
+      role="menu"
       :style="{ left: stashCtxMenu.x + 'px', top: stashCtxMenu.y + 'px' }"
+      @keydown="handleMenuKeydown($event, stashCtxMenuEl, closeStashCtxMenu)"
     >
       <div class="ctx-menu-label">{{ stashCtxMenu.ref }}</div>
 
       <template v-if="stashCtxMenu.mode === 'default'">
-        <button class="ctx-menu-item ctx-menu-item-primary" @click="applyStash()">Apply</button>
-        <button class="ctx-menu-item ctx-menu-item-primary" @click="popStash()">Pop</button>
+        <button role="menuitem" class="ctx-menu-item ctx-menu-item-primary" @click="applyStash()">
+          Apply
+        </button>
+        <button role="menuitem" class="ctx-menu-item" @click="popStash()">Pop</button>
         <div class="ctx-menu-divider" />
-        <button class="ctx-menu-item" @click="startStashRename()">Rename</button>
-        <button class="ctx-menu-item ctx-menu-item-danger" @click="startStashDrop()">Drop</button>
+        <button role="menuitem" class="ctx-menu-item" @click="startStashRename()">Rename</button>
+        <button
+          role="menuitem"
+          class="ctx-menu-item ctx-menu-item-danger"
+          @click="startStashDrop()"
+        >
+          Drop
+        </button>
       </template>
 
       <template v-else-if="stashCtxMenu.mode === 'rename'">
@@ -665,11 +861,16 @@ async function confirmStashRename() {
 
       <template v-else-if="stashCtxMenu.mode === 'confirm-drop'">
         <div class="ctx-menu-confirm">
-          <p class="ctx-menu-confirm-text">Drop "{{ stashCtxMenu.ref }}"?</p>
-          <button class="ctx-menu-item ctx-menu-item-danger" @click="confirmStashDrop()">
-            Drop
-          </button>
-          <button class="ctx-menu-item" @click="closeStashCtxMenu()">Cancel</button>
+          <p class="ctx-menu-confirm-text">
+            Drop "{{ stashCtxMenu.ref }}"? Its changes are deleted from the stash list and can't be
+            restored from gitgood.
+          </p>
+          <div class="ctx-menu-row">
+            <button class="ctx-menu-btn ctx-menu-btn-danger" @click="confirmStashDrop()">
+              Drop
+            </button>
+            <button class="ctx-menu-btn" @click="closeStashCtxMenu()">Cancel</button>
+          </div>
         </div>
       </template>
     </div>
@@ -679,8 +880,8 @@ async function confirmStashRename() {
 <style scoped>
 .sidebar {
   flex-shrink: 0;
-  background: #16213e;
-  border-right: 1px solid #2d2d4e;
+  background: var(--surface-chrome);
+  border-right: 1px solid var(--border);
   overflow: hidden;
   display: flex;
   flex-direction: column;
@@ -697,19 +898,8 @@ async function confirmStashRename() {
 .empty-state {
   padding: 24px 16px;
   text-align: center;
-  color: #666;
-  font-size: 13px;
-}
-
-.empty-state button {
-  margin-top: 12px;
-  padding: 6px 14px;
-  background: #4f8ef7;
-  border: none;
-  border-radius: 4px;
-  color: white;
-  cursor: pointer;
-  font-size: 13px;
+  color: var(--text-secondary);
+  font-size: var(--text-body);
 }
 
 .branch-section {
@@ -718,11 +908,9 @@ async function confirmStashRename() {
 
 .section-title {
   padding: 4px 12px;
-  font-size: 11px;
+  font-size: var(--text-meta);
   font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  color: #7a8899;
+  color: var(--text-tertiary);
   margin: 0;
 }
 
@@ -733,14 +921,21 @@ async function confirmStashRename() {
   display: flex;
   align-items: center;
   gap: 4px;
+  width: 100%;
+  padding: 0;
+  background: none;
+  border: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
 }
 
 .section-title--toggle:hover {
-  color: #9aaabb;
+  color: var(--text-secondary);
 }
 
 .section-chevron {
-  font-size: 9px;
+  font-size: var(--text-meta);
   flex-shrink: 0;
 }
 
@@ -755,8 +950,8 @@ async function confirmStashRename() {
   align-items: center;
   gap: 6px;
   padding: 4px 12px;
-  font-size: 13px;
-  color: #aaa;
+  font-size: var(--text-body);
+  color: var(--text-secondary);
   cursor: pointer;
   white-space: nowrap;
   user-select: none;
@@ -764,25 +959,25 @@ async function confirmStashRename() {
 }
 
 .branch-item:hover {
-  background: #1e2d50;
-  color: #ddd;
+  background: var(--surface-hover);
+  color: var(--text-primary);
 }
 .branch-item.current {
-  color: #4f8ef7;
+  color: var(--accent-text);
   font-weight: 500;
   cursor: default;
 }
 .branch-item.remote {
-  color: #9aaabb;
+  color: var(--text-secondary);
 }
 
 .branch-icon {
-  font-size: 10px;
-  color: #7a8899;
+  font-size: var(--text-meta);
+  color: var(--text-tertiary);
   flex-shrink: 0;
 }
 .branch-item.current .branch-icon {
-  color: #4f8ef7;
+  color: var(--accent-text);
 }
 
 .branch-name {
@@ -793,64 +988,99 @@ async function confirmStashRename() {
 
 .sync-badge {
   flex-shrink: 0;
-  font-size: 10px;
+  font-size: var(--text-meta);
   font-weight: 600;
   padding: 1px 5px;
   border-radius: 8px;
-  font-family: monospace;
+  font-family: var(--font-mono);
 }
 
 .sync-badge.ahead {
-  background: rgba(79, 247, 160, 0.12);
-  color: #4ff7a0;
-  border: 1px solid rgba(79, 247, 160, 0.25);
+  background: var(--add-soft);
+  color: var(--add);
+  border: 1px solid var(--add-soft-strong);
 }
 
 .sync-badge.behind {
-  background: rgba(247, 160, 79, 0.12);
-  color: #f7a04f;
-  border: 1px solid rgba(247, 160, 79, 0.25);
+  background: var(--warning-soft);
+  color: var(--modified);
+  border: 1px solid var(--warning-border);
 }
 
 .remote-label {
-  color: #7a8899;
-  font-size: 11px;
+  color: var(--text-tertiary);
+  font-size: var(--text-meta);
 }
 
 .stash-item {
-  color: #aa88dd;
+  color: var(--text-secondary);
 }
 .stash-item:hover {
-  background: #1e1a30;
-  color: #cc99ff;
+  background: var(--surface-hover);
+  color: var(--text-primary);
 }
 .stash-item.stash-selected {
-  background: rgba(187, 136, 255, 0.1);
-  color: #cc99ff;
+  background: var(--stash-soft);
+  color: var(--text-primary);
 }
 
 .stash-index {
   flex-shrink: 0;
-  font-size: 10px;
-  font-family: monospace;
-  color: #6a5888;
+  font-size: var(--text-meta);
+  font-family: var(--font-mono);
+  color: var(--stash);
   min-width: 16px;
   text-align: right;
 }
 
 .stash-msg {
   flex: 1;
-  font-size: 12px;
+  font-size: var(--text-row);
 }
 
 .stash-date {
-  font-size: 10px;
-  color: #556;
+  font-size: var(--text-meta);
+  color: var(--text-tertiary);
   flex-shrink: 0;
 }
 
 .remote-list {
   overflow-y: auto;
+}
+
+.local-section {
+  display: flex;
+  flex-direction: column;
+  flex: 0 1 auto;
+  min-height: 0;
+  max-height: 45%;
+}
+
+.local-list {
+  min-height: 0;
+  overflow-y: auto;
+}
+
+.branch-filter-row {
+  padding: var(--space-3) var(--inset-panel) var(--space-1);
+  flex-shrink: 0;
+}
+
+.branch-filter {
+  width: 100%;
+  padding: 4px 8px;
+  background: var(--surface-field);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  color: var(--text-primary);
+  font-size: var(--text-row);
+  outline: none;
+}
+.branch-filter::placeholder {
+  color: var(--text-tertiary);
+}
+.branch-filter:focus {
+  border-color: var(--focus-ring);
 }
 
 .stash-section {
@@ -871,19 +1101,19 @@ async function confirmStashRename() {
   flex-shrink: 0;
   cursor: row-resize;
   background: transparent;
-  border-top: 1px solid #1e1e36;
-  border-bottom: 1px solid #1e1e36;
+  border-top: 1px solid var(--border-subtle);
+  border-bottom: 1px solid var(--border-subtle);
 }
 
 .section-divider:hover,
 .section-divider:active {
-  background: rgba(79, 142, 247, 0.15);
+  background: var(--accent-soft);
 }
 
 .empty-stash {
   padding: 4px 12px;
-  font-size: 11px;
-  color: #445;
+  font-size: var(--text-meta);
+  color: var(--text-tertiary);
   margin: 0;
 }
 </style>
@@ -893,29 +1123,29 @@ async function confirmStashRename() {
 .ctx-menu {
   position: fixed;
   z-index: 9999;
-  background: #1a1a2e;
-  border: 1px solid #2d2d4e;
+  background: var(--surface-overlay);
+  border: 1px solid var(--border);
   border-radius: 6px;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
+  box-shadow: var(--shadow-popover);
   min-width: 220px;
   padding: 4px 0;
 }
 
 .ctx-menu-label {
   padding: 5px 12px 4px;
-  font-size: 10px;
-  color: #556;
-  font-family: monospace;
+  font-size: var(--text-meta);
+  color: var(--text-tertiary);
+  font-family: var(--font-mono);
   text-overflow: ellipsis;
   overflow: hidden;
   white-space: nowrap;
-  border-bottom: 1px solid #252540;
+  border-bottom: 1px solid var(--border);
   margin-bottom: 3px;
 }
 
 .ctx-menu-divider {
   height: 1px;
-  background: #252540;
+  background: var(--surface-control);
   margin: 3px 0;
 }
 
@@ -926,16 +1156,18 @@ async function confirmStashRename() {
   text-align: left;
   background: transparent;
   border: none;
-  color: #bbc;
-  font-size: 12px;
+  color: var(--text-primary);
+  font-size: var(--text-row);
   cursor: pointer;
 }
+.ctx-menu-item:focus-visible:not(:disabled),
 .ctx-menu-item:hover:not(:disabled) {
-  background: #1e2d50;
-  color: #dde;
+  background: var(--accent-fill);
+  color: var(--text-on-accent);
+  outline: none;
 }
 .ctx-menu-item-primary {
-  color: #4f8ef7;
+  color: var(--accent-text);
   font-weight: 500;
 }
 .ctx-menu-item:disabled {
@@ -944,11 +1176,12 @@ async function confirmStashRename() {
 }
 
 .ctx-menu-item-danger {
-  color: #f07070;
+  color: var(--danger);
 }
+.ctx-menu-item-danger:focus-visible:not(:disabled),
 .ctx-menu-item-danger:hover:not(:disabled) {
-  background: rgba(240, 80, 80, 0.12);
-  color: #f09090;
+  background: var(--accent-fill);
+  color: var(--text-on-accent);
 }
 
 /* Rename mode */
@@ -961,17 +1194,17 @@ async function confirmStashRename() {
 
 .ctx-menu-input {
   width: 100%;
-  background: #111124;
-  border: 1px solid #2d2d4e;
+  background: var(--surface-field);
+  border: 1px solid var(--border);
   border-radius: 4px;
-  color: #e0e0e0;
-  font-size: 12px;
+  color: var(--text-primary);
+  font-size: var(--text-row);
   padding: 4px 8px;
   outline: none;
-  font-family: monospace;
+  font-family: var(--font-mono);
 }
 .ctx-menu-input:focus {
-  border-color: #4f8ef7;
+  border-color: var(--focus-ring);
 }
 
 .ctx-menu-row {
@@ -982,40 +1215,65 @@ async function confirmStashRename() {
 .ctx-menu-btn-primary {
   flex: 1;
   padding: 4px 0;
-  background: #4f8ef7;
+  background: var(--accent-fill);
   border: none;
   border-radius: 4px;
-  color: #fff;
-  font-size: 12px;
+  color: var(--text-on-accent);
+  font-size: var(--text-row);
   cursor: pointer;
 }
 .ctx-menu-btn-primary:hover {
-  background: #6aa3ff;
+  background: var(--accent-fill-hover);
 }
 
 .ctx-menu-btn {
   flex: 1;
   padding: 4px 0;
-  background: #252540;
+  background: var(--surface-control);
   border: none;
   border-radius: 4px;
-  color: #aaa;
-  font-size: 12px;
+  color: var(--text-secondary);
+  font-size: var(--text-row);
   cursor: pointer;
 }
 .ctx-menu-btn:hover {
-  background: #2d2d50;
-  color: #ccc;
+  background: var(--surface-control-hover);
+  color: var(--text-primary);
 }
 
 /* Delete confirm mode */
 .ctx-menu-confirm {
-  padding: 4px 0;
+  max-width: 260px;
+  padding: 4px 10px 8px;
 }
 
 .ctx-menu-confirm-text {
-  padding: 4px 12px 6px;
-  font-size: 11px;
-  color: #778;
+  margin: 0;
+  padding: 4px 2px 8px;
+  font-size: var(--text-meta);
+  line-height: 1.4;
+  color: var(--text-secondary);
+  text-align: left;
+}
+.ctx-menu-confirm-text--warn {
+  color: var(--danger);
+}
+
+.ctx-menu-btn-danger-soft {
+  color: var(--danger);
+}
+.ctx-menu-btn-danger-soft:hover {
+  background: var(--danger-soft);
+  color: var(--danger);
+}
+
+.ctx-menu-btn-danger {
+  background: var(--danger-fill);
+  color: var(--text-on-accent);
+  font-weight: 600;
+}
+.ctx-menu-btn-danger:hover {
+  background: var(--danger-fill-hover);
+  color: var(--text-on-accent);
 }
 </style>
