@@ -20,6 +20,28 @@ export namespace gitcli {
 	        this.undoable = source["undoable"];
 	    }
 	}
+	export class PushResult {
+	    branch: string;
+	    remote: string;
+	    upstream: string;
+	    setUpstream: boolean;
+	    rejected: boolean;
+	    detail: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new PushResult(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.branch = source["branch"];
+	        this.remote = source["remote"];
+	        this.upstream = source["upstream"];
+	        this.setUpstream = source["setUpstream"];
+	        this.rejected = source["rejected"];
+	        this.detail = source["detail"];
+	    }
+	}
 	export class ResetUndo {
 	    head: string;
 	    target: string;

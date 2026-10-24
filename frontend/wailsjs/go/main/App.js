@@ -182,12 +182,8 @@ export function PullBranch(arg1, arg2) {
   return window['go']['main']['App']['PullBranch'](arg1, arg2);
 }
 
-export function PushBranch(arg1) {
-  return window['go']['main']['App']['PushBranch'](arg1);
-}
-
-export function PushNamedBranch(arg1, arg2) {
-  return window['go']['main']['App']['PushNamedBranch'](arg1, arg2);
+export function PushBranch(arg1, arg2, arg3) {
+  return window['go']['main']['App']['PushBranch'](arg1, arg2, arg3);
 }
 
 export function PushTag(arg1, arg2) {

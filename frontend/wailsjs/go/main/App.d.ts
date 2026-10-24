@@ -95,9 +95,7 @@ export function PopStash(arg1:string,arg2:string):Promise<void>;
 
 export function PullBranch(arg1:string,arg2:string):Promise<void>;
 
-export function PushBranch(arg1:string):Promise<void>;
-
-export function PushNamedBranch(arg1:string,arg2:string):Promise<void>;
+export function PushBranch(arg1:string,arg2:string,arg3:boolean):Promise<gitcli.PushResult>;
 
 export function PushTag(arg1:string,arg2:string):Promise<void>;
 

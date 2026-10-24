@@ -47,7 +47,10 @@ internal/gitcli/
   runner.go                         Run() / RunWithInput() — exec.Command wrapper
   staging.go                        StageFile, UnstageFile, StageFiles/UnstageFiles (one call, paths via stdin),
                                     ApplyPatch, DiscardFile
-  remote.go                         FetchAll, Pull, Push
+  remote.go                         FetchAll, Pull, PushTag/ForcePushTag
+  push.go                           PushBranch(branch, force): upstream from config or -u on the default remote;
+                                    non-fast-forward → Rejected result (not an error); force = --force-with-lease --force-if-includes
+                                    (the bare lease is defeated by background auto-fetch)
   fileops.go                        OpenInDefaultApp, ShowInFinder, OpenInEditor,
                                     StashFile, AppendToGitignore, GetFilePatch, DeleteWorkingFile
   undo.go                           SnapshotWorkingFile/RestoreWorkingFile (discard undo via hash-object),
@@ -72,6 +75,7 @@ frontend/src/
     useContextMenu.ts               clampMenuPosition(el, x, y), handleMenuKeydown (↑/↓/Esc), menuEventFor (Shift+F10)
     useDialog.ts                    Esc, initial focus, Tab trap and focus return for modals
     useLineBudget.ts                renders the first 2000 diff lines until "Show more"; hunk actions keep the full hunk
+    usePush.ts                      pushWithFeedback: names the destination; rejection → red "Force push (with lease)" toast
   utils/gitErrors.ts                describeGitError: raw git stderr → sentence + next step (toast.error uses it; raw text under Details)
   App.smoke.test.ts                 mounts the whole app on stubbed Wails bindings — catches setup-time crashes
   stores/

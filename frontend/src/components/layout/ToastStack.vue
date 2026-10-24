@@ -79,6 +79,7 @@ async function runAction(t: Toast, e: MouseEvent) {
           <button
             v-if="t.action"
             class="toast-action"
+            :class="{ 'toast-action--danger': t.action.danger }"
             :title="t.action.label === 'Undo' ? 'Undo (⌘Z)' : undefined"
             @click="runAction(t, $event)"
           >
@@ -156,6 +157,15 @@ async function runAction(t: Toast, e: MouseEvent) {
 
 .toast-icon {
   flex-shrink: 0;
+}
+
+.toast-action--danger {
+  background: var(--danger-fill);
+  border-color: var(--danger-fill);
+  color: var(--text-on-accent);
+}
+.toast-action--danger:hover {
+  background: var(--danger-fill-hover);
 }
 
 .toast-close {

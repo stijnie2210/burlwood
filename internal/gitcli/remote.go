@@ -24,11 +24,6 @@ func Pull(repoPath, mode string) error {
 	return err
 }
 
-func Push(repoPath string) error {
-	_, err := Run(repoPath, "push")
-	return err
-}
-
 func PushTag(repoPath, tagName string) error {
 	_, err := Run(repoPath, "push", "origin", "refs/tags/"+tagName)
 	return err

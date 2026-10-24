@@ -48,10 +48,6 @@ func (m *Manager) FetchAll(repoPath string) error {
 	return gitcli.FetchAll(repoPath)
 }
 
-func (m *Manager) PushBranch(repoPath string) error {
-	return gitcli.Push(repoPath)
-}
-
 func (m *Manager) Stash(repoPath string) error {
 	return gitcli.Stash(repoPath)
 }

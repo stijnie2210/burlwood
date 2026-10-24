@@ -7,6 +7,7 @@ export type ToastType = 'success' | 'error' | 'info';
 export interface ToastAction {
   label: string;
   run: () => void | Promise<void>;
+  danger?: boolean;
 }
 
 export interface Toast {

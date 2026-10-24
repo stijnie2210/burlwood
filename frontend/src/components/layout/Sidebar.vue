@@ -12,13 +12,13 @@ import { useBranchesStore } from '../../stores/branches';
 import { useCommitsStore } from '../../stores/commits';
 import { useStagingStore } from '../../stores/staging';
 import { useToastStore } from '../../stores/toast';
+import { pushWithFeedback } from '../../composables/usePush';
 import { useStashStore } from '../../stores/stash';
 import type { StashEntry } from '../../stores/stash';
 import {
   StartRebase,
   DeleteBranch,
   RenameBranch,
-  PushNamedBranch,
   ApplyStash,
   DropStash,
   PopStash,
@@ -286,10 +286,9 @@ async function pushBranch() {
     return;
   }
   try {
-    await PushNamedBranch(repoPath, menu.target);
-    toast.success('Pushed ' + menu.label);
+    await pushWithFeedback(repoPath, menu.target);
   } catch (e: unknown) {
-    toast.error(String(e));
+    toast.error(e);
   }
 }
 

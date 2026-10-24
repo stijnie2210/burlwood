@@ -153,8 +153,8 @@ func (a *App) SyncAutostash(repoPath string) error {
 	return a.manager.SyncAutostash(repoPath)
 }
 
-func (a *App) PushBranch(repoPath string) error {
-	return a.manager.PushBranch(repoPath)
+func (a *App) PushBranch(repoPath, branch string, force bool) (gitcli.PushResult, error) {
+	return gitcli.PushBranch(repoPath, branch, force)
 }
 
 func (a *App) Stash(repoPath string) error {
@@ -263,10 +263,6 @@ func (a *App) DeleteBranch(repoPath, name string, force bool) error {
 
 func (a *App) RenameBranch(repoPath, oldName, newName string) error {
 	return gitcli.RenameBranch(repoPath, oldName, newName)
-}
-
-func (a *App) PushNamedBranch(repoPath, name string) error {
-	return gitcli.PushNamedBranch(repoPath, name)
 }
 
 func (a *App) PushTag(repoPath, tagName string) error {

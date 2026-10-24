@@ -6,14 +6,9 @@ import { useStagingStore } from '../../stores/staging';
 import { useBranchesStore } from '../../stores/branches';
 import { useToastStore } from '../../stores/toast';
 import { useStashStore } from '../../stores/stash';
-import {
-  PushBranch,
-  Stash,
-  StashPop,
-  CreateBranch,
-  OpenTerminal,
-} from '../../../wailsjs/go/main/App';
+import { Stash, StashPop, CreateBranch, OpenTerminal } from '../../../wailsjs/go/main/App';
 import { usePrefsStore } from '../../stores/prefs';
+import { pushWithFeedback } from '../../composables/usePush';
 import { useRepoPickerStore } from '../../stores/repoPicker';
 
 const viewMode = defineModel<'commits' | 'staging'>('viewMode', { required: true });
@@ -109,14 +104,7 @@ async function onPull() {
 }
 
 async function onPush() {
-  await run(
-    'push',
-    async () => {
-      await PushBranch(repoPath.value);
-      branches.load(repoPath.value);
-    },
-    'Pushed successfully'
-  );
+  await run('push', () => pushWithFeedback(repoPath.value));
 }
 
 async function onStash() {
