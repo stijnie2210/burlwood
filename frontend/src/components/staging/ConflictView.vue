@@ -1,7 +1,10 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from 'vue';
 import { useToastStore } from '../../stores/toast';
+import { useStagingStore } from '../../stores/staging';
 import { GetConflictContent, ResolveConflict } from '../../../wailsjs/go/main/App';
+import { parseConflicts, hasConflictMarkers } from '../../utils/conflicts';
+import type { ContextChunk, ParsedConflict } from '../../utils/conflicts';
 
 const props = defineProps<{
   repoPath: string;
@@ -13,18 +16,14 @@ const emit = defineEmits<{
 }>();
 
 const toast = useToastStore();
+// During a rebase git swaps the meaning: "ours" is the branch being rebased onto.
+const staging = useStagingStore();
 const loading = ref(true);
 const saving = ref(false);
 
 type SelectedLine = { side: 'ours' | 'theirs'; index: number };
 
-type ContextChunk = { type: 'context'; lines: string[] };
-type ConflictChunk = {
-  type: 'conflict';
-  ours: string[];
-  theirs: string[];
-  oursLabel: string;
-  theirsLabel: string;
+type ConflictChunk = ParsedConflict & {
   accepted: 'ours' | 'theirs' | 'custom' | null;
   selection: SelectedLine[];
   textOverride: string | null; // set when user manually edits preview; null = derive from selection
@@ -49,7 +48,9 @@ async function loadConflict() {
   chunks.value = [];
   try {
     const content = await GetConflictContent(props.repoPath, props.path);
-    chunks.value = parseConflicts(content.working);
+    chunks.value = parseConflicts(content.working).map((c) =>
+      c.type === 'context' ? c : { ...c, accepted: null, selection: [], textOverride: null }
+    );
   } catch (e) {
     toast.error(String(e));
   } finally {
@@ -59,64 +60,6 @@ async function loadConflict() {
 
 onMounted(loadConflict);
 watch(() => props.path, loadConflict);
-
-function parseConflicts(text: string): Chunk[] {
-  const result: Chunk[] = [];
-  const lines = text.split('\n');
-
-  let state: 'context' | 'ours' | 'theirs' = 'context';
-  let contextLines: string[] = [];
-  let oursLines: string[] = [];
-  let theirsLines: string[] = [];
-  let oursLabel = 'HEAD';
-
-  for (const line of lines) {
-    if (line.startsWith('<<<<<<< ')) {
-      if (contextLines.length) {
-        result.push({ type: 'context', lines: [...contextLines] });
-      }
-      contextLines = [];
-      oursLabel = line.slice(8);
-      oursLines = [];
-      state = 'ours';
-    } else if (line === '=======' && state === 'ours') {
-      state = 'theirs';
-      theirsLines = [];
-    } else if (line.startsWith('>>>>>>> ') && state === 'theirs') {
-      const theirsLabel = line.slice(8);
-      result.push({
-        type: 'conflict',
-        ours: [...oursLines],
-        theirs: [...theirsLines],
-        oursLabel,
-        theirsLabel,
-        accepted: null,
-        selection: [],
-        textOverride: null,
-      });
-      oursLines = [];
-      theirsLines = [];
-      state = 'context';
-    } else {
-      if (state === 'context') {
-        contextLines.push(line);
-      } else if (state === 'ours') {
-        oursLines.push(line);
-      } else {
-        theirsLines.push(line);
-      }
-    }
-  }
-
-  while (contextLines.length && contextLines[contextLines.length - 1] === '') {
-    contextLines.pop();
-  }
-  if (contextLines.length) {
-    result.push({ type: 'context', lines: contextLines });
-  }
-
-  return result;
-}
 
 function asConflict(c: Chunk): ConflictChunk {
   return c as ConflictChunk;
@@ -187,6 +130,16 @@ function acceptAll(side: 'ours' | 'theirs') {
   }
 }
 
+function focusSiblingLine(e: KeyboardEvent, dir: 1 | -1) {
+  const el = e.currentTarget as HTMLElement;
+  const next = (
+    dir === 1 ? el.nextElementSibling : el.previousElementSibling
+  ) as HTMLElement | null;
+  if (next?.getAttribute('role') === 'checkbox') {
+    next.focus();
+  }
+}
+
 // ── Preview / manual edit ────────────────────────────────────────────────────
 
 function previewText(chunk: ConflictChunk): string {
@@ -232,9 +185,14 @@ async function saveAndStage() {
   if (unresolvedCount.value > 0 || saving.value) {
     return;
   }
+  const resolved = buildResolved();
+  if (hasConflictMarkers(resolved)) {
+    toast.error('The result still contains conflict markers. Edit the preview before saving.');
+    return;
+  }
   saving.value = true;
   try {
-    await ResolveConflict(props.repoPath, props.path, buildResolved());
+    await ResolveConflict(props.repoPath, props.path, resolved);
     toast.success(`Resolved ${props.path.split('/').pop()}`);
     emit('resolved');
   } catch (e) {
@@ -274,26 +232,38 @@ async function saveAndStage() {
         >
           <!-- Ours side -->
           <div class="cv-side-header cv-ours-header">
-            <span class="cv-side-label">Ours — {{ asConflict(chunk).oursLabel }}</span>
+            <span class="cv-side-label">
+              Ours — {{ asConflict(chunk).oursLabel }}
+              <span v-if="staging.isInRebase" class="cv-side-hint"
+                >the branch you're rebasing onto</span
+              >
+            </span>
             <button
               class="cv-quick-btn cv-quick-ours"
               :class="{ active: asConflict(chunk).accepted === 'ours' }"
               @click="acceptSide(asConflict(chunk), 'ours')"
             >
-              {{ asConflict(chunk).accepted === 'ours' ? '✓ All Ours' : 'Accept All Ours' }}
+              {{ asConflict(chunk).accepted === 'ours' ? 'Using Ours' : 'Use Ours' }}
             </button>
           </div>
-          <div class="cv-lines cv-lines--ours">
+          <div class="cv-lines cv-lines--ours" role="group" :aria-label="`Ours lines`">
             <div
               v-for="(line, li) in asConflict(chunk).ours"
               :key="'o' + li"
               class="cv-line"
               :class="{ 'cv-line--selected': isLineSelected(asConflict(chunk), 'ours', li) }"
+              role="checkbox"
+              :aria-checked="isLineSelected(asConflict(chunk), 'ours', li)"
+              :tabindex="li === 0 ? 0 : -1"
               :title="
                 isLineSelected(asConflict(chunk), 'ours', li)
-                  ? 'Click to deselect'
-                  : 'Click to include this line'
+                  ? 'Click or Space to deselect'
+                  : 'Click or Space to include this line'
               "
+              @keydown.space.prevent.stop="toggleLine(asConflict(chunk), 'ours', li)"
+              @keydown.enter.prevent.stop="toggleLine(asConflict(chunk), 'ours', li)"
+              @keydown.down.prevent.stop="focusSiblingLine($event, 1)"
+              @keydown.up.prevent.stop="focusSiblingLine($event, -1)"
               @click="toggleLine(asConflict(chunk), 'ours', li)"
             >
               <span class="cv-line-badge">
@@ -311,30 +281,58 @@ async function saveAndStage() {
             </div>
           </div>
 
+          <!-- Base (diff3/zdiff3): read-only reference, never written into the result -->
+          <template v-if="asConflict(chunk).base">
+            <div class="cv-side-header cv-base-header">
+              <span class="cv-side-label">
+                Base{{ asConflict(chunk).baseLabel ? ` — ${asConflict(chunk).baseLabel}` : '' }}
+              </span>
+            </div>
+            <div class="cv-lines cv-lines--base">
+              <div v-for="(line, li) in asConflict(chunk).base" :key="'b' + li" class="cv-line">
+                <span class="cv-line-badge" />
+                <code class="cv-line-content">{{ line || ' ' }}</code>
+              </div>
+              <div v-if="asConflict(chunk).base!.length === 0" class="cv-line cv-line--empty">
+                (empty)
+              </div>
+            </div>
+          </template>
+
           <div class="cv-separator" />
 
           <!-- Theirs side -->
           <div class="cv-side-header cv-theirs-header">
-            <span class="cv-side-label">Theirs — {{ asConflict(chunk).theirsLabel }}</span>
+            <span class="cv-side-label">
+              Theirs — {{ asConflict(chunk).theirsLabel }}
+              <span v-if="staging.isInRebase" class="cv-side-hint">your commit being replayed</span>
+            </span>
             <button
               class="cv-quick-btn cv-quick-theirs"
               :class="{ active: asConflict(chunk).accepted === 'theirs' }"
               @click="acceptSide(asConflict(chunk), 'theirs')"
             >
-              {{ asConflict(chunk).accepted === 'theirs' ? '✓ All Theirs' : 'Accept All Theirs' }}
+              {{ asConflict(chunk).accepted === 'theirs' ? 'Using Theirs' : 'Use Theirs' }}
             </button>
           </div>
-          <div class="cv-lines cv-lines--theirs">
+          <div class="cv-lines cv-lines--theirs" role="group" :aria-label="`Theirs lines`">
             <div
               v-for="(line, li) in asConflict(chunk).theirs"
               :key="'t' + li"
               class="cv-line"
               :class="{ 'cv-line--selected': isLineSelected(asConflict(chunk), 'theirs', li) }"
+              role="checkbox"
+              :aria-checked="isLineSelected(asConflict(chunk), 'theirs', li)"
+              :tabindex="li === 0 ? 0 : -1"
               :title="
                 isLineSelected(asConflict(chunk), 'theirs', li)
-                  ? 'Click to deselect'
-                  : 'Click to include this line'
+                  ? 'Click or Space to deselect'
+                  : 'Click or Space to include this line'
               "
+              @keydown.space.prevent.stop="toggleLine(asConflict(chunk), 'theirs', li)"
+              @keydown.enter.prevent.stop="toggleLine(asConflict(chunk), 'theirs', li)"
+              @keydown.down.prevent.stop="focusSiblingLine($event, 1)"
+              @keydown.up.prevent.stop="focusSiblingLine($event, -1)"
               @click="toggleLine(asConflict(chunk), 'theirs', li)"
             >
               <span class="cv-line-badge">
@@ -386,8 +384,8 @@ async function saveAndStage() {
 
     <!-- Footer -->
     <div v-if="!loading" class="cv-footer">
-      <button class="cv-footer-btn" @click="acceptAll('ours')">Accept All Ours</button>
-      <button class="cv-footer-btn" @click="acceptAll('theirs')">Accept All Theirs</button>
+      <button class="cv-footer-btn" @click="acceptAll('ours')">Ours for every conflict</button>
+      <button class="cv-footer-btn" @click="acceptAll('theirs')">Theirs for every conflict</button>
       <div class="cv-footer-spacer" />
       <button
         class="cv-save-btn"
@@ -409,6 +407,22 @@ async function saveAndStage() {
   overflow: hidden;
   min-width: 0;
   background: var(--surface-sunken);
+}
+
+.cv-side-hint {
+  margin-left: var(--space-2);
+  font-weight: 400;
+  color: var(--text-tertiary);
+}
+
+/* Base section (diff3) */
+.cv-base-header {
+  background: var(--surface-raised);
+  border-top: 1px solid var(--border-subtle);
+}
+.cv-lines--base .cv-line {
+  cursor: default;
+  color: var(--text-tertiary);
 }
 
 /* Header */
