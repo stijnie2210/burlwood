@@ -381,7 +381,7 @@ async function confirmBranch() {
             @keydown.escape="cancelBranch"
           />
           <button class="branch-confirm" @click="confirmBranch">Create</button>
-          <button class="branch-cancel" @click="cancelBranch">✕</button>
+          <button class="branch-cancel" aria-label="Cancel" @click="cancelBranch">✕</button>
         </div>
       </div>
 

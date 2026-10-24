@@ -252,7 +252,14 @@ async function onMenuRefresh() {
       <span v-if="searchQuery.trim()" class="search-count">
         {{ filteredRows.length }} result{{ filteredRows.length === 1 ? '' : 's' }}
       </span>
-      <button class="search-close" @click="closeSearch">×</button>
+      <button
+        class="search-close"
+        aria-label="Close search"
+        title="Close search (Esc)"
+        @click="closeSearch"
+      >
+        ×
+      </button>
     </div>
 
     <div

@@ -340,6 +340,7 @@ onUnmounted(() => document.removeEventListener('keydown', onKeyDown));
   font-size: var(--text-row);
   line-height: 19px;
   white-space: pre;
+  tab-size: 4;
 }
 .diff-line--add {
   background: var(--add-line-bg);

@@ -536,6 +536,14 @@ const navigableFiles = computed((): NavEntry[] => [
   ...staging.stagedFiles.map((f) => ({ path: f.path, section: 'staged' as const })),
 ]);
 
+// The selected file is the list's Tab stop; with nothing selected the first file is, so the
+// list stays reachable by keyboard.
+function fileTabIndex(path: string, section: NavEntry['section']): number {
+  const i = currentNavIndex.value;
+  const stop = i >= 0 ? navigableFiles.value[i] : navigableFiles.value[0];
+  return stop && stop.path === path && stop.section === section ? 0 : -1;
+}
+
 const currentNavIndex = computed(() => {
   if (!staging.selectedPath) {
     return -1;
@@ -778,7 +786,7 @@ async function doAbortRebase() {
                 :class="{ selected: staging.selectedPath === file.path }"
                 role="option"
                 :aria-selected="staging.selectedPath === file.path"
-                :tabindex="staging.selectedPath === file.path ? 0 : -1"
+                :tabindex="fileTabIndex(file.path, 'conflict')"
                 @click="onSelectConflict(file.path)"
                 @contextmenu="openFileCtxMenu($event, file.path, 'conflict')"
                 @keydown.shift.f10.prevent="
@@ -828,9 +836,7 @@ async function doAbortRebase() {
               :aria-selected="
                 staging.selectedPath === file.path && staging.selectedMode === 'unstaged'
               "
-              :tabindex="
-                staging.selectedPath === file.path && staging.selectedMode === 'unstaged' ? 0 : -1
-              "
+              :tabindex="fileTabIndex(file.path, 'unstaged')"
               @click="onSelectFile(file.path, 'unstaged')"
               @contextmenu="openFileCtxMenu($event, file.path, 'unstaged')"
               @keydown.shift.f10.prevent="
@@ -875,9 +881,7 @@ async function doAbortRebase() {
               :aria-selected="
                 staging.selectedPath === file.path && staging.selectedMode === 'staged'
               "
-              :tabindex="
-                staging.selectedPath === file.path && staging.selectedMode === 'staged' ? 0 : -1
-              "
+              :tabindex="fileTabIndex(file.path, 'staged')"
               @click="onSelectFile(file.path, 'staged')"
               @contextmenu="openFileCtxMenu($event, file.path, 'staged')"
               @keydown.shift.f10.prevent="

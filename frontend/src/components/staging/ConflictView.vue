@@ -482,6 +482,7 @@ async function saveAndStage() {
   background: var(--surface-sunken);
   white-space: pre-wrap;
   word-break: break-all;
+  tab-size: 4;
 }
 
 /* Conflict block */
@@ -634,6 +635,7 @@ async function saveAndStage() {
   line-height: 1.55;
   white-space: pre-wrap;
   word-break: break-all;
+  tab-size: 4;
 }
 .cv-lines--ours .cv-line-content {
   color: var(--ours-fg);

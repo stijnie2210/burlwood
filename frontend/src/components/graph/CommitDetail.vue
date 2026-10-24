@@ -31,7 +31,7 @@ const displayDate = computed(() => {
         <span class="meta-hash">{{ selectedRow.shortHash }}</span>
         <span
           v-for="l in selectedRow.labels"
-          :key="l.name"
+          :key="`${l.type}:${l.remote ?? ''}:${l.name}`"
           class="label"
           :class="`label--${l.type}`"
           >{{ l.type === 'remote' ? `${l.remote}/${l.name}` : l.name }}</span

@@ -59,7 +59,7 @@ watchEffect(() => {
     <span class="row-labels">
       <span
         v-for="l in visibleLabels"
-        :key="l.name"
+        :key="`${l.type}:${l.remote ?? ''}:${l.name}`"
         class="label"
         :class="`label--${l.type}`"
         :title="labelText(l)"
