@@ -41,13 +41,17 @@ func (a *App) beforeClose(ctx context.Context) bool {
 	return false
 }
 
-func (a *App) OpenRepository(path string) error {
-	if err := a.manager.Open(path); err != nil {
-		return err
+// Returns the repository root, which differs from path when a subfolder was picked.
+func (a *App) OpenRepository(path string) (string, error) {
+	root, err := gitcli.RepoRoot(path)
+	if err != nil {
+		return "", err
 	}
-	abs, _ := filepath.Abs(path)
-	_ = repo.SaveRecentRepo(abs)
-	return nil
+	if err := a.manager.Open(root); err != nil {
+		return "", err
+	}
+	_ = repo.SaveRecentRepo(root)
+	return root, nil
 }
 
 func (a *App) CloseRepository(path string) {

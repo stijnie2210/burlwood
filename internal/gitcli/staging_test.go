@@ -35,3 +35,23 @@ func TestStageFiles_StagesAndUnstagesInOneCall(t *testing.T) {
 		t.Fatalf("still staged: %q", staged.Stdout)
 	}
 }
+
+func TestRepoRoot_ResolvesSubfolderAndRejectsNonRepo(t *testing.T) {
+	dir := initRepo(t)
+	sub := filepath.Join(dir, "a", "b")
+	if err := os.MkdirAll(sub, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	root, err := RepoRoot(sub)
+	if err != nil {
+		t.Fatal(err)
+	}
+	want, _ := filepath.EvalSymlinks(dir)
+	got, _ := filepath.EvalSymlinks(root)
+	if got != want {
+		t.Fatalf("root = %s, want %s", got, want)
+	}
+	if _, err := RepoRoot(t.TempDir()); err == nil || !strings.Contains(err.Error(), "isn't inside a git repository") {
+		t.Fatalf("expected a not-a-repo error, got %v", err)
+	}
+}

@@ -52,7 +52,7 @@ async function loadConflict() {
       c.type === 'context' ? c : { ...c, accepted: null, selection: [], textOverride: null }
     );
   } catch (e) {
-    toast.error(String(e));
+    toast.error(e);
   } finally {
     loading.value = false;
   }
@@ -196,7 +196,7 @@ async function saveAndStage() {
     toast.success(`Resolved ${props.path.split('/').pop()}`);
     emit('resolved');
   } catch (e) {
-    toast.error(String(e));
+    toast.error(e);
   } finally {
     saving.value = false;
   }

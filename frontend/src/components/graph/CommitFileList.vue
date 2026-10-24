@@ -44,7 +44,10 @@ function tabStop(fi: number): number {
 
 <template>
   <div class="file-list">
-    <div v-if="commits.diff.length === 0" class="no-changes">No changes</div>
+    <div v-if="commits.diffError" class="no-changes no-changes--error" role="alert">
+      Couldn't load this commit's changes. {{ commits.diffError }}
+    </div>
+    <div v-else-if="commits.diff.length === 0" class="no-changes">No changes</div>
 
     <button
       v-for="(file, fi) in commits.diff"
@@ -80,6 +83,9 @@ function tabStop(fi: number): number {
   overflow-y: auto;
 }
 
+.no-changes--error {
+  color: var(--danger);
+}
 .no-changes {
   padding: 16px;
   color: var(--text-tertiary);

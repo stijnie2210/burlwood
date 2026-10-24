@@ -9,6 +9,7 @@ const props = defineProps<{
   mode: 'stage' | 'unstage';
   path: string;
   diffLoading: boolean;
+  diffError?: string | null;
 }>();
 
 const lang = computed(() => languageForPath(props.path));
@@ -68,6 +69,10 @@ const { visible, hiddenLines, revealAll } = useLineBudget(
 
     <!-- Loading state -->
     <div v-if="diffLoading" class="hunk-loading">Loading diff…</div>
+
+    <div v-else-if="diffError" class="hunk-empty hunk-error" role="alert">
+      Couldn't load this diff. {{ diffError }}
+    </div>
 
     <!-- Binary file notice -->
     <div v-else-if="isBinary" class="hunk-empty">Binary file — no diff available</div>
@@ -193,6 +198,10 @@ const { visible, hiddenLines, revealAll } = useLineBudget(
   color: var(--text-secondary);
   text-align: center;
   font-size: var(--text-body);
+}
+
+.hunk-error {
+  color: var(--danger);
 }
 
 .hunks-scroll {

@@ -16,9 +16,9 @@ function preview(message: string): string {
   return message.includes('\n') ? firstLine + ' …' : firstLine;
 }
 
-function viewLog(t: { type: string; message: string }, e: MouseEvent) {
+function viewLog(t: Toast, e: MouseEvent) {
   e.stopPropagation();
-  logModal.show(t.type === 'error' ? 'Error details' : 'Details', t.message);
+  logModal.show(t.type === 'error' ? 'Error details' : 'Details', t.detail ?? t.message);
 }
 
 async function runAction(t: Toast, e: MouseEvent) {
@@ -69,8 +69,12 @@ async function runAction(t: Toast, e: MouseEvent) {
           <span class="toast-msg">{{
             isLongMessage(t.message) ? preview(t.message) : t.message
           }}</span>
-          <button v-if="isLongMessage(t.message)" class="toast-action" @click="viewLog(t, $event)">
-            View log
+          <button
+            v-if="t.detail || isLongMessage(t.message)"
+            class="toast-action"
+            @click="viewLog(t, $event)"
+          >
+            Details
           </button>
           <button
             v-if="t.action"

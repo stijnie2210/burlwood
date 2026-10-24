@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia';
 import { ref } from 'vue';
+import { describeGitError } from '../utils/gitErrors';
 
 export type ToastType = 'success' | 'error' | 'info';
 
@@ -14,6 +15,7 @@ export interface Toast {
   type: ToastType;
   duration: number;
   action?: ToastAction;
+  detail?: string;
   paused?: boolean;
 }
 
@@ -39,11 +41,12 @@ export const useToastStore = defineStore('toast', () => {
     message: string,
     type: ToastType = 'info',
     duration?: number,
-    action?: ToastAction
+    action?: ToastAction,
+    detail?: string
   ) {
     const ms = duration ?? (isLongMessage(message) ? 0 : type === 'error' ? 7000 : 3500);
     const id = nextId++;
-    toasts.value.push({ id, message, type, duration: ms, action });
+    toasts.value.push({ id, message, type, duration: ms, action, detail });
     if (ms > 0) {
       schedule(id, ms);
     }
@@ -100,8 +103,10 @@ export const useToastStore = defineStore('toast', () => {
   function success(message: string) {
     return push(message, 'success');
   }
-  function error(message: string) {
-    return push(message, 'error');
+  // Accepts raw errors from git calls and shows them as a sentence with a next step.
+  function error(err: unknown) {
+    const { message, detail } = describeGitError(err);
+    return push(message, 'error', undefined, undefined, detail);
   }
   function withUndo(message: string, undo: () => void | Promise<void>) {
     return push(message, 'info', UNDO_WINDOW_MS, { label: 'Undo', run: undo });

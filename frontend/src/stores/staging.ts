@@ -22,6 +22,8 @@ import {
   SyncAutostash,
 } from '../../wailsjs/go/main/App';
 import type { gitcli, repo } from '../../wailsjs/go/models';
+import { describeGitError } from '../utils/gitErrors';
+import { useToastStore } from './toast';
 
 export type FileStatus = repo.FileStatus;
 export type FileDiff = repo.FileDiff;
@@ -62,6 +64,7 @@ export const useStagingStore = defineStore('staging', () => {
   const selectedMode = ref<'staged' | 'unstaged'>('unstaged');
   const diff = ref<FileDiff[]>([]);
   const diffLoading = ref(false);
+  const diffError = ref<string | null>(null);
   const isInMerge = ref(false);
   const mergeMessage = ref('');
   const isInRebase = ref(false);
@@ -111,6 +114,8 @@ export const useStagingStore = defineStore('staging', () => {
       isInRebase.value = rebaseActive;
       rebaseState.value = rebaseInfo;
       loadedRepoPath = repoPath;
+    } catch (e) {
+      useToastStore().error(e);
     } finally {
       loading.value = false;
     }
@@ -129,11 +134,7 @@ export const useStagingStore = defineStore('staging', () => {
       clearSelection();
       return;
     }
-    try {
-      diff.value = await GetWorkingDiff(repoPath, path, selectedMode.value === 'staged');
-    } catch {
-      // keep showing the previous diff; the next refresh will retry
-    }
+    await reloadDiff(repoPath);
   }
 
   async function selectFile(repoPath: string, path: string, mode: 'staged' | 'unstaged') {
@@ -141,10 +142,27 @@ export const useStagingStore = defineStore('staging', () => {
     selectedMode.value = mode;
     diffLoading.value = true;
     diff.value = [];
+    diffError.value = null;
     try {
       diff.value = await GetWorkingDiff(repoPath, path, mode === 'staged');
+    } catch (e) {
+      diffError.value = describeGitError(e).message;
     } finally {
       diffLoading.value = false;
+    }
+  }
+
+  // Swaps the open diff in place (no loading state), so staging a hunk keeps your scroll position.
+  async function reloadDiff(repoPath: string) {
+    const path = selectedPath.value;
+    if (!path) {
+      return;
+    }
+    try {
+      diff.value = await GetWorkingDiff(repoPath, path, selectedMode.value === 'staged');
+      diffError.value = null;
+    } catch (e) {
+      diffError.value = describeGitError(e).message;
     }
   }
 
@@ -173,7 +191,7 @@ export const useStagingStore = defineStore('staging', () => {
     await StageHunk(repoPath, patch);
     await load(repoPath);
     if (selectedPath.value === path) {
-      await selectFile(repoPath, path, 'unstaged');
+      await reloadDiff(repoPath);
     }
   }
 
@@ -182,7 +200,7 @@ export const useStagingStore = defineStore('staging', () => {
     await UnstageHunk(repoPath, patch);
     await load(repoPath);
     if (selectedPath.value === path) {
-      await selectFile(repoPath, path, 'staged');
+      await reloadDiff(repoPath);
     }
   }
 
@@ -253,6 +271,7 @@ export const useStagingStore = defineStore('staging', () => {
     selectedMode,
     diff,
     diffLoading,
+    diffError,
     isInMerge,
     mergeMessage,
     isInRebase,

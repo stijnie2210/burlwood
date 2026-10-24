@@ -96,7 +96,7 @@ async function checkout() {
     toast.success(`Checked out ${props.row.shortHash} (detached HEAD)`);
     emit('refresh');
   } catch (e) {
-    toast.error(String(e));
+    toast.error(e);
   }
   emit('close');
 }
@@ -117,7 +117,7 @@ async function confirmBranch() {
     toast.success(`Branch '${name}' created at ${props.row.shortHash}`);
     emit('refresh');
   } catch (e) {
-    toast.error(String(e));
+    toast.error(e);
   }
   emit('close');
 }
@@ -136,7 +136,7 @@ async function revert(commitImmediately: boolean) {
     );
     emit('refresh');
   } catch (e) {
-    toast.error(String(e));
+    toast.error(e);
   }
   emit('close');
 }
@@ -151,7 +151,7 @@ async function reset(resetMode: 'soft' | 'mixed' | 'hard') {
     toast.success(`Branch reset (${resetMode}) to ${props.row.shortHash}`);
     emit('refresh');
   } catch (e) {
-    toast.error(String(e));
+    toast.error(e);
   }
   emit('close');
 }
@@ -168,12 +168,12 @@ async function hardReset() {
         await UndoHardReset(repo, undo);
         toast.success(`Reset undone, back at ${undo.head.slice(0, 7)}`);
       } catch (e) {
-        toast.error(String(e));
+        toast.error(e);
       }
       await reloadRepo(repo);
     });
   } catch (e) {
-    toast.error(String(e));
+    toast.error(e);
   }
   emit('close');
 }
@@ -214,7 +214,7 @@ async function confirmMoveTag() {
     emit('refresh');
     mode.value = 'tag-created';
   } catch (e) {
-    toast.error(String(e));
+    toast.error(e);
     emit('close');
   }
 }
@@ -229,7 +229,7 @@ async function confirmTag() {
     emit('refresh');
     mode.value = 'tag-created';
   } catch (e) {
-    toast.error(String(e));
+    toast.error(e);
     emit('close');
   }
 }
@@ -244,7 +244,7 @@ async function pushCreatedTag() {
     }
     toast.success(tagMoved.value ? `Tag '${name}' force-pushed` : `Tag '${name}' pushed`);
   } catch (e) {
-    toast.error(String(e));
+    toast.error(e);
   }
   emit('close');
 }
@@ -254,7 +254,7 @@ async function pushTag(name: string) {
     await PushTag(props.repoPath, name);
     toast.success(`Tag '${name}' pushed`);
   } catch (e) {
-    toast.error(String(e));
+    toast.error(e);
   }
   emit('close');
 }

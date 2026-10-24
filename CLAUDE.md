@@ -72,6 +72,7 @@ frontend/src/
     useContextMenu.ts               clampMenuPosition(el, x, y), handleMenuKeydown (↑/↓/Esc), menuEventFor (Shift+F10)
     useDialog.ts                    Esc, initial focus, Tab trap and focus return for modals
     useLineBudget.ts                renders the first 2000 diff lines until "Show more"; hunk actions keep the full hunk
+  utils/gitErrors.ts                describeGitError: raw git stderr → sentence + next step (toast.error uses it; raw text under Details)
   App.smoke.test.ts                 mounts the whole app on stubbed Wails bindings — catches setup-time crashes
   stores/
     repos.ts                        tabs[], activeRepo, openRepo, pickAndOpen, closeTab

@@ -151,7 +151,7 @@ async function switchTo(target: string, trackRemote: boolean) {
       toast.success(result.message);
     }
   } catch (e: unknown) {
-    toast.error(String(e));
+    toast.error(e);
   }
 }
 
@@ -263,14 +263,17 @@ async function rebaseOnto(target: string) {
     await StartRebase(repoPath, target);
     await Promise.all([branches.load(repoPath), commits.load(repoPath), staging.load(repoPath)]);
     toast.success('Rebased onto ' + target);
-  } catch {
+  } catch (e) {
     await staging.load(repoPath);
     if (staging.isInRebase) {
       await Promise.all([branches.load(repoPath), commits.load(repoPath)]);
-      toast.success('Rebase started — switch to Working Tree to resolve conflicts');
+      toast.push(
+        `Rebase onto ${target} stopped on a conflict. Resolve it in the Working Tree (⌘2), then continue.`,
+        'info',
+        0
+      );
     } else {
-      await staging.load(repoPath);
-      toast.error('Rebase failed — check Working Tree view for details');
+      toast.error(e);
     }
   }
 }
@@ -329,7 +332,7 @@ async function confirmRename() {
     await branches.load(repoPath);
     toast.success('Renamed to ' + newName);
   } catch (e: unknown) {
-    toast.error(String(e));
+    toast.error(e);
   }
 }
 
@@ -454,7 +457,7 @@ async function applyStash() {
     await Promise.all([stash.load(repoPath), staging.load(repoPath)]);
     toast.success('Applied ' + menu.ref);
   } catch (e: unknown) {
-    toast.error(String(e));
+    toast.error(e);
   }
 }
 
@@ -470,7 +473,7 @@ async function popStash() {
     await Promise.all([stash.load(repoPath), staging.load(repoPath), commits.load(repoPath)]);
     toast.success('Popped ' + menu.ref);
   } catch (e: unknown) {
-    toast.error(String(e));
+    toast.error(e);
   }
 }
 
@@ -493,7 +496,7 @@ async function confirmStashDrop() {
     await Promise.all([stash.load(repoPath), commits.load(repoPath)]);
     toast.success('Dropped ' + menu.ref);
   } catch (e: unknown) {
-    toast.error(String(e));
+    toast.error(e);
   }
 }
 
@@ -525,7 +528,7 @@ async function confirmStashRename() {
     await Promise.all([stash.load(repoPath), commits.load(repoPath)]);
     toast.success('Renamed stash');
   } catch (e: unknown) {
-    toast.error(String(e));
+    toast.error(e);
   }
 }
 </script>

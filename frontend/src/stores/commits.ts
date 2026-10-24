@@ -3,6 +3,7 @@ import { ref, computed } from 'vue';
 import { GetCommitGraph, GetCommitDiff } from '../../wailsjs/go/main/App';
 import type { graph, repo } from '../../wailsjs/go/models';
 import { usePrefsStore } from './prefs';
+import { describeGitError } from '../utils/gitErrors';
 
 export type GraphRow = graph.GraphRow;
 export type FileDiff = repo.FileDiff;
@@ -20,6 +21,7 @@ export const useCommitsStore = defineStore('commits', () => {
   const selectedFileIndex = ref<number | null>(null);
   const diff = ref<FileDiff[]>([]);
   const diffLoading = ref(false);
+  const diffError = ref<string | null>(null);
   const currentRepoPath = ref<string | null>(null);
 
   const maxColumn = computed(() => rows.value.reduce((m, r) => Math.max(m, r.maxColumn), 0));
@@ -94,8 +96,11 @@ export const useCommitsStore = defineStore('commits', () => {
     selectedFileIndex.value = null;
     diffLoading.value = true;
     diff.value = [];
+    diffError.value = null;
     try {
       diff.value = await GetCommitDiff(repoPath, hash);
+    } catch (e) {
+      diffError.value = describeGitError(e).message;
     } finally {
       diffLoading.value = false;
     }
@@ -121,6 +126,7 @@ export const useCommitsStore = defineStore('commits', () => {
     selectedFileIndex,
     diff,
     diffLoading,
+    diffError,
     maxColumn,
     load,
     loadMore,

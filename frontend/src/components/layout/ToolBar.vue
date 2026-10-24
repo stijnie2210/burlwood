@@ -44,7 +44,7 @@ async function run(op: string, fn: () => Promise<void>, successMsg?: string) {
       toast.success(successMsg);
     }
   } catch (e: unknown) {
-    toast.error(String(e));
+    toast.error(e);
   } finally {
     busy.value = null;
   }

@@ -78,7 +78,12 @@ function onSelectFile(path: string, mode: 'staged' | 'unstaged') {
 async function onStageFile(path: string) {
   const prevIdx = staging.unstagedFiles.findIndex((f) => f.path === path);
   const wasSelected = staging.selectedPath === path;
-  await staging.stageFile(repoPath(), path);
+  try {
+    await staging.stageFile(repoPath(), path);
+  } catch (e) {
+    toast.error(e);
+    return;
+  }
   if (!wasSelected) {
     return;
   }
@@ -95,7 +100,12 @@ async function onStageFile(path: string) {
 async function onUnstageFile(path: string) {
   const prevIdx = staging.stagedFiles.findIndex((f) => f.path === path);
   const wasSelected = staging.selectedPath === path;
-  await staging.unstageFile(repoPath(), path);
+  try {
+    await staging.unstageFile(repoPath(), path);
+  } catch (e) {
+    toast.error(e);
+    return;
+  }
   if (!wasSelected) {
     return;
   }
@@ -126,23 +136,33 @@ async function onDiscardFile(path: string) {
         }
         toast.success(`Restored ${name}`);
       } catch (e) {
-        toast.error(String(e));
+        toast.error(e);
       }
     });
   } catch (e) {
-    toast.error(String(e));
+    toast.error(e);
   }
 }
 
-function onStageHunk(hunk: Hunk) {
-  if (staging.selectedPath) {
-    staging.stageHunk(repoPath(), staging.selectedPath, hunk);
+async function onStageHunk(hunk: Hunk) {
+  if (!staging.selectedPath) {
+    return;
+  }
+  try {
+    await staging.stageHunk(repoPath(), staging.selectedPath, hunk);
+  } catch (e) {
+    toast.error(e);
   }
 }
 
-function onUnstageHunk(hunk: Hunk) {
-  if (staging.selectedPath) {
-    staging.unstageHunk(repoPath(), staging.selectedPath, hunk);
+async function onUnstageHunk(hunk: Hunk) {
+  if (!staging.selectedPath) {
+    return;
+  }
+  try {
+    await staging.unstageHunk(repoPath(), staging.selectedPath, hunk);
+  } catch (e) {
+    toast.error(e);
   }
 }
 async function onStageAll() {
@@ -152,7 +172,7 @@ async function onStageAll() {
       staging.unstagedFiles.map((f) => f.path)
     );
   } catch (e) {
-    toast.error(String(e));
+    toast.error(e);
   }
 }
 async function onUnstageAll() {
@@ -162,7 +182,7 @@ async function onUnstageAll() {
       staging.stagedFiles.map((f) => f.path)
     );
   } catch (e) {
-    toast.error(String(e));
+    toast.error(e);
   }
 }
 
@@ -380,7 +400,7 @@ async function ctxStashFile() {
     await staging.load(repoPath());
     toast.success(`Stashed ${m.path}`);
   } catch (e) {
-    toast.error(String(e));
+    toast.error(e);
   }
 }
 
@@ -403,7 +423,7 @@ async function ctxIgnore(mode: 'file' | 'ext' | 'dir') {
     await staging.load(repoPath());
     toast.success(`Added "${pattern}" to .gitignore`);
   } catch (e) {
-    toast.error(String(e));
+    toast.error(e);
   }
 }
 
@@ -416,7 +436,7 @@ async function ctxOpenDefaultApp() {
   try {
     await OpenInDefaultApp(repoPath(), m.path);
   } catch (e) {
-    toast.error(String(e));
+    toast.error(e);
   }
 }
 
@@ -429,7 +449,7 @@ async function ctxShowInFinder() {
   try {
     await ShowInFinder(repoPath(), m.path);
   } catch (e) {
-    toast.error(String(e));
+    toast.error(e);
   }
 }
 
@@ -442,7 +462,7 @@ async function ctxOpenInEditor() {
   try {
     await OpenInEditor(repoPath(), m.path);
   } catch (e) {
-    toast.error(String(e));
+    toast.error(e);
   }
 }
 
@@ -465,7 +485,7 @@ async function ctxSavePatch() {
   try {
     await SavePatchFile(repoPath(), m.path);
   } catch (e) {
-    toast.error(String(e));
+    toast.error(e);
   }
 }
 
@@ -488,7 +508,7 @@ async function ctxDeleteFile() {
     }
     toast.success(`Deleted ${path}`);
   } catch (e) {
-    toast.error(String(e));
+    toast.error(e);
   }
 }
 
@@ -625,7 +645,7 @@ async function doAbortMerge() {
     staging.clearSelection();
     toast.success('Merge aborted');
   } catch (e) {
-    toast.error(String(e));
+    toast.error(e);
   }
 }
 
@@ -650,7 +670,7 @@ async function doContinueRebase() {
     if (staging.isInRebase) {
       toast.success('Conflict resolved — next commit has conflicts, keep resolving');
     } else {
-      toast.error(String(e));
+      toast.error(e);
     }
   }
 }
@@ -667,7 +687,7 @@ async function doAbortRebase() {
     staging.clearSelection();
     toast.success('Rebase aborted');
   } catch (e) {
-    toast.error(String(e));
+    toast.error(e);
   }
 }
 </script>
@@ -969,6 +989,7 @@ async function doAbortRebase() {
           :mode="staging.selectedMode === 'staged' ? 'unstage' : 'stage'"
           :path="staging.selectedPath"
           :diff-loading="staging.diffLoading"
+          :diff-error="staging.diffError"
           @stage-file="onStageFile(staging.selectedPath!)"
           @unstage-file="onUnstageFile(staging.selectedPath!)"
           @discard-file="onDiscardFile(staging.selectedPath!)"

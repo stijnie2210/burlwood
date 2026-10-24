@@ -85,7 +85,7 @@ export function OpenInDefaultApp(arg1:string,arg2:string):Promise<void>;
 
 export function OpenInEditor(arg1:string,arg2:string):Promise<void>;
 
-export function OpenRepository(arg1:string):Promise<void>;
+export function OpenRepository(arg1:string):Promise<string>;
 
 export function OpenTerminal(arg1:string):Promise<void>;
 
