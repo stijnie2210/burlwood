@@ -1,6 +1,8 @@
 <p align="center">
-  <img src="assets/fulllogo_transparent_b.png" alt="gitgood" width="320">
+  <img src="frontend/src/assets/images/logo-icon.png" alt="" width="96">
 </p>
+
+<h1 align="center">gitgood</h1>
 
 A fast desktop Git client, built first for macOS. One native binary made with [Wails](https://wails.io): a Go backend and a Vue 3 frontend, no Electron and no local web server.
 
