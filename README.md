@@ -1,20 +1,47 @@
-# gitgood
+<p align="center">
+  <img src="assets/fulllogo_transparent_b.png" alt="gitgood" width="320">
+</p>
 
-A desktop Git client built as a single binary using [Wails v2](https://wails.io) (Go backend + Vue 3 frontend). No HTTP server — the Go layer is bound directly to the TypeScript frontend via auto-generated type-safe bindings.
+A fast desktop Git client, built first for macOS. One native binary made with [Wails](https://wails.io): a Go backend and a Vue 3 frontend, no Electron and no local web server.
+
+gitgood is a hobby project and still early (v0.1.x). Expect rough edges, and keep your usual backups of anything precious.
+
+![The commit graph with a commit's changed files](assets/screenshots/commit-graph.png)
 
 ## Features
 
-- **Commit graph** — visual branch graph with lane layout and virtual scrolling, handles thousands of commits
-- **Staging** — file-level and hunk-level stage/unstage, discard, and diff viewer
-- **Branch switching** — smart checkout that carries over non-conflicting changes; auto-stashes when git refuses, then pops the stash after the switch
-- **Conflict resolution** — per-conflict Accept Ours / Accept Theirs UI for merge and rebase conflicts
-- **Rebasing** — start a rebase onto any branch from the sidebar context menu; continue or abort from the staging view while conflicts are surfaced inline
-- **Remote operations** — fetch, pull, push with SSH agent support
-- **Recent repositories** — persisted to `~/Library/Application Support/gitgood/repos.json`
+- **Commit graph:** branch lanes for every ref and stash, scrolls smoothly through thousands of commits, find a commit with ⌘F
+- **Commit actions:** checkout, create a branch or tag at any commit, move or push tags, revert, and soft, mixed or hard reset (a hard reset can be undone)
+- **Working tree:** stage and unstage whole files or single hunks, discard with undo, image preview, syntax-highlighted diffs
+- **Committing:** commit or amend, with a warning before you rewrite commits that are already pushed
+- **Branches:** switch, rename, delete, push and rebase from the sidebar; switching carries your uncommitted changes along and stashes them only when git refuses
+- **Stashes:** create, apply, pop, rename and drop
+- **Merge and rebase conflicts:** pick ours or theirs per conflict, with diff3/zdiff3 support and a banner showing rebase progress
+- **Remotes:** fetch (also automatically in the background), pull with your preferred mode and automatic stashing, push with automatic upstream, and force push with lease when a push is rejected
+- **Clear errors:** git's error output is turned into a plain sentence with a next step; the full output stays one click away
+- **Tabs:** several repositories open at once, restored on the next launch
 
-## Installing (Linux)
+Not supported yet: HTTPS authentication for private repositories. SSH remotes work through your SSH agent.
 
-The AppImage release requires WebKit2GTK 4.1. Install it before running:
+![Staging changes in the working tree](assets/screenshots/working-tree.png)
+
+## Installing
+
+Download the latest build from [Releases](https://github.com/stijnie2210/gitgood/releases).
+
+gitgood calls the `git` on your system for most operations, so git must be installed and on your `PATH`.
+
+### macOS
+
+Open `gitgood-mac-universal.dmg` and drag gitgood to Applications. The app isn't signed with an Apple Developer ID, so macOS blocks it on the first launch. Clear the quarantine flag once:
+
+```bash
+xattr -dr com.apple.quarantine /Applications/gitgood.app
+```
+
+### Linux
+
+The AppImage needs WebKit2GTK 4.1:
 
 ```bash
 # Fedora / RHEL
@@ -27,103 +54,45 @@ sudo apt install libwebkit2gtk-4.1-0
 sudo pacman -S webkit2gtk-4.1
 ```
 
-Then make the AppImage executable and run it:
+Then make it executable and run it:
 
 ```bash
 chmod +x gitgood-linux-amd64.AppImage
 ./gitgood-linux-amd64.AppImage
 ```
 
-## Requirements (building from source)
+### Windows
 
-- Go 1.24+
+Unzip `gitgood-windows-amd64.zip` and run `gitgood.exe`.
+
+## Building from source
+
+Requirements:
+
+- Go 1.25+
+- Node.js 20.19+ or 22.12+
 - [Wails CLI](https://wails.io/docs/gettingstarted/installation) v2
-- Node.js 18+
-
-## Development
 
 ```bash
-wails dev        # hot-reload dev build; regenerates TypeScript bindings automatically
-wails build      # production .app bundle → build/bin/gitgood.app
-go build ./...   # Go-only compile check
+wails dev        # development build with hot reload
+wails build      # production build → build/bin/
 ```
 
-After adding or changing Go methods on `App` or structs that cross the boundary, run `wails dev` or `wails build` to regenerate `frontend/wailsjs/go/main/App.d.ts` and `frontend/wailsjs/go/models.ts`. Never edit those files by hand.
+Tests and checks:
 
-## Architecture
-
-### Hybrid git strategy
-
-- **go-git** for reads: log, branches, refs, commit objects, tree diffs
-- **System `git` (shell-out)** for writes and complex operations: staging, hunk apply, rebase, merge, fetch/pull/push
-
-This keeps reads fast and dependency-light while delegating anything state-changing to the real git binary.
-
-### Layer overview
-
-```
-app.go                    Thin Wails-bound coordinator; all methods delegate to manager
-internal/repo/            Manager (open repos map) and all business logic
-internal/gitcli/          Pure exec.Command wrappers — no business logic
-internal/graph/           Lane assignment algorithm for the commit graph
-frontend/src/stores/      Pinia stores, one per domain
-frontend/src/components/  Vue components grouped by feature
+```bash
+go test ./internal/...
+cd frontend && npm test && npm run lint && npm run build
 ```
 
-### Key implementation notes
+## How it works
 
-**Commit graph** — greedy topological walk assigns each commit to a lane. Merge convergence frees the current lane and draws a diagonal edge. Rendered with `@tanstack/vue-virtual` virtual scroll and a canvas element per row.
+The Go side runs your system `git` for almost everything and parses its output; `internal/gitcli/` holds the thin command wrappers and `internal/repo/` the logic on top. The commit graph layout lives in `internal/graph/`. The Vue frontend (`frontend/src/`) calls the Go methods through bindings that Wails generates. For hunk staging, the frontend builds the patch from exactly the lines on screen and hands it to `git apply --cached`.
 
-**Hunk staging** — the frontend builds the patch string from what the user sees, then calls `git apply --cached` (or `--cached --reverse` to unstage). This ensures the applied patch exactly matches the displayed diff.
+[CLAUDE.md](CLAUDE.md) has the detailed architecture notes and a file map.
 
-**Branch switching** — attempts a direct `git checkout` first; if git refuses due to conflicting changes it auto-stashes, switches, then pops the stash. If the stash pop produces conflicts they are surfaced in the staging view.
+## License
 
-**Conflict resolution** — works identically for merges and rebases. The staging view parses `<<<<<<< / ======= / >>>>>>>` markers into context and conflict chunks; each conflict chunk has Accept Ours / Accept Theirs buttons. Save & Stage calls `ResolveConflict` on the backend.
+Copyright © 2026 Stijn Mommersteeg
 
-**Rebasing** — `git rebase <onto>` is started from the sidebar context menu (right-click any branch). If conflicts are hit, the staging view shows a rebase banner with step progress and the current commit message. Continuing calls `git -c core.editor=true rebase --continue` to avoid opening an editor prompt.
-
-## Project structure
-
-```
-app.go
-internal/
-  gitcli/
-    runner.go       Run() / RunWithInput() — exec.Command wrapper
-    staging.go      StageFile, UnstageFile, ApplyPatch, DiscardFile
-    stash.go        Stash, StashPop, StashPushNamed
-    remote.go       FetchAll, Pull, Push
-    rebase.go       StartRebase, ContinueRebase, AbortRebase
-  repo/
-    manager.go      Manager{map[string]*git.Repository}; Open/Close/Get
-    branches.go     ListBranches, GetAheadBehind
-    commits.go      GetCommitGraph, GetCommitDiff
-    diff.go         GetStatus, GetWorkingDiff, parseUnifiedDiff
-    staging.go      StageHunk, UnstageHunk, Commit
-    conflict.go     IsInMerge, GetConflictContent, ResolveConflict, AbortMerge
-    checkout.go     SwitchBranch (smart stash logic), SwitchResult
-    rebase.go       IsInRebase, GetRebaseState, StartRebase, ContinueRebase, AbortRebase
-  graph/
-    layout.go       BuildGraph() — greedy lane assignment
-frontend/src/
-  App.vue
-  stores/
-    repos.ts        Tabs, active repo, open/close
-    branches.ts     Local/remote branch list, switchBranch
-    commits.ts      Commit graph rows, selected commit diff
-    staging.ts      File status, diff, merge/rebase state
-    toast.ts        Notification toasts
-  components/
-    layout/
-      TabBar.vue
-      Sidebar.vue         Branch list with click-to-switch and right-click context menu
-      ToolBar.vue
-    graph/
-      CommitGraph.vue     Virtual-scroll commit graph
-      CommitRow.vue
-      CommitDetail.vue
-      graphRenderer.ts    Canvas drawing
-    staging/
-      StagingView.vue     File list, merge/rebase banners, commit panel
-      HunkSelector.vue    Per-hunk stage/unstage
-      ConflictView.vue    Per-conflict Accept Ours/Theirs
-```
+gitgood is free software: you can redistribute it and/or modify it under the terms of the [GNU General Public License v3.0](LICENSE). If you distribute a modified version, it must also be released under the GPL with its source code.
