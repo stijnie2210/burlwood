@@ -5,7 +5,14 @@ const DOT_R = 4;
 
 export { CELL_W };
 
-export function drawGraphCell(ctx: CanvasRenderingContext2D, row: GraphRow, cellH: number): void {
+// visibleWidth is set when the graph column is narrower than the lanes need: lanes beyond it
+// are clipped, but a commit's dot is pulled in before the faded edge so every row keeps one.
+export function drawGraphCell(
+  ctx: CanvasRenderingContext2D,
+  row: GraphRow,
+  cellH: number,
+  visibleWidth?: number
+): void {
   const w = ctx.canvas.width;
   const midY = cellH / 2;
 
@@ -23,8 +30,21 @@ export function drawGraphCell(ctx: CanvasRenderingContext2D, row: GraphRow, cell
   }
 
   // Commit dot
-  const dotX = row.column * CELL_W + CELL_W / 2;
+  const lastClearCol = visibleWidth ? Math.max(0, Math.floor(visibleWidth / CELL_W) - 2) : Infinity;
+  const hidden = row.column > lastClearCol;
+  const dotX = Math.min(row.column, lastClearCol) * CELL_W + CELL_W / 2;
   ctx.beginPath();
+  if (hidden) {
+    // A hollow ring says "this commit is in a lane further right", so it isn't read as part of
+    // the edge lane it's drawn on. The surface-coloured fill hides the edge lane behind it.
+    ctx.arc(dotX, midY, DOT_R - 0.5, 0, Math.PI * 2);
+    ctx.fillStyle = dotOutlineColor();
+    ctx.fill();
+    ctx.strokeStyle = row.color;
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+    return;
+  }
   ctx.arc(dotX, midY, DOT_R, 0, Math.PI * 2);
   ctx.fillStyle = row.color;
   ctx.fill();

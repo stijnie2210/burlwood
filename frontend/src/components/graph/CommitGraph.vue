@@ -73,7 +73,56 @@ const virtualizer = useVirtualizer(
 
 const items = computed(() => virtualizer.value.getVirtualItems());
 const totalSize = computed(() => virtualizer.value.getTotalSize());
-const graphWidth = computed(() => (commits.maxColumn + 2) * CELL_W);
+// Busy repos can have dozens of parallel lanes; the graph column is capped (8 lanes by default)
+// and resizable, so subjects don't start halfway across the window.
+const GRAPH_WIDTH_KEY = 'gitgood:graph-width';
+const DEFAULT_GRAPH_WIDTH = (8 + 2) * CELL_W;
+const MIN_GRAPH_WIDTH = 4 * CELL_W;
+
+function loadGraphLimit(): number {
+  try {
+    const v = parseInt(localStorage.getItem(GRAPH_WIDTH_KEY) ?? '', 10);
+    return Number.isFinite(v) ? v : DEFAULT_GRAPH_WIDTH;
+  } catch {
+    return DEFAULT_GRAPH_WIDTH;
+  }
+}
+
+const graphLimit = ref(loadGraphLimit());
+const naturalGraphWidth = computed(() => (commits.maxColumn + 2) * CELL_W);
+const graphWidth = computed(() => Math.min(naturalGraphWidth.value, graphLimit.value));
+const graphTruncated = computed(() => naturalGraphWidth.value > graphLimit.value);
+
+function setGraphLimit(px: number) {
+  graphLimit.value = Math.max(
+    MIN_GRAPH_WIDTH,
+    Math.min(px, Math.max(naturalGraphWidth.value, 600))
+  );
+  try {
+    localStorage.setItem(GRAPH_WIDTH_KEY, String(graphLimit.value));
+  } catch {
+    // width just won't persist
+  }
+}
+
+function startGraphResize(e: MouseEvent) {
+  const startX = e.clientX;
+  const startW = graphWidth.value;
+  function onMove(ev: MouseEvent) {
+    setGraphLimit(startW + ev.clientX - startX);
+  }
+  function onUp() {
+    window.removeEventListener('mousemove', onMove);
+    window.removeEventListener('mouseup', onUp);
+  }
+  window.addEventListener('mousemove', onMove);
+  window.addEventListener('mouseup', onUp);
+}
+
+// Double-click toggles between showing every lane and the default cap.
+function toggleGraphWidth() {
+  setGraphLimit(graphTruncated.value ? naturalGraphWidth.value : DEFAULT_GRAPH_WIDTH);
+}
 
 // Scroll to top when search results change so first match is visible
 watch(filteredRows, () => {
@@ -250,74 +299,95 @@ async function onMenuRefresh() {
       </button>
     </div>
 
-    <div
-      ref="parentRef"
-      class="graph-scroller"
-      role="listbox"
-      aria-label="Commits"
-      tabindex="0"
-      :aria-activedescendant="selectedIndex >= 0 ? `commit-row-${selectedIndex}` : undefined"
-      @scroll="onScroll"
-      @keydown.shift.f10.prevent="openMenuForSelected"
-    >
-      <div v-if="commits.loading" class="loading">Loading commits…</div>
+    <div class="graph-viewport">
+      <div
+        ref="parentRef"
+        class="graph-scroller"
+        role="listbox"
+        aria-label="Commits"
+        tabindex="0"
+        :aria-activedescendant="selectedIndex >= 0 ? `commit-row-${selectedIndex}` : undefined"
+        @scroll="onScroll"
+        @keydown.shift.f10.prevent="openMenuForSelected"
+      >
+        <div v-if="commits.loading" class="loading">Loading commits…</div>
 
-      <div v-else-if="commits.error" class="load-error">
-        <span>Failed to load commits</span>
-        <code>{{ commits.error }}</code>
-      </div>
+        <div v-else-if="commits.error" class="load-error">
+          <span>Failed to load commits</span>
+          <code>{{ commits.error }}</code>
+        </div>
 
-      <div v-else-if="searchQuery.trim() && filteredRows.length === 0" class="no-results">
-        No commits match "{{ searchQuery }}"
-      </div>
+        <div v-else-if="searchQuery.trim() && filteredRows.length === 0" class="no-results">
+          No commits match "{{ searchQuery }}"
+        </div>
 
-      <div v-else :style="{ height: `${totalSize}px`, position: 'relative' }">
+        <div v-else :style="{ height: `${totalSize}px`, position: 'relative' }">
+          <div
+            v-for="item in items"
+            :id="`commit-row-${item.index}`"
+            :key="item.index"
+            role="option"
+            :aria-selected="commits.selectedHash === filteredRows[item.index]?.hash"
+            :aria-posinset="item.index + 1"
+            :aria-setsize="filteredRows.length"
+            :aria-label="rowLabel(filteredRows[item.index])"
+            :style="{
+              position: 'absolute',
+              top: 0,
+              transform: `translateY(${item.start}px)`,
+              width: '100%',
+              height: `${ROW_H}px`,
+            }"
+            @click="onRowClick(item.index)"
+            @contextmenu.prevent="onRowContextMenu(item.index, $event)"
+          >
+            <CommitRow
+              v-if="filteredRows[item.index]"
+              :row="filteredRows[item.index]"
+              :graph-width="graphWidth"
+              :truncated="graphTruncated"
+              :row-h="ROW_H"
+              :selected="commits.selectedHash === filteredRows[item.index].hash"
+            />
+          </div>
+        </div>
+
+        <CommitContextMenu
+          v-if="menu && filteredRows[menu.index]"
+          :row="filteredRows[menu.index]"
+          :repo-path="repos.activeRepo?.path ?? ''"
+          :x="menu.x"
+          :y="menu.y"
+          @close="closeMenu"
+          @refresh="onMenuRefresh"
+        />
+
+        <div v-if="commits.loadingMore" class="loading-more">Loading more commits…</div>
         <div
-          v-for="item in items"
-          :id="`commit-row-${item.index}`"
-          :key="item.index"
-          role="option"
-          :aria-selected="commits.selectedHash === filteredRows[item.index]?.hash"
-          :aria-posinset="item.index + 1"
-          :aria-setsize="filteredRows.length"
-          :aria-label="rowLabel(filteredRows[item.index])"
-          :style="{
-            position: 'absolute',
-            top: 0,
-            transform: `translateY(${item.start}px)`,
-            width: '100%',
-            height: `${ROW_H}px`,
-          }"
-          @click="onRowClick(item.index)"
-          @contextmenu.prevent="onRowContextMenu(item.index, $event)"
+          v-else-if="!commits.hasMore && commits.rows.length > 0 && !searchQuery.trim()"
+          class="load-end"
         >
-          <CommitRow
-            v-if="filteredRows[item.index]"
-            :row="filteredRows[item.index]"
-            :graph-width="graphWidth"
-            :row-h="ROW_H"
-            :selected="commits.selectedHash === filteredRows[item.index].hash"
-          />
+          {{ commits.rows.length }} commits loaded
         </div>
       </div>
-
-      <CommitContextMenu
-        v-if="menu && filteredRows[menu.index]"
-        :row="filteredRows[menu.index]"
-        :repo-path="repos.activeRepo?.path ?? ''"
-        :x="menu.x"
-        :y="menu.y"
-        @close="closeMenu"
-        @refresh="onMenuRefresh"
-      />
-
-      <div v-if="commits.loadingMore" class="loading-more">Loading more commits…</div>
       <div
-        v-else-if="!commits.hasMore && commits.rows.length > 0 && !searchQuery.trim()"
-        class="load-end"
-      >
-        {{ commits.rows.length }} commits loaded
-      </div>
+        class="graph-resize"
+        :style="{ left: `${graphWidth}px` }"
+        role="separator"
+        aria-orientation="vertical"
+        aria-label="Graph column width"
+        :aria-valuenow="graphWidth"
+        tabindex="0"
+        :title="
+          graphTruncated
+            ? 'Drag to resize · double-click to show all lanes'
+            : 'Drag to resize · double-click to reset'
+        "
+        @mousedown.prevent="startGraphResize"
+        @dblclick="toggleGraphWidth"
+        @keydown.left.prevent="setGraphLimit(graphWidth - CELL_W)"
+        @keydown.right.prevent="setGraphLimit(graphWidth + CELL_W)"
+      />
     </div>
   </div>
 </template>
@@ -374,6 +444,37 @@ async function onMenuRefresh() {
 
 .search-close:hover {
   color: var(--text-secondary);
+}
+
+.graph-viewport {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  display: flex;
+}
+
+.graph-resize {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 7px;
+  margin-left: -3px;
+  cursor: col-resize;
+  z-index: 1;
+}
+.graph-resize::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 3px;
+  width: 1px;
+  background: transparent;
+  transition: background 0.15s;
+}
+.graph-resize:hover::after,
+.graph-resize:focus-visible::after {
+  background: var(--accent-text);
 }
 
 .graph-scroller {
