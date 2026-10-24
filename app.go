@@ -113,6 +113,14 @@ func (a *App) UnstageFile(repoPath, path string) error {
 	return a.manager.UnstageFile(repoPath, path)
 }
 
+func (a *App) StageFiles(repoPath string, paths []string) error {
+	return a.manager.StageFiles(repoPath, paths)
+}
+
+func (a *App) UnstageFiles(repoPath string, paths []string) error {
+	return a.manager.UnstageFiles(repoPath, paths)
+}
+
 func (a *App) StageHunk(repoPath, patch string) error {
 	return a.manager.StageHunk(repoPath, patch)
 }
@@ -121,8 +129,12 @@ func (a *App) UnstageHunk(repoPath, patch string) error {
 	return a.manager.UnstageHunk(repoPath, patch)
 }
 
-func (a *App) DiscardFile(repoPath, path string) error {
+func (a *App) DiscardFile(repoPath, path string) (gitcli.DiscardSnapshot, error) {
 	return a.manager.DiscardFile(repoPath, path)
+}
+
+func (a *App) UndoDiscard(repoPath string, snap gitcli.DiscardSnapshot) error {
+	return a.manager.UndoDiscard(repoPath, snap)
 }
 
 func (a *App) FetchAll(repoPath string) error {
@@ -187,6 +199,14 @@ func (a *App) MoveTag(repoPath, name, hash string) error {
 
 func (a *App) ResetBranch(repoPath, hash, mode string) error {
 	return gitcli.ResetBranch(repoPath, hash, mode)
+}
+
+func (a *App) HardResetBranch(repoPath, hash string) (gitcli.ResetUndo, error) {
+	return gitcli.HardResetWithUndo(repoPath, hash)
+}
+
+func (a *App) UndoHardReset(repoPath string, undo gitcli.ResetUndo) error {
+	return gitcli.UndoHardReset(repoPath, undo)
 }
 
 func (a *App) IsInMerge(repoPath string) (bool, error) {

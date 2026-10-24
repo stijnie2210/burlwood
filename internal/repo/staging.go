@@ -15,8 +15,24 @@ func (m *Manager) UnstageFile(repoPath, path string) error {
 	return gitcli.UnstageFile(repoPath, path)
 }
 
-func (m *Manager) DiscardFile(repoPath, path string) error {
-	return gitcli.DiscardFile(repoPath, path)
+func (m *Manager) StageFiles(repoPath string, paths []string) error {
+	return gitcli.StageFiles(repoPath, paths)
+}
+
+func (m *Manager) UnstageFiles(repoPath string, paths []string) error {
+	return gitcli.UnstageFiles(repoPath, paths)
+}
+
+func (m *Manager) DiscardFile(repoPath, path string) (gitcli.DiscardSnapshot, error) {
+	snap, err := gitcli.SnapshotWorkingFile(repoPath, path)
+	if err != nil {
+		return snap, err
+	}
+	return snap, gitcli.DiscardFile(repoPath, path)
+}
+
+func (m *Manager) UndoDiscard(repoPath string, snap gitcli.DiscardSnapshot) error {
+	return gitcli.RestoreWorkingFile(repoPath, snap)
 }
 
 // patch is built by the frontend from the displayed hunk data

@@ -1,5 +1,41 @@
 export namespace gitcli {
 	
+	export class DiscardSnapshot {
+	    path: string;
+	    blob: string;
+	    mode: number;
+	    existed: boolean;
+	    undoable: boolean;
+	
+	    static createFrom(source: any = {}) {
+	        return new DiscardSnapshot(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.path = source["path"];
+	        this.blob = source["blob"];
+	        this.mode = source["mode"];
+	        this.existed = source["existed"];
+	        this.undoable = source["undoable"];
+	    }
+	}
+	export class ResetUndo {
+	    head: string;
+	    target: string;
+	    stash: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new ResetUndo(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.head = source["head"];
+	        this.target = source["target"];
+	        this.stash = source["stash"];
+	    }
+	}
 	export class StashEntry {
 	    index: number;
 	    ref: string;
