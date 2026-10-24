@@ -517,7 +517,6 @@ async function confirmStashRename() {
   <aside class="sidebar" v-bind="$attrs">
     <div v-if="!repos.activeRepo" class="empty-state">
       <p>No repository open</p>
-      <button @click="repos.pickAndOpen()">Open Repository</button>
     </div>
 
     <div v-else class="sidebar-content">
@@ -624,7 +623,7 @@ async function confirmStashRename() {
               openCtxMenu($event, b.remote + '/' + b.name, b.remote + '/' + b.name, false, false)
             "
           >
-            <span class="branch-icon">↑</span>
+            <span class="branch-icon" aria-hidden="true">○</span>
             <span class="remote-label">{{ b.remote }}</span
             >/{{ b.name }}
           </li>

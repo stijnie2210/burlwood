@@ -654,9 +654,7 @@ async function doAbortRebase() {
   <div class="staging-outer">
     <!-- Merge in progress banner -->
     <div v-if="staging.isInMerge" class="merge-banner">
-      <span class="merge-banner-text"
-        >⚡ Merge in progress — resolve all conflicts, then commit</span
-      >
+      <span class="merge-banner-text">Merge in progress — resolve all conflicts, then commit</span>
       <div v-if="confirmingAbort" class="merge-abort-confirm">
         <span class="merge-abort-confirm-text">Discard all resolutions?</span>
         <button class="merge-abort-btn merge-abort-btn--confirm" @click="doAbortMerge">
@@ -843,7 +841,7 @@ async function doAbortRebase() {
               <span v-if="staging.conflictedFiles.length > 0"
                 >Resolve {{ staging.conflictedFiles.length }} conflict(s) first</span
               >
-              <span v-else>↪ Continue Rebase</span>
+              <span v-else>Continue Rebase</span>
             </button>
           </template>
 
@@ -893,7 +891,7 @@ async function doAbortRebase() {
                 Amend last commit on <strong>{{ currentBranch }}</strong>
               </span>
               <span v-else>
-                ○ Commit to <strong>{{ currentBranch }}</strong>
+                Commit to <strong>{{ currentBranch }}</strong>
               </span>
             </button>
           </template>

@@ -275,9 +275,7 @@ async function confirmBranch() {
           </button>
 
           <div v-if="showPullMenu" class="pull-menu">
-            <p class="pull-menu-desc">
-              Select a default pull/fetch operation to execute when clicking this button
-            </p>
+            <p class="pull-menu-desc">Default action for the Pull button</p>
             <button
               v-for="opt in PULL_MODES"
               :key="opt.value"

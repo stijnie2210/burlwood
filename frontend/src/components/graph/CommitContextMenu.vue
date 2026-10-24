@@ -259,145 +259,155 @@ async function pushTag(name: string) {
 </script>
 
 <template>
-  <div ref="menuEl" class="ctx-menu" :style="style" @click.stop>
-    <!-- ── Revert confirmation ──────────────────── -->
-    <template v-if="mode === 'revert-confirm'">
-      <div class="ctx-input-header">Revert {{ row.shortHash }}</div>
-      <div class="ctx-choices">
-        <button class="ctx-choice" @click="revert(true)">
-          <span class="ctx-choice-title">Revert and commit</span>
-          <span class="ctx-choice-desc">Creates a new commit that undoes {{ row.shortHash }}</span>
-        </button>
-        <button class="ctx-choice" @click="revert(false)">
-          <span class="ctx-choice-title">Stage the revert</span>
-          <span class="ctx-choice-desc">Leaves the changes staged so you can edit them first</span>
-        </button>
-      </div>
-    </template>
-
-    <!-- ── Branch input ─────────────────────────── -->
-    <template v-else-if="mode === 'branch'">
-      <div class="ctx-input-header">Create branch at {{ row.shortHash }}</div>
-      <div class="ctx-input-row">
-        <input
-          ref="inputEl"
-          v-model="inputVal"
-          class="ctx-input"
-          placeholder="branch-name"
-          @keydown.enter="confirmBranch"
-          @keydown.escape="emit('close')"
-        />
-        <button class="ctx-confirm" @click="confirmBranch">Create</button>
-      </div>
-    </template>
-
-    <!-- ── Tag input ────────────────────────────── -->
-    <template v-else-if="mode === 'tag'">
-      <div class="ctx-input-header">Create tag at {{ row.shortHash }}</div>
-      <div class="ctx-input-row">
-        <input
-          ref="inputEl"
-          v-model="inputVal"
-          class="ctx-input"
-          placeholder="tag-name"
-          @keydown.enter="confirmTag"
-          @keydown.escape="emit('close')"
-        />
-        <button class="ctx-confirm" @click="confirmTag">Create</button>
-      </div>
-    </template>
-
-    <!-- ── Move tag input ────────────────────────────── -->
-    <template v-else-if="mode === 'move-tag'">
-      <div class="ctx-input-header">Move tag to {{ row.shortHash }}</div>
-      <div class="ctx-input-row">
-        <input
-          ref="inputEl"
-          v-model="inputVal"
-          class="ctx-input"
-          placeholder="existing-tag-name"
-          @keydown.enter="confirmMoveTag"
-          @keydown.escape="emit('close')"
-        />
-        <button class="ctx-confirm" @click="confirmMoveTag">Move</button>
-      </div>
-    </template>
-
-    <!-- ── Tag created ────────────────────────────── -->
-    <template v-else-if="mode === 'tag-created'">
-      <div class="ctx-input-header">Tag '{{ inputVal }}' {{ tagMoved ? 'moved' : 'created' }}</div>
-      <div v-if="tagMoved" class="ctx-confirm-question">
-        The remote still points '{{ inputVal }}' at the old commit. Force-pushing replaces it there,
-        and anyone who already fetched it keeps the old one.
-      </div>
-      <div class="ctx-confirm-row">
-        <button
-          v-if="tagMoved"
-          class="ctx-confirm-btn ctx-confirm-btn--danger"
-          @click="pushCreatedTag"
-        >
-          Force-push tag
-        </button>
-        <button v-else class="ctx-confirm-btn ctx-confirm-btn--yes" @click="pushCreatedTag">
-          Push tag
-        </button>
-        <button class="ctx-confirm-btn ctx-confirm-btn--cancel" @click="emit('close')">Done</button>
-      </div>
-    </template>
-
-    <!-- ── Main menu ────────────────────────────── -->
-    <template v-else>
-      <div class="ctx-header">{{ row.shortHash }} — {{ row.subject }}</div>
-
-      <div class="ctx-divider" />
-
-      <button class="ctx-item" @click="copyHash(false)">Copy short SHA</button>
-      <button class="ctx-item" @click="copyHash(true)">Copy full SHA</button>
-
-      <div class="ctx-divider" />
-
-      <button class="ctx-item" @click="checkout">Checkout commit</button>
-      <button class="ctx-item" @click="openBranchInput">Create branch here…</button>
-
-      <div class="ctx-divider" />
-
-      <button class="ctx-item" @click="openRevertConfirm">Revert commit</button>
-
-      <div class="ctx-divider" />
-
-      <div class="ctx-group-label">Reset branch to here</div>
-      <button class="ctx-item ctx-item--indent" @click="reset('soft')">Soft — keep staged</button>
-      <button class="ctx-item ctx-item--indent" @click="reset('mixed')">
-        Mixed — keep working tree
-      </button>
-      <button class="ctx-item ctx-item--indent ctx-item--danger" @click="reset('hard')">
-        Hard — discard all changes
-      </button>
-
-      <div class="ctx-divider" />
-
-      <button class="ctx-item" @click="openTagInput">Create tag here…</button>
-      <button class="ctx-item" @click="openMoveTagInput">Move tag here…</button>
-
-      <template v-if="row.labels.some((l) => l.type === 'tag')">
-        <div class="ctx-divider" />
-        <button
-          v-for="l in row.labels.filter((l) => l.type === 'tag')"
-          :key="l.name"
-          class="ctx-item"
-          @click="pushTag(l.name)"
-        >
-          Push tag '{{ l.name }}'
-        </button>
+  <Teleport to="body">
+    <div ref="menuEl" class="ctx-menu" :style="style" @click.stop>
+      <!-- ── Revert confirmation ──────────────────── -->
+      <template v-if="mode === 'revert-confirm'">
+        <div class="ctx-input-header">Revert {{ row.shortHash }}</div>
+        <div class="ctx-choices">
+          <button class="ctx-choice" @click="revert(true)">
+            <span class="ctx-choice-title">Revert and commit</span>
+            <span class="ctx-choice-desc"
+              >Creates a new commit that undoes {{ row.shortHash }}</span
+            >
+          </button>
+          <button class="ctx-choice" @click="revert(false)">
+            <span class="ctx-choice-title">Stage the revert</span>
+            <span class="ctx-choice-desc"
+              >Leaves the changes staged so you can edit them first</span
+            >
+          </button>
+        </div>
       </template>
-    </template>
-  </div>
+
+      <!-- ── Branch input ─────────────────────────── -->
+      <template v-else-if="mode === 'branch'">
+        <div class="ctx-input-header">Create branch at {{ row.shortHash }}</div>
+        <div class="ctx-input-row">
+          <input
+            ref="inputEl"
+            v-model="inputVal"
+            class="ctx-input"
+            placeholder="branch-name"
+            @keydown.enter="confirmBranch"
+            @keydown.escape="emit('close')"
+          />
+          <button class="ctx-confirm" @click="confirmBranch">Create</button>
+        </div>
+      </template>
+
+      <!-- ── Tag input ────────────────────────────── -->
+      <template v-else-if="mode === 'tag'">
+        <div class="ctx-input-header">Create tag at {{ row.shortHash }}</div>
+        <div class="ctx-input-row">
+          <input
+            ref="inputEl"
+            v-model="inputVal"
+            class="ctx-input"
+            placeholder="tag-name"
+            @keydown.enter="confirmTag"
+            @keydown.escape="emit('close')"
+          />
+          <button class="ctx-confirm" @click="confirmTag">Create</button>
+        </div>
+      </template>
+
+      <!-- ── Move tag input ────────────────────────────── -->
+      <template v-else-if="mode === 'move-tag'">
+        <div class="ctx-input-header">Move tag to {{ row.shortHash }}</div>
+        <div class="ctx-input-row">
+          <input
+            ref="inputEl"
+            v-model="inputVal"
+            class="ctx-input"
+            placeholder="existing-tag-name"
+            @keydown.enter="confirmMoveTag"
+            @keydown.escape="emit('close')"
+          />
+          <button class="ctx-confirm" @click="confirmMoveTag">Move</button>
+        </div>
+      </template>
+
+      <!-- ── Tag created ────────────────────────────── -->
+      <template v-else-if="mode === 'tag-created'">
+        <div class="ctx-input-header">
+          Tag '{{ inputVal }}' {{ tagMoved ? 'moved' : 'created' }}
+        </div>
+        <div v-if="tagMoved" class="ctx-confirm-question">
+          The remote still points '{{ inputVal }}' at the old commit. Force-pushing replaces it
+          there, and anyone who already fetched it keeps the old one.
+        </div>
+        <div class="ctx-confirm-row">
+          <button
+            v-if="tagMoved"
+            class="ctx-confirm-btn ctx-confirm-btn--danger"
+            @click="pushCreatedTag"
+          >
+            Force-push tag
+          </button>
+          <button v-else class="ctx-confirm-btn ctx-confirm-btn--yes" @click="pushCreatedTag">
+            Push tag
+          </button>
+          <button class="ctx-confirm-btn ctx-confirm-btn--cancel" @click="emit('close')">
+            Done
+          </button>
+        </div>
+      </template>
+
+      <!-- ── Main menu ────────────────────────────── -->
+      <template v-else>
+        <div class="ctx-header">{{ row.shortHash }} — {{ row.subject }}</div>
+
+        <div class="ctx-divider" />
+
+        <button class="ctx-item" @click="copyHash(false)">Copy short SHA</button>
+        <button class="ctx-item" @click="copyHash(true)">Copy full SHA</button>
+
+        <div class="ctx-divider" />
+
+        <button class="ctx-item" @click="checkout">Checkout commit</button>
+        <button class="ctx-item" @click="openBranchInput">Create branch here…</button>
+
+        <div class="ctx-divider" />
+
+        <button class="ctx-item" @click="openRevertConfirm">Revert commit</button>
+
+        <div class="ctx-divider" />
+
+        <div class="ctx-group-label">Reset branch to here</div>
+        <button class="ctx-item ctx-item--indent" @click="reset('soft')">Soft — keep staged</button>
+        <button class="ctx-item ctx-item--indent" @click="reset('mixed')">
+          Mixed — keep working tree
+        </button>
+        <button class="ctx-item ctx-item--indent ctx-item--danger" @click="reset('hard')">
+          Hard — discard all changes
+        </button>
+
+        <div class="ctx-divider" />
+
+        <button class="ctx-item" @click="openTagInput">Create tag here…</button>
+        <button class="ctx-item" @click="openMoveTagInput">Move tag here…</button>
+
+        <template v-if="row.labels.some((l) => l.type === 'tag')">
+          <div class="ctx-divider" />
+          <button
+            v-for="l in row.labels.filter((l) => l.type === 'tag')"
+            :key="l.name"
+            class="ctx-item"
+            @click="pushTag(l.name)"
+          >
+            Push tag '{{ l.name }}'
+          </button>
+        </template>
+      </template>
+    </div>
+  </Teleport>
 </template>
 
 <style scoped>
 .ctx-menu {
   position: fixed;
-  z-index: 1000;
+  z-index: 9999;
   min-width: 230px;
   background: var(--surface-overlay);
   border: 1px solid var(--border);
