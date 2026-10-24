@@ -250,9 +250,8 @@ onUnmounted(() => {
   padding: 0;
 }
 body {
-  background: #0f0f1a;
-  color: #e0e0e0;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  background: var(--surface-base);
+  color: var(--text-primary);
 }
 </style>
 
@@ -273,17 +272,19 @@ body {
 .main-panel {
   flex: 1;
   overflow: hidden;
-  background: #0f0f1a;
+  background: var(--surface-base);
   display: flex;
   flex-direction: column;
 }
 
 .view-tabs {
+  user-select: none;
+  -webkit-user-select: none;
   display: flex;
   gap: 2px;
   padding: 4px 8px;
-  background: #0a0a14;
-  border-bottom: 1px solid #1e1e36;
+  background: var(--surface-base);
+  border-bottom: 1px solid var(--border-subtle);
   flex-shrink: 0;
 }
 
@@ -295,23 +296,23 @@ body {
   border-radius: 4px;
   border: none;
   background: transparent;
-  color: #555;
-  font-size: 12px;
+  color: var(--text-tertiary);
+  font-size: var(--text-row);
   cursor: pointer;
 }
 .view-tab:hover {
-  color: #888;
-  background: #111120;
+  color: var(--text-secondary);
+  background: var(--surface-hover);
 }
 .view-tab.active {
-  color: #ccc;
-  background: #16162a;
+  color: var(--text-primary);
+  background: var(--surface-control);
 }
 
 .view-tab-badge {
-  background: #4f8ef7;
-  color: #fff;
-  font-size: 9px;
+  background: var(--accent-fill);
+  color: var(--text-on-accent);
+  font-size: var(--text-meta);
   font-weight: 700;
   padding: 1px 5px;
   border-radius: 8px;
@@ -327,12 +328,12 @@ body {
 .resize-handle {
   width: 4px;
   flex-shrink: 0;
-  background: #1e1e36;
+  background: var(--border-subtle);
   cursor: col-resize;
   transition: background 0.15s;
 }
 .resize-handle:hover {
-  background: #4f8ef7;
+  background: var(--accent-fill);
 }
 
 .welcome {
@@ -342,7 +343,8 @@ body {
   justify-content: center;
   height: 100%;
   gap: 12px;
-  color: #666;
+  text-align: center;
+  color: var(--text-secondary);
 }
 
 .welcome-logo {
@@ -351,25 +353,25 @@ body {
 .welcome-brand {
   font-size: 32px;
   font-weight: 700;
-  color: #4f8ef7;
+  color: var(--accent-text);
   margin-top: -4px;
 }
 .welcome-brand span {
-  color: #ccc;
+  color: var(--text-primary);
   font-weight: 400;
 }
 .welcome p {
-  font-size: 15px;
+  font-size: var(--text-title);
 }
 
 .welcome button {
   padding: 8px 20px;
-  background: #4f8ef7;
+  background: var(--accent-fill);
   border: none;
   border-radius: 6px;
-  color: white;
+  color: var(--text-on-accent);
   cursor: pointer;
-  font-size: 14px;
+  font-size: var(--text-body);
 }
 
 .recents {
@@ -378,32 +380,35 @@ body {
   width: 400px;
 }
 .recents h3 {
-  font-size: 12px;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  color: #444;
+  font-size: var(--text-row);
+  color: var(--text-tertiary);
   margin-bottom: 8px;
 }
 .recents ul {
   list-style: none;
 }
-.recents li {
+.recent-btn {
   display: flex;
   flex-direction: column;
+  width: 100%;
   padding: 8px 10px;
+  border: none;
   border-radius: 4px;
+  background: none;
+  text-align: left;
+  font: inherit;
   cursor: pointer;
   gap: 2px;
 }
-.recents li:hover {
-  background: #1a1a2e;
+.recent-btn:hover {
+  background: var(--surface-hover);
 }
-.recents li strong {
-  font-size: 14px;
-  color: #ccc;
+.recent-btn strong {
+  font-size: var(--text-body);
+  color: var(--text-primary);
 }
-.recents li span {
-  font-size: 11px;
-  color: #555;
+.recent-btn span {
+  font-size: var(--text-meta);
+  color: var(--text-tertiary);
 }
 </style>

@@ -60,37 +60,49 @@ function viewLog(t: { type: string; message: string }, e: MouseEvent) {
 }
 
 .toast {
+  position: relative;
+  overflow: hidden;
   display: flex;
   align-items: center;
   gap: 8px;
   padding: 9px 14px;
   border-radius: 6px;
-  font-size: 12px;
+  font-size: var(--text-row);
   max-width: 420px;
   cursor: pointer;
   pointer-events: all;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
+  box-shadow: var(--shadow-popover);
   user-select: none;
 }
 
 .toast--success {
-  background: #162a1e;
-  border: 1px solid #2a5a38;
-  color: #7de8a8;
+  background: var(--surface-overlay);
+  border: 1px solid var(--border);
+  color: var(--text-primary);
 }
 .toast--error {
-  background: #2a1616;
-  border: 1px solid #5a2828;
-  color: #f79090;
+  background: var(--surface-overlay);
+  border: 1px solid var(--danger-border);
+  color: var(--text-primary);
 }
 .toast--info {
-  background: #151530;
-  border: 1px solid #2d2d60;
-  color: #99aadd;
+  background: var(--surface-overlay);
+  border: 1px solid var(--border);
+  color: var(--text-primary);
+}
+
+.toast--success .toast-icon {
+  color: var(--add);
+}
+.toast--error .toast-icon {
+  color: var(--danger);
+}
+.toast--info .toast-icon {
+  color: var(--accent-text);
 }
 
 .toast-icon {
-  font-size: 11px;
+  font-size: var(--text-meta);
   font-weight: 700;
   flex-shrink: 0;
   width: 14px;
@@ -109,13 +121,35 @@ function viewLog(t: { type: string; message: string }, e: MouseEvent) {
   border: 1px solid rgba(255, 255, 255, 0.15);
   border-radius: 4px;
   color: inherit;
-  font-size: 11px;
+  font-size: var(--text-meta);
   font-weight: 600;
   padding: 3px 8px;
   cursor: pointer;
 }
 .toast-action:hover {
   background: rgba(255, 255, 255, 0.16);
+}
+
+.toast-timer {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  height: 2px;
+  width: 100%;
+  background: currentColor;
+  opacity: 0.45;
+  transform-origin: left;
+  animation: toast-timer linear forwards;
+}
+@keyframes toast-timer {
+  to {
+    transform: scaleX(0);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .toast-timer {
+    display: none;
+  }
 }
 
 /* Transitions */

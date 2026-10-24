@@ -28,7 +28,7 @@ export function drawGraphCell(ctx: CanvasRenderingContext2D, row: GraphRow, cell
   ctx.arc(dotX, midY, DOT_R, 0, Math.PI * 2);
   ctx.fillStyle = row.color;
   ctx.fill();
-  ctx.strokeStyle = '#0f0f1a';
+  ctx.strokeStyle = dotOutlineColor();
   ctx.lineWidth = 1.5;
   ctx.stroke();
 }
@@ -58,4 +58,16 @@ function drawSegment(
   }
 
   ctx.stroke();
+}
+
+let cachedDotOutline = '';
+
+// Canvas can't read CSS variables, so the dot outline resolves the graph's surface token once.
+function dotOutlineColor(): string {
+  if (!cachedDotOutline) {
+    cachedDotOutline =
+      getComputedStyle(document.documentElement).getPropertyValue('--surface-base').trim() ||
+      '#1b1b1d';
+  }
+  return cachedDotOutline;
 }

@@ -58,9 +58,9 @@ function fileStatus(file: FileDiff): string {
 
 .no-changes {
   padding: 16px;
-  color: #555;
+  color: var(--text-tertiary);
   text-align: center;
-  font-size: 12px;
+  font-size: var(--text-row);
 }
 
 .file-item {
@@ -72,38 +72,38 @@ function fileStatus(file: FileDiff): string {
   border: none;
   cursor: pointer;
   text-align: left;
-  color: #aaa;
+  color: var(--text-secondary);
   width: 100%;
-  font-size: 13px;
+  font-size: var(--text-body);
 }
 .file-item:hover {
-  background: #111124;
-  color: #ccc;
+  background: var(--surface-hover);
+  color: var(--text-primary);
 }
 .file-item.active {
-  background: #16213e;
-  color: #ccc;
+  background: var(--surface-selected);
+  color: var(--text-primary);
 }
 
 .file-status {
   width: 14px;
   text-align: center;
   flex-shrink: 0;
-  font-family: monospace;
+  font-family: var(--font-mono);
 }
 .status-add {
-  color: #4ff7a0;
+  color: var(--add);
 }
 .status-mod {
-  color: #f7a04f;
+  color: var(--modified);
 }
 .status-ren {
-  color: #4f8ef7;
+  color: var(--accent-text);
 }
 
 .file-path {
-  font-family: monospace;
-  font-size: 13px;
+  font-family: var(--font-mono);
+  font-size: var(--text-body);
   flex: 1;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -111,9 +111,9 @@ function fileStatus(file: FileDiff): string {
 }
 
 .file-badge {
-  font-size: 10px;
-  background: #2a2a3e;
-  color: #666;
+  font-size: var(--text-meta);
+  background: var(--surface-control);
+  color: var(--text-secondary);
   padding: 1px 4px;
   border-radius: 3px;
   flex-shrink: 0;
@@ -123,13 +123,13 @@ function fileStatus(file: FileDiff): string {
   display: flex;
   gap: 6px;
   flex-shrink: 0;
-  font-size: 12px;
-  font-family: monospace;
+  font-size: var(--text-row);
+  font-family: var(--font-mono);
 }
 .stat-add {
-  color: #4ff7a0;
+  color: var(--add);
 }
 .stat-del {
-  color: #f74f4f;
+  color: var(--del);
 }
 </style>

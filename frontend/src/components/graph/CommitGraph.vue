@@ -259,59 +259,59 @@ async function onMenuRefresh() {
   align-items: center;
   gap: 8px;
   padding: 5px 10px;
-  background: #0d0d1e;
-  border-bottom: 1px solid #2d2d4e;
+  background: var(--surface-raised);
+  border-bottom: 1px solid var(--border);
   flex-shrink: 0;
 }
 
 .search-input {
   flex: 1;
-  background: #1a1a2e;
-  border: 1px solid #2d2d4e;
+  background: var(--surface-field);
+  border: 1px solid var(--border);
   border-radius: 4px;
-  color: #e0e0e0;
-  font-size: 13px;
+  color: var(--text-primary);
+  font-size: var(--text-body);
   padding: 3px 8px;
   outline: none;
 }
 
 .search-input:focus {
-  border-color: #4f8ef7;
+  border-color: var(--focus-ring);
 }
 
 .search-count {
-  font-size: 12px;
-  color: #556;
+  font-size: var(--text-row);
+  color: var(--text-tertiary);
   white-space: nowrap;
 }
 
 .search-close {
   background: none;
   border: none;
-  color: #556;
+  color: var(--text-tertiary);
   cursor: pointer;
-  font-size: 18px;
+  font-size: 16px;
   line-height: 1;
   padding: 0 2px;
 }
 
 .search-close:hover {
-  color: #aaa;
+  color: var(--text-secondary);
 }
 
 .graph-scroller {
   flex: 1;
   overflow-y: auto;
   overflow-x: auto;
-  background: #0f0f1a;
+  background: var(--surface-base);
   min-height: 0;
 }
 
 .loading {
   padding: 24px;
-  color: #555;
+  color: var(--text-tertiary);
   text-align: center;
-  font-size: 13px;
+  font-size: var(--text-body);
 }
 
 .load-error {
@@ -319,34 +319,34 @@ async function onMenuRefresh() {
   display: flex;
   flex-direction: column;
   gap: 8px;
-  color: #f74f4f;
-  font-size: 13px;
+  color: var(--del);
+  font-size: var(--text-body);
 }
 .load-error code {
-  font-size: 11px;
-  color: #a05050;
+  font-size: var(--text-meta);
+  color: var(--danger);
   word-break: break-all;
-  font-family: monospace;
+  font-family: var(--font-mono);
 }
 
 .no-results {
   padding: 24px;
-  color: #555;
+  color: var(--text-tertiary);
   text-align: center;
-  font-size: 13px;
+  font-size: var(--text-body);
 }
 
 .loading-more {
   padding: 12px;
-  color: #445;
+  color: var(--text-tertiary);
   text-align: center;
-  font-size: 12px;
+  font-size: var(--text-row);
 }
 
 .load-end {
   padding: 12px;
-  color: #334;
+  color: var(--text-tertiary);
   text-align: center;
-  font-size: 11px;
+  font-size: var(--text-meta);
 }
 </style>

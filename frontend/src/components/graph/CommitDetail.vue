@@ -56,16 +56,16 @@ const displayDate = computed(() => {
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  font-size: 12px;
-  background: #0d0d18;
-  border-left: 1px solid #1e1e36;
+  font-size: var(--text-row);
+  background: var(--surface-sunken);
+  border-left: 1px solid var(--border-subtle);
   min-width: 200px;
   height: 100%;
 }
 
 .commit-meta {
   padding: 10px 12px;
-  border-bottom: 1px solid #1e1e36;
+  border-bottom: 1px solid var(--border-subtle);
   flex-shrink: 0;
 }
 
@@ -78,27 +78,27 @@ const displayDate = computed(() => {
 }
 
 .meta-hash {
-  font-family: monospace;
-  font-size: 11px;
-  color: #555;
+  font-family: var(--font-mono);
+  font-size: var(--text-meta);
+  color: var(--text-tertiary);
 }
 
 .meta-subject {
-  font-size: 13px;
-  color: #e0e0e0;
+  font-size: var(--text-body);
+  color: var(--text-primary);
   font-weight: 500;
   margin-bottom: 3px;
 }
 .meta-info {
   display: flex;
   gap: 12px;
-  color: #666;
-  font-size: 11px;
+  color: var(--text-secondary);
+  font-size: var(--text-meta);
 }
 
 .loading {
   padding: 16px;
-  color: #555;
+  color: var(--text-tertiary);
   text-align: center;
 }
 </style>

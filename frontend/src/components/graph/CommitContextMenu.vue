@@ -334,19 +334,19 @@ async function pushTag(name: string) {
   position: fixed;
   z-index: 1000;
   min-width: 230px;
-  background: #141428;
-  border: 1px solid #2a2a50;
+  background: var(--surface-overlay);
+  border: 1px solid var(--border);
   border-radius: 7px;
   padding: 4px 0;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6);
+  box-shadow: var(--shadow-popover);
   user-select: none;
 }
 
 .ctx-header {
   padding: 6px 12px 5px;
-  font-size: 10px;
-  color: #445;
-  font-family: monospace;
+  font-size: var(--text-meta);
+  color: var(--text-tertiary);
+  font-family: var(--font-mono);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -355,7 +355,7 @@ async function pushTag(name: string) {
 
 .ctx-divider {
   height: 1px;
-  background: #1e1e38;
+  background: var(--border-subtle);
   margin: 3px 0;
 }
 
@@ -366,47 +366,84 @@ async function pushTag(name: string) {
   background: none;
   border: none;
   text-align: left;
-  color: #bbc;
-  font-size: 12px;
+  color: var(--text-primary);
+  font-size: var(--text-row);
   cursor: pointer;
   white-space: nowrap;
 }
+.ctx-item:focus-visible,
 .ctx-item:hover {
-  background: #1e1e42;
-  color: #eef;
+  outline: none;
+  background: var(--accent-fill);
+  color: var(--text-on-accent);
 }
 
 .ctx-item--indent {
   padding-left: 22px;
-  color: #99a;
-  font-size: 11px;
+  color: var(--text-secondary);
+  font-size: var(--text-meta);
 }
+.ctx-item--indent:focus-visible,
 .ctx-item--indent:hover {
-  color: #ccd;
+  color: var(--text-on-accent);
 }
 
 .ctx-item--danger {
-  color: #f08080;
+  color: var(--danger);
 }
+.ctx-item--danger:focus-visible,
 .ctx-item--danger:hover {
-  background: #2a1818;
-  color: #f74f4f;
+  background: var(--accent-fill);
+  color: var(--text-on-accent);
 }
 
 .ctx-group-label {
   padding: 5px 14px 2px;
-  font-size: 9px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  color: #445;
+  font-size: var(--text-meta);
+  font-weight: 600;
+  color: var(--text-tertiary);
 }
 
-/* Revert confirm */
+.ctx-choices {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 2px 6px 6px;
+}
+
+.ctx-choice {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 7px 10px;
+  background: none;
+  border: 1px solid transparent;
+  border-radius: 5px;
+  text-align: left;
+  cursor: pointer;
+}
+.ctx-choice:hover {
+  background: var(--surface-hover);
+  border-color: var(--border);
+}
+
+.ctx-choice-title {
+  font-size: var(--text-row);
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.ctx-choice-desc {
+  font-size: var(--text-meta);
+  color: var(--text-secondary);
+  line-height: 1.35;
+}
+
 .ctx-confirm-question {
+  max-width: 260px;
   padding: 4px 12px 8px;
-  font-size: 12px;
-  color: #bbc;
+  font-size: var(--text-row);
+  color: var(--text-primary);
   line-height: 1.4;
 }
 
@@ -420,44 +457,44 @@ async function pushTag(name: string) {
   flex: 1;
   padding: 5px 0;
   border-radius: 4px;
-  font-size: 11px;
+  font-size: var(--text-meta);
   font-weight: 600;
   cursor: pointer;
   border: 1px solid transparent;
 }
 
 .ctx-confirm-btn--yes {
-  background: #1e3d28;
-  color: #4ff7a0;
-  border-color: #2a5a38;
+  background: var(--accent-fill);
+  color: var(--text-on-accent);
+  border-color: var(--accent-fill);
 }
 .ctx-confirm-btn--yes:hover {
-  background: #254830;
+  background: var(--accent-fill-hover);
 }
-.ctx-confirm-btn--no {
-  background: #1a2848;
-  color: #7aadff;
-  border-color: #2a3a60;
+.ctx-confirm-btn--danger {
+  background: var(--danger-fill);
+  color: var(--text-on-accent);
+  border-color: var(--danger-fill);
 }
-.ctx-confirm-btn--no:hover {
-  background: #1e3060;
+.ctx-confirm-btn--danger:hover {
+  background: var(--danger-soft-hover);
 }
 .ctx-confirm-btn--cancel {
   background: transparent;
-  color: #667;
-  border-color: #334;
+  color: var(--text-tertiary);
+  border-color: var(--border);
 }
 .ctx-confirm-btn--cancel:hover {
-  color: #889;
-  border-color: #556;
+  color: var(--text-tertiary);
+  border-color: var(--border-strong);
 }
 
 /* Input mode */
 .ctx-input-header {
   padding: 8px 12px 4px;
-  font-size: 11px;
-  color: #667;
-  font-family: monospace;
+  font-size: var(--text-meta);
+  color: var(--text-tertiary);
+  font-family: var(--font-mono);
 }
 
 .ctx-input-row {
@@ -468,33 +505,33 @@ async function pushTag(name: string) {
 
 .ctx-input {
   flex: 1;
-  background: #0f0f1a;
-  border: 1px solid #2d2d50;
+  background: var(--surface-field);
+  border: 1px solid var(--border);
   border-radius: 4px;
-  color: #ccc;
-  font-size: 12px;
+  color: var(--text-primary);
+  font-size: var(--text-row);
   padding: 4px 8px;
   outline: none;
-  font-family: monospace;
+  font-family: var(--font-mono);
 }
 .ctx-input:focus {
-  border-color: #4f8ef7;
+  border-color: var(--focus-ring);
 }
 .ctx-input::placeholder {
-  color: #334;
+  color: var(--text-tertiary);
 }
 
 .ctx-confirm {
   padding: 4px 10px;
-  background: #4f8ef7;
+  background: var(--accent-fill);
   border: none;
   border-radius: 4px;
-  color: white;
-  font-size: 11px;
+  color: var(--text-on-accent);
+  font-size: var(--text-meta);
   cursor: pointer;
   white-space: nowrap;
 }
 .ctx-confirm:hover {
-  background: #6aa0f8;
+  background: var(--accent-fill-hover);
 }
 </style>

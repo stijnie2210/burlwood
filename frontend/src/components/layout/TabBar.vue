@@ -92,10 +92,12 @@ onUnmounted(() => window.removeEventListener('mousedown', onWindowMouseDown));
 
 <style scoped>
 .tab-bar {
+  user-select: none;
+  -webkit-user-select: none;
   display: flex;
   align-items: center;
-  background: #1a1a2e;
-  border-bottom: 1px solid #2d2d4e;
+  background: var(--surface-chrome);
+  border-bottom: 1px solid var(--border);
   height: 36px;
   overflow-x: auto;
   flex-shrink: 0;
@@ -104,38 +106,52 @@ onUnmounted(() => window.removeEventListener('mousedown', onWindowMouseDown));
 .tab {
   display: flex;
   align-items: center;
-  gap: 6px;
-  padding: 0 12px;
+  gap: 2px;
+  padding: 0 6px 0 0;
   height: 100%;
-  background: none;
-  border: none;
-  border-right: 1px solid #2d2d4e;
-  color: #888;
-  cursor: pointer;
-  font-size: 13px;
+  border-right: 1px solid var(--border);
+  color: var(--text-secondary);
+  font-size: var(--text-body);
   white-space: nowrap;
   transition: background 0.1s;
 }
 
+.tab-select {
+  height: 100%;
+  padding: 0 4px 0 12px;
+  background: none;
+  border: none;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
 .tab:hover {
-  background: #22223a;
-  color: #ccc;
+  background: var(--surface-hover);
+  color: var(--text-primary);
 }
 .tab.active {
-  background: #16213e;
-  color: #e0e0e0;
-  border-bottom: 2px solid #4f8ef7;
+  background: var(--surface-control);
+  color: var(--text-primary);
+  border-bottom: 2px solid var(--focus-ring);
 }
 
 .tab-close {
+  background: none;
+  border: none;
+  border-radius: 3px;
+  color: inherit;
+  cursor: pointer;
   opacity: 0.4;
   font-size: 16px;
   line-height: 1;
   padding: 0 2px;
 }
+.tab-close:focus-visible,
 .tab-close:hover {
   opacity: 1;
-  color: #ff6b6b;
+  color: var(--danger);
 }
 
 .tab-add {
@@ -143,13 +159,13 @@ onUnmounted(() => window.removeEventListener('mousedown', onWindowMouseDown));
   height: 100%;
   background: none;
   border: none;
-  color: #889;
+  color: var(--text-tertiary);
   cursor: pointer;
-  font-size: 18px;
+  font-size: 16px;
   line-height: 1;
 }
 .tab-add:hover {
-  color: #aaa;
+  color: var(--text-secondary);
 }
 </style>
 
@@ -159,10 +175,10 @@ onUnmounted(() => window.removeEventListener('mousedown', onWindowMouseDown));
   z-index: 1000;
   min-width: 280px;
   max-width: 360px;
-  background: #1a1a2e;
-  border: 1px solid #2d2d4e;
+  background: var(--surface-overlay);
+  border: 1px solid var(--border);
   border-radius: 6px;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+  box-shadow: var(--shadow-popover);
   padding: 6px 0;
   max-height: 380px;
   overflow-y: auto;
@@ -170,17 +186,15 @@ onUnmounted(() => window.removeEventListener('mousedown', onWindowMouseDown));
 
 .picker-section-label {
   padding: 4px 12px 6px;
-  font-size: 11px;
+  font-size: var(--text-meta);
   font-weight: 600;
-  color: #556;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
+  color: var(--text-tertiary);
 }
 
 .picker-empty {
   padding: 6px 12px;
-  font-size: 13px;
-  color: #556;
+  font-size: var(--text-body);
+  color: var(--text-tertiary);
 }
 
 .picker-item {
@@ -197,33 +211,33 @@ onUnmounted(() => window.removeEventListener('mousedown', onWindowMouseDown));
 }
 
 .picker-item:hover {
-  background: #22223a;
+  background: var(--surface-hover);
 }
 
 .picker-item-name {
-  font-size: 13px;
-  color: #c8cce0;
+  font-size: var(--text-body);
+  color: var(--text-primary);
   font-weight: 500;
 }
 
 .picker-item-path {
-  font-size: 11px;
-  color: #556;
+  font-size: var(--text-meta);
+  color: var(--text-tertiary);
 }
 
 .picker-divider {
   height: 1px;
-  background: #2d2d4e;
+  background: var(--border);
   margin: 4px 0;
 }
 
 .picker-browse {
-  color: #4f8ef7;
-  font-size: 13px;
+  color: var(--accent-text);
+  font-size: var(--text-body);
   padding: 8px 12px;
 }
 
 .picker-browse:hover {
-  background: #22223a;
+  background: var(--surface-hover);
 }
 </style>

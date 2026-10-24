@@ -468,9 +468,11 @@ async function confirmBranch() {
 
 <style scoped>
 .toolbar {
+  user-select: none;
+  -webkit-user-select: none;
   flex-shrink: 0;
-  background: #0c0c1a;
-  border-bottom: 1px solid #1e1e36;
+  background: var(--surface-chrome);
+  border-bottom: 1px solid var(--border-subtle);
   user-select: none;
 }
 
@@ -500,7 +502,7 @@ async function confirmBranch() {
 .separator {
   width: 1px;
   height: 24px;
-  background: #1e1e36;
+  background: var(--border);
   margin: 0 6px;
   flex-shrink: 0;
 }
@@ -515,7 +517,7 @@ async function confirmBranch() {
   border: none;
   background: transparent;
   border-radius: 5px;
-  color: #778;
+  color: var(--text-secondary);
   cursor: pointer;
   min-width: 52px;
   transition:
@@ -524,13 +526,13 @@ async function confirmBranch() {
 }
 
 .tbtn:hover:not(:disabled) {
-  background: #14142a;
-  color: #bbc;
+  background: var(--surface-hover);
+  color: var(--text-primary);
 }
 
 .tbtn.active {
-  background: #14142a;
-  color: #4f8ef7;
+  background: var(--surface-control);
+  color: var(--accent-text);
 }
 
 .tbtn:disabled {
@@ -546,7 +548,7 @@ async function confirmBranch() {
 }
 
 .tbtn-label {
-  font-size: 10px;
+  font-size: var(--text-meta);
   font-weight: 500;
   letter-spacing: 0.02em;
 }
@@ -577,7 +579,7 @@ async function confirmBranch() {
   padding: 0;
   border: none;
   background: transparent;
-  color: #667;
+  color: var(--text-tertiary);
   cursor: pointer;
   border-radius: 4px;
   margin-left: 1px;
@@ -585,8 +587,8 @@ async function confirmBranch() {
 
 .pull-mode-toggle:hover:not(:disabled),
 .pull-mode-toggle.active {
-  color: #bbc;
-  background: #14142a;
+  color: var(--text-primary);
+  background: var(--surface-control);
 }
 
 .pull-mode-toggle:disabled {
@@ -599,19 +601,19 @@ async function confirmBranch() {
   top: calc(100% + 6px);
   left: 0;
   width: 320px;
-  background: #23233c;
-  border: 1px solid #34345a;
+  background: var(--surface-overlay);
+  border: 1px solid var(--border);
   border-radius: 8px;
   padding: 12px;
   z-index: 100;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
+  box-shadow: var(--shadow-popover);
 }
 
 .pull-menu-desc {
   margin: 0 0 10px;
-  font-size: 12px;
+  font-size: var(--text-row);
   line-height: 1.4;
-  color: #99a;
+  color: var(--text-secondary);
 }
 
 .pull-menu-item {
@@ -623,19 +625,19 @@ async function confirmBranch() {
   border: none;
   border-radius: 5px;
   background: transparent;
-  color: #ccd;
-  font-size: 12.5px;
+  color: var(--text-primary);
+  font-size: var(--text-row);
   text-align: left;
   cursor: pointer;
 }
 
 .pull-menu-item:hover {
-  background: #2c2c4a;
+  background: var(--surface-hover);
 }
 
 .pull-menu-item.selected {
-  background: #3a5a44;
-  color: #fff;
+  background: var(--accent-fill);
+  color: var(--text-on-accent);
 }
 
 .pull-menu-radio {
@@ -643,13 +645,13 @@ async function confirmBranch() {
   width: 12px;
   height: 12px;
   border-radius: 50%;
-  border: 1.5px solid #778;
+  border: 1.5px solid var(--border-strong);
   box-sizing: border-box;
   position: relative;
 }
 
 .pull-menu-item.selected .pull-menu-radio {
-  border-color: #fff;
+  border-color: var(--text-on-accent);
 }
 
 .pull-menu-item.selected .pull-menu-radio::after {
@@ -657,7 +659,7 @@ async function confirmBranch() {
   position: absolute;
   inset: 2px;
   border-radius: 50%;
-  background: #fff;
+  background: var(--text-on-accent);
 }
 
 /* Branch popover */
@@ -668,58 +670,58 @@ async function confirmBranch() {
   display: flex;
   align-items: center;
   gap: 4px;
-  background: #1a1a2e;
-  border: 1px solid #2d2d50;
+  background: var(--surface-overlay);
+  border: 1px solid var(--border);
   border-radius: 6px;
   padding: 6px 8px;
   z-index: 100;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+  box-shadow: var(--shadow-popover);
   min-width: 220px;
 }
 
 .branch-input {
   flex: 1;
-  background: #0f0f1a;
-  border: 1px solid #2d2d50;
+  background: var(--surface-field);
+  border: 1px solid var(--border);
   border-radius: 4px;
-  color: #ccc;
-  font-size: 12px;
+  color: var(--text-primary);
+  font-size: var(--text-row);
   padding: 4px 8px;
   outline: none;
-  font-family: monospace;
+  font-family: var(--font-mono);
 }
 .branch-input:focus {
-  border-color: #4f8ef7;
+  border-color: var(--focus-ring);
 }
 .branch-input::placeholder {
-  color: #667;
+  color: var(--text-tertiary);
 }
 
 .branch-confirm {
   padding: 4px 10px;
-  background: #4f8ef7;
+  background: var(--accent-fill);
   border: none;
   border-radius: 4px;
-  color: white;
-  font-size: 11px;
+  color: var(--text-on-accent);
+  font-size: var(--text-meta);
   cursor: pointer;
   white-space: nowrap;
 }
 .branch-confirm:hover {
-  background: #6aa0f8;
+  background: var(--accent-fill-hover);
 }
 
 .branch-cancel {
   padding: 4px 6px;
   background: transparent;
-  border: 1px solid #445;
+  border: 1px solid var(--border-strong);
   border-radius: 4px;
-  color: #889;
-  font-size: 11px;
+  color: var(--text-tertiary);
+  font-size: var(--text-meta);
   cursor: pointer;
 }
 .branch-cancel:hover {
-  color: #aab;
-  border-color: #667;
+  color: var(--text-primary);
+  border-color: var(--border-strong);
 }
 </style>

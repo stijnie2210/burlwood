@@ -50,15 +50,15 @@ function onOverlayClick(e: MouseEvent) {
 }
 
 .log-panel {
-  background: #1a1a2e;
-  border: 1px solid #252545;
+  background: var(--surface-overlay);
+  border: 1px solid var(--border);
   border-radius: 10px;
   width: 640px;
   max-width: 90vw;
   max-height: 82vh;
   display: flex;
   flex-direction: column;
-  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.7);
+  box-shadow: var(--shadow-modal);
 }
 
 .log-header {
@@ -66,29 +66,29 @@ function onOverlayClick(e: MouseEvent) {
   align-items: center;
   justify-content: space-between;
   padding: 14px 20px;
-  border-bottom: 1px solid #222238;
+  border-bottom: 1px solid var(--border-subtle);
   flex-shrink: 0;
 }
 
 .log-title {
-  font-size: 14px;
+  font-size: var(--text-title);
   font-weight: 600;
-  color: #dde;
+  color: var(--text-primary);
 }
 
 .log-close {
   background: transparent;
   border: none;
-  color: #556;
-  font-size: 12px;
+  color: var(--text-tertiary);
+  font-size: var(--text-row);
   cursor: pointer;
   padding: 3px 7px;
   border-radius: 4px;
   line-height: 1;
 }
 .log-close:hover {
-  color: #99a;
-  background: #222238;
+  color: var(--text-secondary);
+  background: var(--surface-hover);
 }
 
 .log-body {
@@ -96,10 +96,10 @@ function onOverlayClick(e: MouseEvent) {
   flex: 1;
   margin: 0;
   padding: 14px 20px;
-  font-family: monospace;
-  font-size: 12px;
+  font-family: var(--font-mono);
+  font-size: var(--text-row);
   line-height: 1.5;
-  color: #ccd;
+  color: var(--text-primary);
   white-space: pre-wrap;
   word-break: break-word;
   user-select: text;
@@ -110,35 +110,35 @@ function onOverlayClick(e: MouseEvent) {
   justify-content: flex-end;
   gap: 8px;
   padding: 12px 20px;
-  border-top: 1px solid #222238;
+  border-top: 1px solid var(--border-subtle);
   flex-shrink: 0;
 }
 
 .log-btn-copy {
   padding: 6px 16px;
   background: transparent;
-  border: 1px solid #252545;
+  border: 1px solid var(--border);
   border-radius: 6px;
-  color: #667;
-  font-size: 12px;
+  color: var(--text-tertiary);
+  font-size: var(--text-row);
   cursor: pointer;
 }
 .log-btn-copy:hover {
-  color: #99a;
-  border-color: #3a3a5a;
+  color: var(--text-secondary);
+  border-color: var(--border-strong);
 }
 
 .log-btn-close {
   padding: 6px 20px;
-  background: #4f8ef7;
+  background: var(--accent-fill);
   border: none;
   border-radius: 6px;
-  color: #fff;
-  font-size: 12px;
+  color: var(--text-on-accent);
+  font-size: var(--text-row);
   font-weight: 600;
   cursor: pointer;
 }
 .log-btn-close:hover {
-  background: #6aa0f8;
+  background: var(--accent-fill-hover);
 }
 </style>

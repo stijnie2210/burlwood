@@ -679,8 +679,8 @@ async function confirmStashRename() {
 <style scoped>
 .sidebar {
   flex-shrink: 0;
-  background: #16213e;
-  border-right: 1px solid #2d2d4e;
+  background: var(--surface-chrome);
+  border-right: 1px solid var(--border);
   overflow: hidden;
   display: flex;
   flex-direction: column;
@@ -697,19 +697,8 @@ async function confirmStashRename() {
 .empty-state {
   padding: 24px 16px;
   text-align: center;
-  color: #666;
-  font-size: 13px;
-}
-
-.empty-state button {
-  margin-top: 12px;
-  padding: 6px 14px;
-  background: #4f8ef7;
-  border: none;
-  border-radius: 4px;
-  color: white;
-  cursor: pointer;
-  font-size: 13px;
+  color: var(--text-secondary);
+  font-size: var(--text-body);
 }
 
 .branch-section {
@@ -718,11 +707,9 @@ async function confirmStashRename() {
 
 .section-title {
   padding: 4px 12px;
-  font-size: 11px;
+  font-size: var(--text-meta);
   font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  color: #7a8899;
+  color: var(--text-tertiary);
   margin: 0;
 }
 
@@ -733,14 +720,21 @@ async function confirmStashRename() {
   display: flex;
   align-items: center;
   gap: 4px;
+  width: 100%;
+  padding: 0;
+  background: none;
+  border: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
 }
 
 .section-title--toggle:hover {
-  color: #9aaabb;
+  color: var(--text-secondary);
 }
 
 .section-chevron {
-  font-size: 9px;
+  font-size: var(--text-meta);
   flex-shrink: 0;
 }
 
@@ -755,8 +749,8 @@ async function confirmStashRename() {
   align-items: center;
   gap: 6px;
   padding: 4px 12px;
-  font-size: 13px;
-  color: #aaa;
+  font-size: var(--text-body);
+  color: var(--text-secondary);
   cursor: pointer;
   white-space: nowrap;
   user-select: none;
@@ -764,25 +758,25 @@ async function confirmStashRename() {
 }
 
 .branch-item:hover {
-  background: #1e2d50;
-  color: #ddd;
+  background: var(--surface-hover);
+  color: var(--text-primary);
 }
 .branch-item.current {
-  color: #4f8ef7;
+  color: var(--accent-text);
   font-weight: 500;
   cursor: default;
 }
 .branch-item.remote {
-  color: #9aaabb;
+  color: var(--text-secondary);
 }
 
 .branch-icon {
-  font-size: 10px;
-  color: #7a8899;
+  font-size: var(--text-meta);
+  color: var(--text-tertiary);
   flex-shrink: 0;
 }
 .branch-item.current .branch-icon {
-  color: #4f8ef7;
+  color: var(--accent-text);
 }
 
 .branch-name {
@@ -793,64 +787,99 @@ async function confirmStashRename() {
 
 .sync-badge {
   flex-shrink: 0;
-  font-size: 10px;
+  font-size: var(--text-meta);
   font-weight: 600;
   padding: 1px 5px;
   border-radius: 8px;
-  font-family: monospace;
+  font-family: var(--font-mono);
 }
 
 .sync-badge.ahead {
-  background: rgba(79, 247, 160, 0.12);
-  color: #4ff7a0;
-  border: 1px solid rgba(79, 247, 160, 0.25);
+  background: var(--add-soft);
+  color: var(--add);
+  border: 1px solid var(--add-soft-strong);
 }
 
 .sync-badge.behind {
-  background: rgba(247, 160, 79, 0.12);
-  color: #f7a04f;
-  border: 1px solid rgba(247, 160, 79, 0.25);
+  background: var(--warning-soft);
+  color: var(--modified);
+  border: 1px solid var(--warning-border);
 }
 
 .remote-label {
-  color: #7a8899;
-  font-size: 11px;
+  color: var(--text-tertiary);
+  font-size: var(--text-meta);
 }
 
 .stash-item {
-  color: #aa88dd;
+  color: var(--text-secondary);
 }
 .stash-item:hover {
-  background: #1e1a30;
-  color: #cc99ff;
+  background: var(--surface-hover);
+  color: var(--text-primary);
 }
 .stash-item.stash-selected {
-  background: rgba(187, 136, 255, 0.1);
-  color: #cc99ff;
+  background: var(--stash-soft);
+  color: var(--text-primary);
 }
 
 .stash-index {
   flex-shrink: 0;
-  font-size: 10px;
-  font-family: monospace;
-  color: #6a5888;
+  font-size: var(--text-meta);
+  font-family: var(--font-mono);
+  color: var(--stash);
   min-width: 16px;
   text-align: right;
 }
 
 .stash-msg {
   flex: 1;
-  font-size: 12px;
+  font-size: var(--text-row);
 }
 
 .stash-date {
-  font-size: 10px;
-  color: #556;
+  font-size: var(--text-meta);
+  color: var(--text-tertiary);
   flex-shrink: 0;
 }
 
 .remote-list {
   overflow-y: auto;
+}
+
+.local-section {
+  display: flex;
+  flex-direction: column;
+  flex: 0 1 auto;
+  min-height: 0;
+  max-height: 45%;
+}
+
+.local-list {
+  min-height: 0;
+  overflow-y: auto;
+}
+
+.branch-filter-row {
+  padding: 8px 10px 0;
+  flex-shrink: 0;
+}
+
+.branch-filter {
+  width: 100%;
+  padding: 4px 8px;
+  background: var(--surface-field);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  color: var(--text-primary);
+  font-size: var(--text-row);
+  outline: none;
+}
+.branch-filter::placeholder {
+  color: var(--text-tertiary);
+}
+.branch-filter:focus {
+  border-color: var(--focus-ring);
 }
 
 .stash-section {
@@ -871,19 +900,19 @@ async function confirmStashRename() {
   flex-shrink: 0;
   cursor: row-resize;
   background: transparent;
-  border-top: 1px solid #1e1e36;
-  border-bottom: 1px solid #1e1e36;
+  border-top: 1px solid var(--border-subtle);
+  border-bottom: 1px solid var(--border-subtle);
 }
 
 .section-divider:hover,
 .section-divider:active {
-  background: rgba(79, 142, 247, 0.15);
+  background: var(--accent-soft);
 }
 
 .empty-stash {
   padding: 4px 12px;
-  font-size: 11px;
-  color: #445;
+  font-size: var(--text-meta);
+  color: var(--text-tertiary);
   margin: 0;
 }
 </style>
@@ -893,29 +922,29 @@ async function confirmStashRename() {
 .ctx-menu {
   position: fixed;
   z-index: 9999;
-  background: #1a1a2e;
-  border: 1px solid #2d2d4e;
+  background: var(--surface-overlay);
+  border: 1px solid var(--border);
   border-radius: 6px;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
+  box-shadow: var(--shadow-popover);
   min-width: 220px;
   padding: 4px 0;
 }
 
 .ctx-menu-label {
   padding: 5px 12px 4px;
-  font-size: 10px;
-  color: #556;
-  font-family: monospace;
+  font-size: var(--text-meta);
+  color: var(--text-tertiary);
+  font-family: var(--font-mono);
   text-overflow: ellipsis;
   overflow: hidden;
   white-space: nowrap;
-  border-bottom: 1px solid #252540;
+  border-bottom: 1px solid var(--border);
   margin-bottom: 3px;
 }
 
 .ctx-menu-divider {
   height: 1px;
-  background: #252540;
+  background: var(--surface-control);
   margin: 3px 0;
 }
 
@@ -926,16 +955,18 @@ async function confirmStashRename() {
   text-align: left;
   background: transparent;
   border: none;
-  color: #bbc;
-  font-size: 12px;
+  color: var(--text-primary);
+  font-size: var(--text-row);
   cursor: pointer;
 }
+.ctx-menu-item:focus-visible:not(:disabled),
 .ctx-menu-item:hover:not(:disabled) {
-  background: #1e2d50;
-  color: #dde;
+  background: var(--accent-fill);
+  color: var(--text-on-accent);
+  outline: none;
 }
 .ctx-menu-item-primary {
-  color: #4f8ef7;
+  color: var(--accent-text);
   font-weight: 500;
 }
 .ctx-menu-item:disabled {
@@ -944,11 +975,12 @@ async function confirmStashRename() {
 }
 
 .ctx-menu-item-danger {
-  color: #f07070;
+  color: var(--danger);
 }
+.ctx-menu-item-danger:focus-visible:not(:disabled),
 .ctx-menu-item-danger:hover:not(:disabled) {
-  background: rgba(240, 80, 80, 0.12);
-  color: #f09090;
+  background: var(--accent-fill);
+  color: var(--text-on-accent);
 }
 
 /* Rename mode */
@@ -961,17 +993,17 @@ async function confirmStashRename() {
 
 .ctx-menu-input {
   width: 100%;
-  background: #111124;
-  border: 1px solid #2d2d4e;
+  background: var(--surface-field);
+  border: 1px solid var(--border);
   border-radius: 4px;
-  color: #e0e0e0;
-  font-size: 12px;
+  color: var(--text-primary);
+  font-size: var(--text-row);
   padding: 4px 8px;
   outline: none;
-  font-family: monospace;
+  font-family: var(--font-mono);
 }
 .ctx-menu-input:focus {
-  border-color: #4f8ef7;
+  border-color: var(--focus-ring);
 }
 
 .ctx-menu-row {
@@ -982,40 +1014,65 @@ async function confirmStashRename() {
 .ctx-menu-btn-primary {
   flex: 1;
   padding: 4px 0;
-  background: #4f8ef7;
+  background: var(--accent-fill);
   border: none;
   border-radius: 4px;
-  color: #fff;
-  font-size: 12px;
+  color: var(--text-on-accent);
+  font-size: var(--text-row);
   cursor: pointer;
 }
 .ctx-menu-btn-primary:hover {
-  background: #6aa3ff;
+  background: var(--accent-fill-hover);
 }
 
 .ctx-menu-btn {
   flex: 1;
   padding: 4px 0;
-  background: #252540;
+  background: var(--surface-control);
   border: none;
   border-radius: 4px;
-  color: #aaa;
-  font-size: 12px;
+  color: var(--text-secondary);
+  font-size: var(--text-row);
   cursor: pointer;
 }
 .ctx-menu-btn:hover {
-  background: #2d2d50;
-  color: #ccc;
+  background: var(--surface-control-hover);
+  color: var(--text-primary);
 }
 
 /* Delete confirm mode */
 .ctx-menu-confirm {
-  padding: 4px 0;
+  max-width: 260px;
+  padding: 4px 10px 8px;
 }
 
 .ctx-menu-confirm-text {
-  padding: 4px 12px 6px;
-  font-size: 11px;
-  color: #778;
+  margin: 0;
+  padding: 4px 2px 8px;
+  font-size: var(--text-meta);
+  line-height: 1.4;
+  color: var(--text-secondary);
+  text-align: left;
+}
+.ctx-menu-confirm-text--warn {
+  color: var(--danger);
+}
+
+.ctx-menu-btn-danger-soft {
+  color: var(--danger);
+}
+.ctx-menu-btn-danger-soft:hover {
+  background: var(--danger-soft);
+  color: var(--danger);
+}
+
+.ctx-menu-btn-danger {
+  background: var(--danger-fill);
+  color: var(--text-on-accent);
+  font-weight: 600;
+}
+.ctx-menu-btn-danger:hover {
+  background: var(--danger-fill-hover);
+  color: var(--text-on-accent);
 }
 </style>

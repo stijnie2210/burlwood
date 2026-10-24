@@ -75,7 +75,7 @@ watchEffect(() => {
   background: rgba(255, 255, 255, 0.04);
 }
 .row-inner.selected {
-  background: rgba(79, 142, 247, 0.15);
+  background: var(--accent-soft);
 }
 
 .row-canvas {
@@ -84,9 +84,9 @@ watchEffect(() => {
 }
 
 .row-hash {
-  font-family: monospace;
-  color: #555;
-  font-size: 11px;
+  font-family: var(--font-mono);
+  color: var(--text-tertiary);
+  font-size: var(--text-meta);
   flex-shrink: 0;
   width: 52px;
 }
@@ -94,29 +94,44 @@ watchEffect(() => {
 .row-labels {
   display: flex;
   gap: 4px;
+  flex-shrink: 1;
+  min-width: 0;
+  max-width: 40%;
+  overflow: hidden;
+}
+.row-labels .label {
+  min-width: 0;
+  max-width: 180px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.row-labels .label--more {
   flex-shrink: 0;
+  background: var(--surface-control);
+  color: var(--text-secondary);
 }
 
 .row-subject {
   flex: 1;
+  min-width: 80px;
   overflow: hidden;
   text-overflow: ellipsis;
-  color: #ddd;
-  font-size: 12px;
+  color: var(--text-primary);
+  font-size: var(--text-row);
 }
 .row-author {
   width: 120px;
   overflow: hidden;
   text-overflow: ellipsis;
-  color: #777;
+  color: var(--text-secondary);
   flex-shrink: 0;
-  font-size: 12px;
+  font-size: var(--text-row);
 }
 .row-date {
   width: 80px;
-  color: #555;
+  color: var(--text-tertiary);
   flex-shrink: 0;
   text-align: right;
-  font-size: 12px;
+  font-size: var(--text-row);
 }
 </style>
