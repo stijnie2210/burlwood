@@ -51,18 +51,40 @@ onUnmounted(() => window.removeEventListener('mousedown', onWindowMouseDown));
 </script>
 
 <template>
-  <div class="tab-bar">
-    <button
+  <div class="tab-bar" role="tablist" aria-label="Open repositories">
+    <div
       v-for="(tab, i) in repos.tabs"
       :key="tab.path"
       class="tab"
       :class="{ active: repos.activeIndex === i }"
-      @click="repos.setActive(i)"
     >
-      <span class="tab-name">{{ tab.name }}</span>
-      <span class="tab-close" @click.stop="repos.closeTab(i)">×</span>
+      <button
+        class="tab-select"
+        role="tab"
+        :aria-selected="repos.activeIndex === i"
+        :title="tab.path"
+        @click="repos.setActive(i)"
+      >
+        <span class="tab-name">{{ tab.name }}</span>
+      </button>
+      <button
+        class="tab-close"
+        :aria-label="`Close ${tab.name}`"
+        title="Close tab (⌘W)"
+        @click="repos.closeTab(i)"
+      >
+        ×
+      </button>
+    </div>
+    <button
+      ref="addBtnRef"
+      class="tab-add"
+      title="Open repository (⌘O)"
+      aria-label="Open repository"
+      @click="openPicker()"
+    >
+      +
     </button>
-    <button ref="addBtnRef" class="tab-add" title="Open repository" @click="openPicker()">+</button>
   </div>
 
   <Teleport to="body">

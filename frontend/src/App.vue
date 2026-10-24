@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, onUnmounted, ref, watch, type Ref, computed } from 'vue';
+import { onMounted, onUnmounted, ref, watch, type Ref, computed, nextTick } from 'vue';
 import { EventsOn, EventsOff } from '../wailsjs/runtime/runtime';
 import { useDetailWidth } from './composables/useDetailWidth';
 import TabBar from './components/layout/TabBar.vue';
@@ -115,35 +115,18 @@ const startDetailResize = makeResizer(detailWidth, 200, 800, 'left');
 
 const repoPath = computed(() => repos.activeRepo?.path ?? '');
 
-function onGlobalKeyDown(e: KeyboardEvent) {
-  if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) {
-    return;
-  }
-  if (!e.metaKey && !e.ctrlKey) {
-    return;
-  }
-  if (e.key === '1') {
-    e.preventDefault();
-    if (repos.activeRepo) {
-      viewMode.value = 'commits';
-    }
-  } else if (e.key === '2') {
-    e.preventDefault();
-    if (repos.activeRepo) {
-      viewMode.value = 'staging';
-    }
-  } else if (e.key === '[') {
-    e.preventDefault();
-    if (repos.tabs.length > 1) {
-      repos.setActive((repos.activeIndex - 1 + repos.tabs.length) % repos.tabs.length);
-    }
-  } else if (e.key === ']') {
-    e.preventDefault();
-    if (repos.tabs.length > 1) {
-      repos.setActive((repos.activeIndex + 1) % repos.tabs.length);
-    }
-  } else if (e.key === 'r') {
-    e.preventDefault();
+function runAction(action: string) {
+  if (action === 'view-commits' && repos.activeRepo) {
+    viewMode.value = 'commits';
+  } else if (action === 'view-staging' && repos.activeRepo) {
+    viewMode.value = 'staging';
+  } else if (action === 'prev-tab' && repos.tabs.length > 1) {
+    repos.setActive((repos.activeIndex - 1 + repos.tabs.length) % repos.tabs.length);
+  } else if (action === 'next-tab' && repos.tabs.length > 1) {
+    repos.setActive((repos.activeIndex + 1) % repos.tabs.length);
+  } else if (action === 'close-tab' && repos.tabs.length > 0) {
+    repos.closeTab(repos.activeIndex);
+  } else if (action === 'fetch') {
     const path = repoPath.value;
     if (path) {
       staging.fetchAll(path).then(() => {
@@ -152,22 +135,50 @@ function onGlobalKeyDown(e: KeyboardEvent) {
         branches.load(path);
       });
     }
-  } else if (e.key === 'o') {
-    e.preventDefault();
+  } else if (action === 'open-repo') {
     repos.pickAndOpen();
-  } else if (e.key === ',') {
-    e.preventDefault();
+  } else if (action === 'preferences') {
     prefsStore.openModal();
+  } else if (action === 'find' && repos.activeRepo) {
+    viewMode.value = 'commits';
+    nextTick(() => window.dispatchEvent(new CustomEvent('gitgood:find')));
+  }
+}
+
+const SHORTCUTS: Record<string, string> = {
+  '1': 'view-commits',
+  '2': 'view-staging',
+  '[': 'prev-tab',
+  ']': 'next-tab',
+  w: 'close-tab',
+  r: 'fetch',
+  o: 'open-repo',
+  ',': 'preferences',
+};
+
+function onGlobalKeyDown(e: KeyboardEvent) {
+  if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) {
+    return;
+  }
+  if (!e.metaKey && !e.ctrlKey) {
+    return;
+  }
+  const action = SHORTCUTS[e.key];
+  if (action) {
+    e.preventDefault();
+    runAction(action);
   }
 }
 
 onMounted(() => {
   window.addEventListener('keydown', onGlobalKeyDown);
   EventsOn('open-preferences', () => prefsStore.openModal());
+  EventsOn('menu', runAction);
 });
 onUnmounted(() => {
   window.removeEventListener('keydown', onGlobalKeyDown);
   EventsOff('open-preferences');
+  EventsOff('menu');
 });
 </script>
 
@@ -191,9 +202,11 @@ onUnmounted(() => {
           <div v-if="repos.recentRepos.length" class="recents">
             <h3>Recent</h3>
             <ul>
-              <li v-for="r in repos.recentRepos" :key="r.path" @click="repos.openRepo(r.path)">
-                <strong>{{ r.name }}</strong>
-                <span>{{ r.path }}</span>
+              <li v-for="r in repos.recentRepos" :key="r.path">
+                <button class="recent-btn" @click="repos.openRepo(r.path)">
+                  <strong>{{ r.name }}</strong>
+                  <span>{{ r.path }}</span>
+                </button>
               </li>
             </ul>
           </div>

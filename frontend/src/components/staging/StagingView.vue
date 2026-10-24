@@ -10,7 +10,12 @@ import { useToastStore } from '../../stores/toast';
 import HunkSelector from './HunkSelector.vue';
 import ConflictView from './ConflictView.vue';
 import type { Hunk } from '../../stores/staging';
-import { clampMenuPosition } from '../../composables/useContextMenu';
+import {
+  clampMenuPosition,
+  focusFirstMenuItem,
+  handleMenuKeydown,
+  menuEventFor,
+} from '../../composables/useContextMenu';
 import {
   AbortMerge,
   ContinueRebase,
@@ -264,6 +269,8 @@ const fileCtxMenuEl = ref<HTMLElement | null>(null);
 async function openFileCtxMenu(e: MouseEvent, path: string, section: FileCtxMenu['section']) {
   e.preventDefault();
   e.stopPropagation();
+  fileMenuReturnFocus =
+    document.activeElement instanceof HTMLElement ? document.activeElement : null;
   fileCtxMenu.value = { x: e.clientX, y: e.clientY, path, section, mode: 'default' };
   await nextTick();
   const menu = fileCtxMenuEl.value;
@@ -271,10 +278,18 @@ async function openFileCtxMenu(e: MouseEvent, path: string, section: FileCtxMenu
     const { x, y } = clampMenuPosition(menu, e.clientX, e.clientY);
     fileCtxMenu.value = { ...fileCtxMenu.value, x, y };
   }
+  focusFirstMenuItem(menu);
 }
+
+let fileMenuReturnFocus: HTMLElement | null = null;
 
 function closeFileCtxMenu() {
   fileCtxMenu.value = null;
+  const el = fileMenuReturnFocus;
+  fileMenuReturnFocus = null;
+  if (el?.isConnected) {
+    el.focus();
+  }
 }
 
 function onFileCtxMouseDown(e: MouseEvent) {
@@ -488,10 +503,16 @@ function navigateTo(delta: number) {
   } else {
     onSelectFile(entry.path, entry.section);
   }
+  const listEl = fileListScrollRef.value;
+  const focusFollows =
+    !!listEl &&
+    (listEl.contains(document.activeElement) || document.activeElement === document.body);
   nextTick(() => {
-    fileListScrollRef.value
-      ?.querySelector('.file-item.selected')
-      ?.scrollIntoView({ block: 'nearest' });
+    const selectedEl = fileListScrollRef.value?.querySelector<HTMLElement>('.file-item.selected');
+    selectedEl?.scrollIntoView({ block: 'nearest' });
+    if (focusFollows) {
+      selectedEl?.focus({ preventScroll: true });
+    }
   });
 }
 
@@ -673,7 +694,12 @@ async function doAbortRebase() {
       <!-- File list panel (fixed width, has its own scroll + commit panel) -->
       <div class="file-panel" :style="{ width: fileListWidth + 'px' }">
         <!-- Scrollable file list area -->
-        <div ref="fileListScrollRef" class="file-list-scroll">
+        <div
+          ref="fileListScrollRef"
+          class="file-list-scroll"
+          role="listbox"
+          aria-label="Changed files"
+        >
           <div class="staging-toolbar">
             <button class="toolbar-btn" title="Refresh status" @click="staging.load(repoPath())">
               ⟳ Refresh
@@ -692,8 +718,14 @@ async function doAbortRebase() {
                 :key="file.path + ':conflict'"
                 class="file-item file-item--conflict"
                 :class="{ selected: staging.selectedPath === file.path }"
+                role="option"
+                :aria-selected="staging.selectedPath === file.path"
+                :tabindex="staging.selectedPath === file.path ? 0 : -1"
                 @click="onSelectConflict(file.path)"
                 @contextmenu="openFileCtxMenu($event, file.path, 'conflict')"
+                @keydown.shift.f10.prevent="
+                  openFileCtxMenu(menuEventFor($event), file.path, 'conflict')
+                "
               >
                 <span class="status-code sc-conflict">!</span>
                 <span class="file-name" :title="file.path">{{ shortPath(file.path) }}</span>
@@ -715,8 +747,18 @@ async function doAbortRebase() {
               :class="{
                 selected: staging.selectedPath === file.path && staging.selectedMode === 'unstaged',
               }"
+              role="option"
+              :aria-selected="
+                staging.selectedPath === file.path && staging.selectedMode === 'unstaged'
+              "
+              :tabindex="
+                staging.selectedPath === file.path && staging.selectedMode === 'unstaged' ? 0 : -1
+              "
               @click="onSelectFile(file.path, 'unstaged')"
               @contextmenu="openFileCtxMenu($event, file.path, 'unstaged')"
+              @keydown.shift.f10.prevent="
+                openFileCtxMenu(menuEventFor($event), file.path, 'unstaged')
+              "
             >
               <span class="status-code" :class="`sc-${file.unstaged.trim() || 'q'}`">
                 {{ STATUS_LABELS[file.unstaged] ?? file.unstaged }}
@@ -725,6 +767,7 @@ async function doAbortRebase() {
               <button
                 class="inline-btn stage-inline"
                 title="Stage file"
+                :aria-label="`Stage ${file.path}`"
                 @click.stop="onStageFile(file.path)"
               >
                 +
@@ -746,8 +789,18 @@ async function doAbortRebase() {
               :class="{
                 selected: staging.selectedPath === file.path && staging.selectedMode === 'staged',
               }"
+              role="option"
+              :aria-selected="
+                staging.selectedPath === file.path && staging.selectedMode === 'staged'
+              "
+              :tabindex="
+                staging.selectedPath === file.path && staging.selectedMode === 'staged' ? 0 : -1
+              "
               @click="onSelectFile(file.path, 'staged')"
               @contextmenu="openFileCtxMenu($event, file.path, 'staged')"
+              @keydown.shift.f10.prevent="
+                openFileCtxMenu(menuEventFor($event), file.path, 'staged')
+              "
             >
               <span class="status-code" :class="`sc-${file.staged.trim() || 'q'}`">
                 {{ STATUS_LABELS[file.staged] ?? file.staged }}
@@ -756,6 +809,7 @@ async function doAbortRebase() {
               <button
                 class="inline-btn unstage-inline"
                 title="Unstage file"
+                :aria-label="`Unstage ${file.path}`"
                 @click.stop="onUnstageFile(file.path)"
               >
                 −
@@ -879,6 +933,7 @@ async function doAbortRebase() {
       ref="fileCtxMenuEl"
       class="ctx-menu"
       :style="{ left: fileCtxMenu.x + 'px', top: fileCtxMenu.y + 'px' }"
+      @keydown="handleMenuKeydown($event, fileCtxMenuEl, closeFileCtxMenu)"
     >
       <div class="ctx-menu-label">{{ fileCtxMenu.path.split('/').pop() }}</div>
 

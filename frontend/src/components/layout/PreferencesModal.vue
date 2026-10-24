@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue';
 import { usePrefsStore } from '../../stores/prefs';
+import { useDialog } from '../../composables/useDialog';
 import type { AppPrefs } from '../../stores/prefs';
 
 const prefs = usePrefsStore();
@@ -49,15 +50,26 @@ function onOverlayClick(e: MouseEvent) {
     onCancel();
   }
 }
+
+const panelRef = ref<HTMLElement | null>(null);
+const { onKeydown } = useDialog(() => prefs.modalOpen, panelRef, onCancel);
 </script>
 
 <template>
   <Teleport to="body">
     <div v-if="prefs.modalOpen" class="prefs-overlay" @click="onOverlayClick">
-      <div class="prefs-panel">
+      <div
+        ref="panelRef"
+        class="prefs-panel"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="prefs-title"
+        tabindex="-1"
+        @keydown="onKeydown"
+      >
         <div class="prefs-header">
-          <span class="prefs-title">Preferences</span>
-          <button class="prefs-close" @click="onCancel">✕</button>
+          <span id="prefs-title" class="prefs-title">Preferences</span>
+          <button class="prefs-close" aria-label="Close preferences" @click="onCancel">✕</button>
         </div>
 
         <div class="prefs-body">

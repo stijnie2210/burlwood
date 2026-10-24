@@ -30,7 +30,7 @@ async function runAction(t: Toast, e: MouseEvent) {
 
 <template>
   <Teleport to="body">
-    <div class="toast-stack">
+    <div class="toast-stack" role="status" aria-live="polite">
       <TransitionGroup name="toast">
         <div
           v-for="t in toast.toasts"

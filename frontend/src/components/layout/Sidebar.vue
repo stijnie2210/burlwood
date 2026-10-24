@@ -1,6 +1,11 @@
 <script setup lang="ts">
 import { watch, ref, nextTick, onMounted, onUnmounted } from 'vue';
-import { clampMenuPosition } from '../../composables/useContextMenu';
+import {
+  clampMenuPosition,
+  focusFirstMenuItem,
+  handleMenuKeydown,
+  menuEventFor,
+} from '../../composables/useContextMenu';
 import { useReposStore } from '../../stores/repos';
 import { useBranchesStore } from '../../stores/branches';
 import { useCommitsStore } from '../../stores/commits';
@@ -165,6 +170,7 @@ async function openCtxMenu(
 ) {
   e.preventDefault();
   e.stopPropagation();
+  rememberMenuFocus();
   ctxMenu.value = {
     x: e.clientX,
     y: e.clientY,
@@ -181,10 +187,34 @@ async function openCtxMenu(
     const { x, y } = clampMenuPosition(menu, e.clientX, e.clientY);
     ctxMenu.value = { ...ctxMenu.value, x, y };
   }
+  focusFirstMenuItem(menu);
 }
 
 function closeCtxMenu() {
   ctxMenu.value = null;
+  restoreMenuFocus();
+}
+
+let menuReturnFocus: HTMLElement | null = null;
+
+function rememberMenuFocus() {
+  menuReturnFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+}
+
+function restoreMenuFocus() {
+  const el = menuReturnFocus;
+  menuReturnFocus = null;
+  if (el?.isConnected) {
+    el.focus();
+  }
+}
+
+function focusSiblingItem(e: KeyboardEvent, dir: 1 | -1) {
+  const li = e.currentTarget as HTMLElement;
+  const next = (
+    dir === 1 ? li.nextElementSibling : li.previousElementSibling
+  ) as HTMLElement | null;
+  next?.focus();
 }
 
 function onWindowMouseDown(e: MouseEvent) {
@@ -359,6 +389,7 @@ const stashCtxMenuEl = ref<HTMLElement | null>(null);
 async function openStashCtxMenu(e: MouseEvent, entry: StashEntry) {
   e.preventDefault();
   e.stopPropagation();
+  rememberMenuFocus();
   stashCtxMenu.value = {
     x: e.clientX,
     y: e.clientY,
@@ -374,10 +405,12 @@ async function openStashCtxMenu(e: MouseEvent, entry: StashEntry) {
     const { x, y } = clampMenuPosition(menu, e.clientX, e.clientY);
     stashCtxMenu.value = { ...stashCtxMenu.value, x, y };
   }
+  focusFirstMenuItem(menu);
 }
 
 function closeStashCtxMenu() {
   stashCtxMenu.value = null;
+  restoreMenuFocus();
 }
 
 async function applyStash() {
@@ -477,9 +510,18 @@ async function confirmStashRename() {
 
     <div v-else class="sidebar-content">
       <section class="branch-section">
-        <h3 class="section-title section-title--toggle" @click="toggleSection('local')">
-          <span class="section-chevron">{{ collapsed.local ? '▸' : '▾' }}</span>
-          Local Branches
+        <h3 class="section-title">
+          <button
+            type="button"
+            class="section-title--toggle"
+            :aria-expanded="!collapsed.local"
+            @click="toggleSection('local')"
+          >
+            <span class="section-chevron" aria-hidden="true">{{
+              collapsed.local ? '▸' : '▾'
+            }}</span>
+            Local Branches
+          </button>
         </h3>
         <ul v-if="!collapsed.local" class="branch-list">
           <li
@@ -488,7 +530,14 @@ async function confirmStashRename() {
             class="branch-item"
             :class="{ current: b.isCurrent }"
             :title="b.isCurrent ? b.name + ' (current)' : 'Double-click to switch to ' + b.name"
+            tabindex="0"
             @dblclick="switchTo(b.name, false)"
+            @keydown.enter="switchTo(b.name, false)"
+            @keydown.up.prevent.stop="focusSiblingItem($event, -1)"
+            @keydown.down.prevent.stop="focusSiblingItem($event, 1)"
+            @keydown.shift.f10.prevent="
+              openCtxMenu(menuEventFor($event), b.name, b.name, true, b.isCurrent)
+            "
             @contextmenu="openCtxMenu($event, b.name, b.name, true, b.isCurrent)"
           >
             <span class="branch-icon">{{ b.isCurrent ? '●' : '○' }}</span>
@@ -512,9 +561,18 @@ async function confirmStashRename() {
       </section>
 
       <section class="branch-section">
-        <h3 class="section-title section-title--toggle" @click="toggleSection('remote')">
-          <span class="section-chevron">{{ collapsed.remote ? '▸' : '▾' }}</span>
-          Remote Branches
+        <h3 class="section-title">
+          <button
+            type="button"
+            class="section-title--toggle"
+            :aria-expanded="!collapsed.remote"
+            @click="toggleSection('remote')"
+          >
+            <span class="section-chevron" aria-hidden="true">{{
+              collapsed.remote ? '▸' : '▾'
+            }}</span>
+            Remote Branches
+          </button>
         </h3>
         <ul
           v-if="!collapsed.remote"
@@ -526,7 +584,20 @@ async function confirmStashRename() {
             :key="`${b.remote}/${b.name}`"
             class="branch-item remote"
             :title="'Double-click to check out ' + b.remote + '/' + b.name"
+            tabindex="0"
             @dblclick="switchTo(b.remote + '/' + b.name, true)"
+            @keydown.enter="switchTo(b.remote + '/' + b.name, true)"
+            @keydown.up.prevent.stop="focusSiblingItem($event, -1)"
+            @keydown.down.prevent.stop="focusSiblingItem($event, 1)"
+            @keydown.shift.f10.prevent="
+              openCtxMenu(
+                menuEventFor($event),
+                b.remote + '/' + b.name,
+                b.remote + '/' + b.name,
+                false,
+                false
+              )
+            "
             @contextmenu="
               openCtxMenu($event, b.remote + '/' + b.name, b.remote + '/' + b.name, false, false)
             "
@@ -541,9 +612,18 @@ async function confirmStashRename() {
       <div class="section-divider" @mousedown="onSectionDividerDown" />
 
       <section class="branch-section stash-section">
-        <h3 class="section-title section-title--toggle" @click="toggleSection('stashes')">
-          <span class="section-chevron">{{ collapsed.stashes ? '▸' : '▾' }}</span>
-          Stashes
+        <h3 class="section-title">
+          <button
+            type="button"
+            class="section-title--toggle"
+            :aria-expanded="!collapsed.stashes"
+            @click="toggleSection('stashes')"
+          >
+            <span class="section-chevron" aria-hidden="true">{{
+              collapsed.stashes ? '▸' : '▾'
+            }}</span>
+            Stashes
+          </button>
         </h3>
         <ul v-if="!collapsed.stashes && stash.entries.length > 0" class="branch-list stash-list">
           <li
@@ -552,7 +632,12 @@ async function confirmStashRename() {
             class="branch-item stash-item"
             :class="{ 'stash-selected': commits.selectedHash === entry.hash }"
             :title="entry.message"
+            tabindex="0"
             @click="selectStash(entry)"
+            @keydown.enter="selectStash(entry)"
+            @keydown.up.prevent.stop="focusSiblingItem($event, -1)"
+            @keydown.down.prevent.stop="focusSiblingItem($event, 1)"
+            @keydown.shift.f10.prevent="openStashCtxMenu(menuEventFor($event), entry)"
             @contextmenu="openStashCtxMenu($event, entry)"
           >
             <span class="stash-index">{{ entry.index }}</span>
@@ -572,6 +657,7 @@ async function confirmStashRename() {
       ref="branchCtxMenuEl"
       class="ctx-menu"
       :style="{ left: ctxMenu.x + 'px', top: ctxMenu.y + 'px' }"
+      @keydown="handleMenuKeydown($event, branchCtxMenuEl, closeCtxMenu)"
     >
       <div class="ctx-menu-label">{{ ctxMenu.label }}</div>
 
@@ -663,6 +749,7 @@ async function confirmStashRename() {
       ref="stashCtxMenuEl"
       class="ctx-menu"
       :style="{ left: stashCtxMenu.x + 'px', top: stashCtxMenu.y + 'px' }"
+      @keydown="handleMenuKeydown($event, stashCtxMenuEl, closeStashCtxMenu)"
     >
       <div class="ctx-menu-label">{{ stashCtxMenu.ref }}</div>
 

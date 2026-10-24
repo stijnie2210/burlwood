@@ -1,6 +1,10 @@
 <script setup lang="ts">
 import { ref, nextTick, onMounted, onUnmounted } from 'vue';
-import { clampMenuPosition } from '../../composables/useContextMenu';
+import {
+  clampMenuPosition,
+  focusFirstMenuItem,
+  handleMenuKeydown,
+} from '../../composables/useContextMenu';
 import type { GraphRow } from '../../stores/commits';
 import { useToastStore } from '../../stores/toast';
 import { useCommitsStore } from '../../stores/commits';
@@ -53,6 +57,7 @@ onMounted(() => {
 
   document.addEventListener('mousedown', onOutside, true);
   document.addEventListener('keydown', onKey, true);
+  focusFirstMenuItem(el);
 });
 
 onUnmounted(() => {
@@ -66,10 +71,13 @@ function onOutside(e: MouseEvent) {
   }
 }
 
+// Capture phase, so arrow keys move through the menu instead of the commit selection behind it.
 function onKey(e: KeyboardEvent) {
   if (e.key === 'Escape') {
     emit('close');
+    return;
   }
+  handleMenuKeydown(e, menuEl.value, () => emit('close'));
 }
 
 // ── Actions ──────────────────────────────────────────────────────────────────
@@ -258,15 +266,11 @@ async function pushTag(name: string) {
       <div class="ctx-choices">
         <button class="ctx-choice" @click="revert(true)">
           <span class="ctx-choice-title">Revert and commit</span>
-          <span class="ctx-choice-desc"
-            >Creates a new commit that undoes {{ row.shortHash }}</span
-          >
+          <span class="ctx-choice-desc">Creates a new commit that undoes {{ row.shortHash }}</span>
         </button>
         <button class="ctx-choice" @click="revert(false)">
           <span class="ctx-choice-title">Stage the revert</span>
-          <span class="ctx-choice-desc"
-            >Leaves the changes staged so you can edit them first</span
-          >
+          <span class="ctx-choice-desc">Leaves the changes staged so you can edit them first</span>
         </button>
       </div>
     </template>
@@ -321,12 +325,10 @@ async function pushTag(name: string) {
 
     <!-- ── Tag created ────────────────────────────── -->
     <template v-else-if="mode === 'tag-created'">
-      <div class="ctx-input-header">
-        Tag '{{ inputVal }}' {{ tagMoved ? 'moved' : 'created' }}
-      </div>
+      <div class="ctx-input-header">Tag '{{ inputVal }}' {{ tagMoved ? 'moved' : 'created' }}</div>
       <div v-if="tagMoved" class="ctx-confirm-question">
-        The remote still points '{{ inputVal }}' at the old commit. Force-pushing replaces it
-        there, and anyone who already fetched it keeps the old one.
+        The remote still points '{{ inputVal }}' at the old commit. Force-pushing replaces it there,
+        and anyone who already fetched it keeps the old one.
       </div>
       <div class="ctx-confirm-row">
         <button
@@ -339,9 +341,7 @@ async function pushTag(name: string) {
         <button v-else class="ctx-confirm-btn ctx-confirm-btn--yes" @click="pushCreatedTag">
           Push tag
         </button>
-        <button class="ctx-confirm-btn ctx-confirm-btn--cancel" @click="emit('close')">
-          Done
-        </button>
+        <button class="ctx-confirm-btn ctx-confirm-btn--cancel" @click="emit('close')">Done</button>
       </div>
     </template>
 

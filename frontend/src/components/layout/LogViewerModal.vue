@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref } from 'vue';
 import { useLogModalStore } from '../../stores/logModal';
+import { useDialog } from '../../composables/useDialog';
 
 const logModal = useLogModalStore();
 const copied = ref(false);
@@ -16,15 +17,30 @@ function onOverlayClick(e: MouseEvent) {
     logModal.close();
   }
 }
+
+const panelRef = ref<HTMLElement | null>(null);
+const { onKeydown } = useDialog(
+  () => logModal.open,
+  panelRef,
+  () => logModal.close()
+);
 </script>
 
 <template>
   <Teleport to="body">
     <div v-if="logModal.open" class="log-overlay" @click="onOverlayClick">
-      <div class="log-panel">
+      <div
+        ref="panelRef"
+        class="log-panel"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="log-title"
+        tabindex="-1"
+        @keydown="onKeydown"
+      >
         <div class="log-header">
-          <span class="log-title">{{ logModal.title }}</span>
-          <button class="log-close" @click="logModal.close()">✕</button>
+          <span id="log-title" class="log-title">{{ logModal.title }}</span>
+          <button class="log-close" aria-label="Close" @click="logModal.close()">✕</button>
         </div>
 
         <pre class="log-body">{{ logModal.content }}</pre>

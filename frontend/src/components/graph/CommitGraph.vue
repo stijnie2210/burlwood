@@ -142,8 +142,14 @@ function onScroll() {
   }
 }
 
-onMounted(() => window.addEventListener('keydown', onGlobalKeyDown));
-onUnmounted(() => window.removeEventListener('keydown', onGlobalKeyDown));
+onMounted(() => {
+  window.addEventListener('keydown', onGlobalKeyDown);
+  window.addEventListener('gitgood:find', openSearch);
+});
+onUnmounted(() => {
+  window.removeEventListener('keydown', onGlobalKeyDown);
+  window.removeEventListener('gitgood:find', openSearch);
+});
 
 function onRowClick(index: number) {
   const row = filteredRows.value[index];
@@ -155,12 +161,31 @@ function onRowClick(index: number) {
 // Context menu
 const menu = ref<{ x: number; y: number; index: number } | null>(null);
 
+let menuReturnFocus: HTMLElement | null = null;
+
 function onRowContextMenu(index: number, e: MouseEvent) {
+  menuReturnFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null;
   menu.value = { x: e.clientX, y: e.clientY, index };
+}
+
+function openMenuForSelected() {
+  const idx = selectedIndex.value;
+  const rowEl = idx >= 0 ? document.getElementById(`commit-row-${idx}`) : null;
+  if (!rowEl) {
+    return;
+  }
+  const rect = rowEl.getBoundingClientRect();
+  menuReturnFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+  menu.value = { x: rect.left + 120, y: rect.bottom, index: idx };
 }
 
 function closeMenu() {
   menu.value = null;
+  const el = menuReturnFocus;
+  menuReturnFocus = null;
+  if (el?.isConnected) {
+    el.focus();
+  }
 }
 
 async function onMenuRefresh() {
@@ -188,7 +213,16 @@ async function onMenuRefresh() {
       <button class="search-close" @click="closeSearch">×</button>
     </div>
 
-    <div ref="parentRef" class="graph-scroller" @scroll="onScroll">
+    <div
+      ref="parentRef"
+      class="graph-scroller"
+      role="listbox"
+      aria-label="Commits"
+      tabindex="0"
+      :aria-activedescendant="selectedIndex >= 0 ? `commit-row-${selectedIndex}` : undefined"
+      @scroll="onScroll"
+      @keydown.shift.f10.prevent="openMenuForSelected"
+    >
       <div v-if="commits.loading" class="loading">Loading commits…</div>
 
       <div v-else-if="commits.error" class="load-error">
@@ -203,7 +237,17 @@ async function onMenuRefresh() {
       <div v-else :style="{ height: `${totalSize}px`, position: 'relative' }">
         <div
           v-for="item in items"
+          :id="`commit-row-${item.index}`"
           :key="item.index"
+          role="option"
+          :aria-selected="commits.selectedHash === filteredRows[item.index]?.hash"
+          :aria-posinset="item.index + 1"
+          :aria-setsize="filteredRows.length"
+          :aria-label="
+            filteredRows[item.index]
+              ? `${filteredRows[item.index].shortHash} ${filteredRows[item.index].subject}`
+              : undefined
+          "
           :style="{
             position: 'absolute',
             top: 0,
