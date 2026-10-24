@@ -69,14 +69,14 @@ const picker = useRepoPickerStore();
   overflow-x: auto;
 }
 
-/* Safari-style: tabs share the width, but never grow past a readable name. */
+/* Safari-style: tabs split the full width. A max width made the first tab line up with the
+   sidebar and read as its heading. */
 .tab {
   position: relative;
   display: flex;
   align-items: center;
   flex: 1 1 0;
   min-width: 112px;
-  max-width: 240px;
   border-right: 1px solid var(--border-subtle);
   color: var(--text-tertiary);
   font-size: var(--text-row);
