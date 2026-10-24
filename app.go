@@ -177,8 +177,8 @@ func (a *App) Commit(repoPath, message string, amend bool) error {
 	return a.manager.Commit(repoPath, message, amend)
 }
 
-func (a *App) GetLastCommitSubject(repoPath string) (string, error) {
-	return a.manager.GetLastCommitSubject(repoPath)
+func (a *App) GetAmendInfo(repoPath string) (gitcli.AmendInfo, error) {
+	return a.manager.GetAmendInfo(repoPath)
 }
 
 func (a *App) CheckoutRef(repoPath, ref string) error {

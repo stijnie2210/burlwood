@@ -74,6 +74,10 @@ export function GetAheadBehind(arg1) {
   return window['go']['main']['App']['GetAheadBehind'](arg1);
 }
 
+export function GetAmendInfo(arg1) {
+  return window['go']['main']['App']['GetAmendInfo'](arg1);
+}
+
 export function GetCommitDiff(arg1, arg2) {
   return window['go']['main']['App']['GetCommitDiff'](arg1, arg2);
 }
@@ -92,10 +96,6 @@ export function GetFileAtCommitBase64(arg1, arg2, arg3) {
 
 export function GetFileBase64(arg1, arg2) {
   return window['go']['main']['App']['GetFileBase64'](arg1, arg2);
-}
-
-export function GetLastCommitSubject(arg1) {
-  return window['go']['main']['App']['GetLastCommitSubject'](arg1);
 }
 
 export function GetMergeMessage(arg1) {

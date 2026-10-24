@@ -1,5 +1,21 @@
 export namespace gitcli {
 	
+	export class AmendInfo {
+	    summary: string;
+	    description: string;
+	    pushed: boolean;
+	
+	    static createFrom(source: any = {}) {
+	        return new AmendInfo(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.summary = source["summary"];
+	        this.description = source["description"];
+	        this.pushed = source["pushed"];
+	    }
+	}
 	export class DiscardSnapshot {
 	    path: string;
 	    blob: string;

@@ -220,19 +220,32 @@ const canCommit = computed(() => {
   return staging.stagedFiles.length > 0 && commitSummary.value.trim().length > 0;
 });
 
-let amendPrefill = '';
+let amendPrefill: { summary: string; description: string } | null = null;
+const amendPushed = ref(false);
+const descInputRef = ref<HTMLTextAreaElement | null>(null);
 
+// Prefill the whole message (not just the subject) so amending never silently drops the body.
 async function onAmendToggle() {
-  if (amend.value && !commitSummary.value) {
-    amendPrefill = await staging.getLastCommitSubject(repoPath());
-    commitSummary.value = amendPrefill;
-  }
-  if (!amend.value) {
-    if (amendPrefill && commitSummary.value === amendPrefill) {
-      commitSummary.value = '';
+  if (amend.value) {
+    const info = await staging.getAmendInfo(repoPath());
+    amendPushed.value = info.pushed;
+    if (!commitSummary.value && !commitDescription.value) {
+      amendPrefill = { summary: info.summary, description: info.description };
+      commitSummary.value = info.summary;
+      commitDescription.value = info.description;
     }
-    amendPrefill = '';
+    return;
   }
+  amendPushed.value = false;
+  if (
+    amendPrefill &&
+    commitSummary.value === amendPrefill.summary &&
+    commitDescription.value === amendPrefill.description
+  ) {
+    commitSummary.value = '';
+    commitDescription.value = '';
+  }
+  amendPrefill = null;
 }
 
 async function onCommit() {
@@ -252,10 +265,11 @@ async function onCommit() {
     commitSummary.value = '';
     commitDescription.value = '';
     amend.value = false;
-    amendPrefill = '';
+    amendPrefill = null;
+    amendPushed.value = false;
     toast.success(wasAmend ? `Amended commit on ${branch}` : `Committed to ${branch}`);
   } catch (e) {
-    toast.error(String(e));
+    toast.error(e);
   } finally {
     committing.value = false;
   }
@@ -912,16 +926,20 @@ async function doAbortRebase() {
 
           <template v-else>
             <div class="summary-row">
-              <textarea
+              <input
                 v-model="commitSummary"
                 class="summary-input"
-                placeholder="Commit summary"
-                rows="2"
+                type="text"
+                placeholder="Summary"
+                aria-label="Commit summary"
                 maxlength="200"
+                spellcheck="true"
+                @keydown.enter.exact.prevent="descInputRef?.focus()"
                 @keydown.meta.enter="onCommit"
               />
               <span
                 class="char-count"
+                aria-hidden="true"
                 :class="{
                   over: summaryRemaining < 0,
                   warn: summaryRemaining < 10 && summaryRemaining >= 0,
@@ -932,10 +950,12 @@ async function doAbortRebase() {
             </div>
 
             <textarea
+              ref="descInputRef"
               v-model="commitDescription"
               class="desc-input"
               placeholder="Description (optional)"
-              rows="2"
+              aria-label="Commit description"
+              rows="3"
               @keydown.meta.enter="onCommit"
             />
 
@@ -943,6 +963,10 @@ async function doAbortRebase() {
               <input v-model="amend" type="checkbox" @change="onAmendToggle" />
               <span>Amend previous commit</span>
             </label>
+            <p v-if="amend && amendPushed" class="amend-warning" role="status">
+              This commit is already pushed. Amending rewrites it, so the next push will need a
+              force push.
+            </p>
 
             <button
               class="commit-btn"
@@ -1481,6 +1505,13 @@ async function doAbortRebase() {
   gap: var(--space-2);
 }
 
+.amend-warning {
+  margin: 0;
+  font-size: var(--text-meta);
+  line-height: 1.4;
+  color: var(--warning);
+}
+
 .amend-row {
   display: flex;
   align-items: center;
@@ -1511,7 +1542,6 @@ async function doAbortRebase() {
   color: var(--text-primary);
   font-size: var(--text-row);
   padding: 6px 30px 6px 8px;
-  resize: none;
   outline: none;
   font-family: inherit;
   line-height: 1.4;
@@ -1527,10 +1557,11 @@ async function doAbortRebase() {
 .char-count {
   position: absolute;
   right: 6px;
-  bottom: 6px;
   font-size: var(--text-meta);
   color: var(--text-tertiary);
   pointer-events: none;
+  top: 50%;
+  transform: translateY(-50%);
 }
 .char-count.warn {
   color: var(--modified);

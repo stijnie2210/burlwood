@@ -41,6 +41,8 @@ export function ForcePushTag(arg1:string,arg2:string):Promise<void>;
 
 export function GetAheadBehind(arg1:string):Promise<repo.AheadBehind>;
 
+export function GetAmendInfo(arg1:string):Promise<gitcli.AmendInfo>;
+
 export function GetCommitDiff(arg1:string,arg2:string):Promise<Array<repo.FileDiff>>;
 
 export function GetCommitGraph(arg1:string,arg2:number):Promise<Array<graph.GraphRow>>;
@@ -50,8 +52,6 @@ export function GetConflictContent(arg1:string,arg2:string):Promise<repo.Conflic
 export function GetFileAtCommitBase64(arg1:string,arg2:string,arg3:string):Promise<string>;
 
 export function GetFileBase64(arg1:string,arg2:string):Promise<string>;
-
-export function GetLastCommitSubject(arg1:string):Promise<string>;
 
 export function GetMergeMessage(arg1:string):Promise<string>;
 

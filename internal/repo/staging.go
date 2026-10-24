@@ -64,12 +64,8 @@ func (m *Manager) Commit(repoPath, message string, amend bool) error {
 	return gitcli.Commit(repoPath, message, amend)
 }
 
-func (m *Manager) GetLastCommitSubject(repoPath string) (string, error) {
-	result, err := gitcli.Run(repoPath, "log", "-1", "--pretty=%s")
-	if err != nil {
-		return "", nil
-	}
-	return strings.TrimSpace(result.Stdout), nil
+func (m *Manager) GetAmendInfo(repoPath string) (gitcli.AmendInfo, error) {
+	return gitcli.GetAmendInfo(repoPath)
 }
 
 func BuildHunkPatch(path string, hunk Hunk) string {

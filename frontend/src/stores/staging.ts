@@ -14,7 +14,7 @@ import {
   FetchAll,
   PullBranch,
   Commit,
-  GetLastCommitSubject,
+  GetAmendInfo,
   IsInMerge,
   GetMergeMessage,
   IsInRebase,
@@ -238,8 +238,8 @@ export const useStagingStore = defineStore('staging', () => {
     await load(repoPath);
   }
 
-  async function getLastCommitSubject(repoPath: string): Promise<string> {
-    return GetLastCommitSubject(repoPath);
+  async function getAmendInfo(repoPath: string): Promise<gitcli.AmendInfo> {
+    return GetAmendInfo(repoPath);
   }
 
   function clearSelection() {
@@ -293,7 +293,7 @@ export const useStagingStore = defineStore('staging', () => {
     fetchAll,
     pullBranch,
     commit,
-    getLastCommitSubject,
+    getAmendInfo,
     clearSelection,
     refresh,
     setSelectedConflict,

@@ -51,6 +51,7 @@ internal/gitcli/
   push.go                           PushBranch(branch, force): upstream from config or -u on the default remote;
                                     non-fast-forward → Rejected result (not an error); force = --force-with-lease --force-if-includes
                                     (the bare lease is defeated by background auto-fetch)
+  amend.go                          GetAmendInfo: full message (%B) + whether HEAD is already on its upstream
   fileops.go                        OpenInDefaultApp, ShowInFinder, OpenInEditor,
                                     StashFile, AppendToGitignore, GetFilePatch, DeleteWorkingFile
   undo.go                           SnapshotWorkingFile/RestoreWorkingFile (discard undo via hash-object),
