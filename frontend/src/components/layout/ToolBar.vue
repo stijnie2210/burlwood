@@ -51,15 +51,11 @@ async function run(op: string, fn: () => Promise<void>, successMsg?: string) {
 }
 
 async function onFetch() {
-  await run(
-    'fetch',
-    async () => {
-      await staging.fetchAll(repoPath.value);
-      await commits.load(repoPath.value);
-      branches.load(repoPath.value);
-    },
-    'Fetched successfully'
-  );
+  await run('fetch', async () => {
+    await staging.fetchAll(repoPath.value);
+    await commits.load(repoPath.value);
+    branches.load(repoPath.value);
+  });
 }
 
 const PULL_MODES: { value: string; label: string }[] = [
@@ -108,7 +104,7 @@ async function onPull() {
       await staging.load(repoPath.value);
       await branches.load(repoPath.value);
     },
-    mode === 'fetch' ? 'Fetched successfully' : 'Pulled successfully'
+    mode === 'fetch' ? undefined : 'Pulled successfully'
   );
 }
 

@@ -54,10 +54,31 @@ function restartFetchTimer(path: string | undefined) {
   if (!path || !prefsStore.prefs.autoFetchEnabled) {
     return;
   }
-  branches.silentFetchAndRefresh(path);
-  fetchPollTimer = setInterval(() => {
-    branches.silentFetchAndRefresh(path);
-  }, prefsStore.prefs.autoFetchIntervalSecs * 1000);
+  autoFetch(path);
+  fetchPollTimer = setInterval(
+    () => autoFetch(path),
+    prefsStore.prefs.autoFetchIntervalSecs * 1000
+  );
+}
+
+async function autoFetch(path: string) {
+  await branches.silentFetchAndRefresh(path);
+  if (repos.activeRepo?.path === path) {
+    await commits.load(path);
+  }
+}
+
+// Coming back from the editor is when the working tree most likely changed.
+let lastFocusRefresh = 0;
+function refreshOnFocus() {
+  const path = repoPath.value;
+  if (!path || document.visibilityState === 'hidden' || Date.now() - lastFocusRefresh < 1500) {
+    return;
+  }
+  lastFocusRefresh = Date.now();
+  staging.refresh(path);
+  branches.load(path);
+  commits.load(path);
 }
 
 watch(
@@ -173,11 +194,15 @@ function onGlobalKeyDown(e: KeyboardEvent) {
 
 onMounted(() => {
   window.addEventListener('keydown', onGlobalKeyDown);
+  window.addEventListener('focus', refreshOnFocus);
+  document.addEventListener('visibilitychange', refreshOnFocus);
   EventsOn('open-preferences', () => prefsStore.openModal());
   EventsOn('menu', runAction);
 });
 onUnmounted(() => {
   window.removeEventListener('keydown', onGlobalKeyDown);
+  window.removeEventListener('focus', refreshOnFocus);
+  document.removeEventListener('visibilitychange', refreshOnFocus);
   EventsOff('open-preferences');
   EventsOff('menu');
 });

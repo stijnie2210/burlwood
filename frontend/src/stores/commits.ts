@@ -24,25 +24,42 @@ export const useCommitsStore = defineStore('commits', () => {
 
   const maxColumn = computed(() => rows.value.reduce((m, r) => Math.max(m, r.maxColumn), 0));
 
+  // Reloading the repo that is already shown is a quiet refresh: rows swap in place and the
+  // selection survives, so routine operations (fetch, push, stash, commit) don't lose your place.
   async function load(repoPath: string) {
     if (!repoPath) {
       return;
     }
     const initialLimit = usePrefsStore().prefs.commitGraphLimit;
-    loading.value = true;
-    loadedLimit.value = initialLimit;
-    hasMore.value = false;
+    const refresh = currentRepoPath.value === repoPath && rows.value.length > 0;
+    const limit = refresh ? Math.max(initialLimit, loadedLimit.value) : initialLimit;
+    if (!refresh) {
+      loading.value = true;
+      hasMore.value = false;
+      selectedHash.value = null;
+      selectedFileIndex.value = null;
+      diff.value = [];
+    }
     error.value = null;
-    selectedHash.value = null;
-    diff.value = [];
     currentRepoPath.value = repoPath;
     try {
-      const result = await GetCommitGraph(repoPath, initialLimit);
+      const result = await GetCommitGraph(repoPath, limit);
+      if (currentRepoPath.value !== repoPath) {
+        return;
+      }
       rows.value = result;
-      hasMore.value = result.length === initialLimit;
+      loadedLimit.value = limit;
+      hasMore.value = result.length === limit;
+      if (selectedHash.value && !result.some((r) => r.hash === selectedHash.value)) {
+        selectedHash.value = null;
+        selectedFileIndex.value = null;
+        diff.value = [];
+      }
     } catch (e) {
       error.value = String(e);
-      rows.value = [];
+      if (!refresh) {
+        rows.value = [];
+      }
     } finally {
       loading.value = false;
     }

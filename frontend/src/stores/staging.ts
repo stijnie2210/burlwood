@@ -81,11 +81,16 @@ export const useStagingStore = defineStore('staging', () => {
 
   const totalChanges = computed(() => files.value.length);
 
+  let loadedRepoPath: string | null = null;
+
+  // Only the first load of a repo shows the loading state; later loads swap the list in place.
   async function load(repoPath: string) {
     if (!repoPath) {
       return;
     }
-    loading.value = true;
+    if (loadedRepoPath !== repoPath) {
+      loading.value = true;
+    }
     try {
       try {
         await SyncAutostash(repoPath);
@@ -105,8 +110,29 @@ export const useStagingStore = defineStore('staging', () => {
       mergeMessage.value = mergeMsg;
       isInRebase.value = rebaseActive;
       rebaseState.value = rebaseInfo;
+      loadedRepoPath = repoPath;
     } finally {
       loading.value = false;
+    }
+  }
+
+  // Background refresh (window focus): also re-reads the open diff, since the file may have
+  // been edited elsewhere, without flashing the diff's loading state.
+  async function refresh(repoPath: string) {
+    await load(repoPath);
+    const path = selectedPath.value;
+    if (!path || !repoPath) {
+      return;
+    }
+    const stillChanged = files.value.some((f) => f.path === path);
+    if (!stillChanged) {
+      clearSelection();
+      return;
+    }
+    try {
+      diff.value = await GetWorkingDiff(repoPath, path, selectedMode.value === 'staged');
+    } catch {
+      // keep showing the previous diff; the next refresh will retry
     }
   }
 
@@ -210,6 +236,7 @@ export const useStagingStore = defineStore('staging', () => {
   }
 
   function clear() {
+    loadedRepoPath = null;
     files.value = [];
     selectedPath.value = null;
     diff.value = [];
@@ -249,6 +276,7 @@ export const useStagingStore = defineStore('staging', () => {
     commit,
     getLastCommitSubject,
     clearSelection,
+    refresh,
     setSelectedConflict,
     clear,
   };

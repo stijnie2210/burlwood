@@ -35,6 +35,28 @@ const filteredRows = computed(() => {
     .map((r) => ({ ...r, edges: [], edgesIn: [] }));
 });
 
+// A quiet refresh can insert new commits above the viewport; keep the top visible commit in place.
+watch(
+  () => commits.rows,
+  (next, prev) => {
+    const el = parentRef.value;
+    if (!el || !prev?.length || next === prev || searchQuery.value.trim()) {
+      return;
+    }
+    const topIndex = Math.floor(el.scrollTop / ROW_H);
+    const topHash = prev[topIndex]?.hash;
+    const newIndex = topHash ? next.findIndex((r) => r.hash === topHash) : -1;
+    if (newIndex < 0 || newIndex === topIndex) {
+      return;
+    }
+    const offset = el.scrollTop - topIndex * ROW_H;
+    nextTick(() => {
+      el.scrollTop = newIndex * ROW_H + offset;
+    });
+  },
+  { flush: 'pre' }
+);
+
 const selectedIndex = computed(() =>
   commits.selectedHash ? filteredRows.value.findIndex((r) => r.hash === commits.selectedHash) : -1
 );
