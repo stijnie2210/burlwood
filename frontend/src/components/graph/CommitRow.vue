@@ -8,6 +8,7 @@ import { formatDate } from '../../utils/date';
 const props = defineProps<{
   row: GraphRow;
   graphWidth: number;
+  truncated?: boolean;
   rowH: number;
   selected: boolean;
 }>();
@@ -43,7 +44,7 @@ watchEffect(() => {
   const ctx = canvas.getContext('2d');
   if (ctx) {
     ctx.scale(dpr, dpr);
-    drawGraphCell(ctx, props.row, props.rowH);
+    drawGraphCell(ctx, props.row, props.rowH, props.truncated ? props.graphWidth : undefined);
   }
 });
 </script>
@@ -53,6 +54,7 @@ watchEffect(() => {
     <canvas
       ref="canvasRef"
       class="row-canvas"
+      :class="{ 'row-canvas--truncated': truncated }"
       :style="{ width: `${graphWidth}px`, height: `${rowH}px` }"
     />
     <span class="row-hash">{{ row.shortHash }}</span>
@@ -89,7 +91,7 @@ watchEffect(() => {
   padding-right: var(--space-4);
   white-space: nowrap;
   overflow: hidden;
-  cursor: pointer;
+  cursor: default;
   height: 100%;
 }
 
@@ -98,6 +100,11 @@ watchEffect(() => {
 }
 .row-inner.selected {
   background: var(--surface-selected);
+}
+
+.row-canvas--truncated {
+  -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 14px), transparent);
+  mask-image: linear-gradient(to right, #000 calc(100% - 14px), transparent);
 }
 
 .row-canvas {

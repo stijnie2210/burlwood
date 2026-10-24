@@ -143,6 +143,10 @@ func buildLabelMapShell(repoPath string) map[string][]graph.Label {
 			}
 		case strings.HasPrefix(refname, "refs/remotes/"):
 			short := strings.TrimPrefix(refname, "refs/remotes/")
+			// origin/HEAD only names the remote's default branch; it crowds out real refs.
+			if strings.HasSuffix(short, "/HEAD") {
+				continue
+			}
 			rparts := strings.SplitN(short, "/", 2)
 			if len(rparts) == 2 {
 				label = graph.Label{Name: rparts[1], Type: "remote", Remote: rparts[0]}
@@ -215,9 +219,10 @@ func getCommitDiffShell(repoPath, hash string) ([]FileDiff, error) {
 	if result.Stdout != "" {
 		return emptyIfNil(parseUnifiedDiff(result.Stdout)), nil
 	}
-	// Stash and merge commits have multiple parents; diff-tree produces no output without -m.
-	// Fall back to first-parent comparison so the viewer shows something useful.
-	result, err = gitcli.Run(repoPath, "diff-tree", "--no-commit-id", "-p", "--root", ctx, "-m", "--first-parent", hash)
+	// Stash and merge commits have multiple parents and diff-tree prints nothing for them.
+	// diff-tree ignores --first-parent, so "-m --first-parent" emitted one diff per parent and
+	// every file showed up twice; compare against the first parent directly instead.
+	result, err = gitcli.Run(repoPath, "diff", ctx, hash+"^1", hash)
 	if err != nil || result.Stdout == "" {
 		return []FileDiff{}, nil
 	}

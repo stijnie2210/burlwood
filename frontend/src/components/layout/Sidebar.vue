@@ -880,7 +880,7 @@ async function confirmStashRename() {
 <style scoped>
 .sidebar {
   flex-shrink: 0;
-  background: var(--surface-chrome);
+  background: var(--surface-sidebar);
   border-right: 1px solid var(--border);
   overflow: hidden;
   display: flex;
@@ -915,7 +915,7 @@ async function confirmStashRename() {
 }
 
 .section-title--toggle {
-  cursor: pointer;
+  cursor: default;
   user-select: none;
   -webkit-user-select: none;
   display: flex;
@@ -952,7 +952,7 @@ async function confirmStashRename() {
   padding: 4px 12px;
   font-size: var(--text-body);
   color: var(--text-secondary);
-  cursor: pointer;
+  cursor: default;
   white-space: nowrap;
   user-select: none;
   -webkit-user-select: none;
@@ -1158,7 +1158,7 @@ async function confirmStashRename() {
   border: none;
   color: var(--text-primary);
   font-size: var(--text-row);
-  cursor: pointer;
+  cursor: default;
 }
 .ctx-menu-item:focus-visible:not(:disabled),
 .ctx-menu-item:hover:not(:disabled) {
@@ -1220,7 +1220,7 @@ async function confirmStashRename() {
   border-radius: 4px;
   color: var(--text-on-accent);
   font-size: var(--text-row);
-  cursor: pointer;
+  cursor: default;
 }
 .ctx-menu-btn-primary:hover {
   background: var(--accent-fill-hover);
@@ -1234,7 +1234,7 @@ async function confirmStashRename() {
   border-radius: 4px;
   color: var(--text-secondary);
   font-size: var(--text-row);
-  cursor: pointer;
+  cursor: default;
 }
 .ctx-menu-btn:hover {
   background: var(--surface-control-hover);

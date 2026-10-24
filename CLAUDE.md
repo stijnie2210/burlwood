@@ -137,7 +137,8 @@ Four text sizes, as tokens: `--text-meta` 11 (labels, hashes, line numbers), `--
 All colours are semantic tokens in `style.css`; never hard-code hex in components. Neutral macOS-style greys, colour only where it means something:
 - Surfaces: `--surface-sunken` (diffs) → `-base` (canvas) → `-raised` (bars in panels) → `-chrome` (sidebar, tab bar, toolbar) → `-overlay` (menus, modals, toasts); plus `-field`, `-control`, `-hover`, `-selected`
 - Text: `--text-primary` / `-secondary` / `-tertiary` (all ≥4.5:1 on every surface), `--text-on-accent`
-- Accent (system blue): `--accent-fill` for primary buttons and menu hover, `--accent-text`, `--focus-ring`
+- Accent: derived from the macOS accent colour (`--accent-system` = `-apple-system-control-accent`, blue fallback): `--accent-fill` for primary buttons and menu hover, `--accent-text`, `--focus-ring`; `html.window-inactive` greys the selection
+- Window is translucent (Mac options in main.go); the webview background is transparent, so every area except the sidebar (`--surface-sidebar`) must paint its own background. Controls use `cursor: default`, never `pointer`
 - Git meaning: `--add` / `--del` (+ `-fg`, `-line-bg`), `--modified`, `--untracked`, `--ours` / `--theirs`, `--tag`, `--stash`; `--danger*` and `--warning*` for destructive and in-progress states
 - Graph lanes (`internal/graph/layout.go`) are muted and avoid the add/del hues; syntax colours in `assets/prism-theme.css` follow Xcode's dark theme
 

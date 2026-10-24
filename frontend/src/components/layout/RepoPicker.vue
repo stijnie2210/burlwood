@@ -127,7 +127,7 @@ onUnmounted(() => window.removeEventListener('mousedown', onWindowMouseDown));
   padding: 6px var(--space-3);
   background: none;
   border: none;
-  cursor: pointer;
+  cursor: default;
   text-align: left;
   gap: 2px;
   color: var(--text-primary);

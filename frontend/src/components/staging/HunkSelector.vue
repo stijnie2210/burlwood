@@ -163,7 +163,7 @@ const { visible, hiddenLines, revealAll } = useLineBudget(
   border-radius: 4px;
   border: 1px solid;
   font-size: var(--text-meta);
-  cursor: pointer;
+  cursor: default;
   font-weight: 500;
 }
 
@@ -235,7 +235,7 @@ const { visible, hiddenLines, revealAll } = useLineBudget(
   border-radius: 3px;
   border: 1px solid;
   font-size: var(--text-meta);
-  cursor: pointer;
+  cursor: default;
   flex-shrink: 0;
   font-weight: 500;
 }
@@ -324,7 +324,7 @@ const { visible, hiddenLines, revealAll } = useLineBudget(
   border-top: 1px solid var(--border-subtle);
   color: var(--text-secondary);
   font-size: var(--text-row);
-  cursor: pointer;
+  cursor: default;
 }
 .diff-show-all:hover {
   background: var(--surface-control);

@@ -1190,7 +1190,7 @@ async function doAbortRebase() {
   border-radius: 4px;
   color: var(--danger);
   font-size: var(--text-meta);
-  cursor: pointer;
+  cursor: default;
 }
 .merge-abort-btn:hover {
   background: var(--danger-soft-hover);
@@ -1329,7 +1329,7 @@ async function doAbortRebase() {
   border: none;
   border-radius: 4px;
   color: var(--text-tertiary);
-  cursor: pointer;
+  cursor: default;
 }
 .section-icon-btn:hover {
   background: var(--surface-hover);
@@ -1368,7 +1368,7 @@ async function doAbortRebase() {
   border: 1px solid var(--border-strong);
   border-radius: 3px;
   color: var(--text-tertiary);
-  cursor: pointer;
+  cursor: default;
 }
 .section-btn:hover {
   border-color: var(--border-strong);
@@ -1388,7 +1388,7 @@ async function doAbortRebase() {
   gap: var(--space-2);
   padding: 0 var(--inset-panel);
   font-size: var(--text-row);
-  cursor: pointer;
+  cursor: default;
   min-width: 0;
   position: relative;
   min-height: var(--row-h);
@@ -1462,7 +1462,7 @@ async function doAbortRebase() {
   border: none;
   font-size: var(--text-body);
   line-height: 1;
-  cursor: pointer;
+  cursor: default;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1522,13 +1522,13 @@ async function doAbortRebase() {
   gap: 6px;
   font-size: var(--text-meta);
   color: var(--text-secondary);
-  cursor: pointer;
+  cursor: default;
   user-select: none;
   padding: 0 2px;
 }
 .amend-row input[type='checkbox'] {
   accent-color: var(--accent-text);
-  cursor: pointer;
+  cursor: default;
 }
 .amend-row:hover span {
   color: var(--text-primary);
@@ -1602,7 +1602,7 @@ async function doAbortRebase() {
   border-radius: 5px;
   font-size: var(--text-row);
   font-weight: 500;
-  cursor: pointer;
+  cursor: default;
   transition: background 0.15s;
   background: var(--surface-control);
   color: var(--text-secondary);

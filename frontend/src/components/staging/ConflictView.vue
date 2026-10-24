@@ -529,7 +529,7 @@ async function saveAndStage() {
   border-radius: 3px;
   font-size: var(--text-meta);
   font-weight: 600;
-  cursor: pointer;
+  cursor: default;
   border: 1px solid transparent;
   transition: background 0.1s;
 }
@@ -575,7 +575,7 @@ async function saveAndStage() {
   align-items: baseline;
   gap: 0;
   padding: 1px 8px 1px 4px;
-  cursor: pointer;
+  cursor: default;
   user-select: none;
   transition: background 0.08s;
   min-height: 20px;
@@ -687,7 +687,7 @@ async function saveAndStage() {
   border: 1px solid var(--border);
   border-radius: 3px;
   color: var(--text-tertiary);
-  cursor: pointer;
+  cursor: default;
   text-transform: none;
   font-weight: 400;
   letter-spacing: 0;
@@ -741,7 +741,7 @@ async function saveAndStage() {
   border-radius: 4px;
   color: var(--text-tertiary);
   font-size: var(--text-meta);
-  cursor: pointer;
+  cursor: default;
 }
 .cv-footer-btn:hover {
   background: var(--surface-control-hover);
@@ -754,7 +754,7 @@ async function saveAndStage() {
   border-radius: 4px;
   font-size: var(--text-row);
   font-weight: 600;
-  cursor: pointer;
+  cursor: default;
   border: 1px solid var(--border);
   background: var(--surface-control);
   color: var(--text-tertiary);

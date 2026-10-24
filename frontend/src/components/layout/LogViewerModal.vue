@@ -97,7 +97,7 @@ const { onKeydown } = useDialog(
   border: none;
   color: var(--text-tertiary);
   font-size: var(--text-row);
-  cursor: pointer;
+  cursor: default;
   padding: 3px 7px;
   border-radius: 4px;
   line-height: 1;
@@ -137,7 +137,7 @@ const { onKeydown } = useDialog(
   border-radius: 6px;
   color: var(--text-tertiary);
   font-size: var(--text-row);
-  cursor: pointer;
+  cursor: default;
 }
 .log-btn-copy:hover {
   color: var(--text-secondary);
@@ -152,7 +152,7 @@ const { onKeydown } = useDialog(
   color: var(--text-on-accent);
   font-size: var(--text-row);
   font-weight: 600;
-  cursor: pointer;
+  cursor: default;
 }
 .log-btn-close:hover {
   background: var(--accent-fill-hover);

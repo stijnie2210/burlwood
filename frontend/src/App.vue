@@ -70,6 +70,10 @@ async function autoFetch(path: string) {
   }
 }
 
+function onWindowFocusChange(e: FocusEvent) {
+  document.documentElement.classList.toggle('window-inactive', e.type === 'blur');
+}
+
 // Coming back from the editor is when the working tree most likely changed.
 let lastFocusRefresh = 0;
 function refreshOnFocus() {
@@ -219,6 +223,8 @@ function onGlobalKeyDown(e: KeyboardEvent) {
 onMounted(() => {
   window.addEventListener('keydown', onGlobalKeyDown);
   window.addEventListener('focus', refreshOnFocus);
+  window.addEventListener('focus', onWindowFocusChange);
+  window.addEventListener('blur', onWindowFocusChange);
   document.addEventListener('visibilitychange', refreshOnFocus);
   EventsOn('open-preferences', () => prefsStore.openModal());
   EventsOn('menu', runAction);
@@ -226,6 +232,8 @@ onMounted(() => {
 onUnmounted(() => {
   window.removeEventListener('keydown', onGlobalKeyDown);
   window.removeEventListener('focus', refreshOnFocus);
+  window.removeEventListener('focus', onWindowFocusChange);
+  window.removeEventListener('blur', onWindowFocusChange);
   document.removeEventListener('visibilitychange', refreshOnFocus);
   EventsOff('open-preferences');
   EventsOff('menu');
@@ -295,7 +303,7 @@ onUnmounted(() => {
   padding: 0;
 }
 body {
-  background: var(--surface-base);
+  background: transparent;
   color: var(--text-primary);
 }
 </style>
@@ -373,7 +381,7 @@ body {
   border: none;
   border-radius: 5px;
   color: var(--text-on-accent);
-  cursor: pointer;
+  cursor: default;
   font-size: var(--text-body);
 }
 
@@ -400,7 +408,7 @@ body {
   background: none;
   text-align: left;
   font: inherit;
-  cursor: pointer;
+  cursor: default;
   gap: 2px;
 }
 .recent-btn:hover {

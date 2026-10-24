@@ -225,7 +225,7 @@ onUnmounted(() => document.removeEventListener('keydown', onKeyDown));
   border-radius: 4px;
   color: var(--text-secondary);
   font-size: var(--text-row);
-  cursor: pointer;
+  cursor: default;
   flex-shrink: 0;
   transition:
     color 0.15s,
@@ -432,7 +432,7 @@ onUnmounted(() => document.removeEventListener('keydown', onKeyDown));
   border-top: 1px solid var(--border-subtle);
   color: var(--text-secondary);
   font-size: var(--text-row);
-  cursor: pointer;
+  cursor: default;
 }
 .diff-show-all:hover {
   background: var(--surface-control);
