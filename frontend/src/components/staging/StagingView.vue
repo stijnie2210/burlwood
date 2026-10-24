@@ -102,8 +102,29 @@ async function onUnstageFile(path: string) {
   }
 }
 
-function onDiscardFile(path: string) {
-  staging.discardFile(repoPath(), path);
+async function onDiscardFile(path: string) {
+  const repo = repoPath();
+  const name = path.split('/').pop() ?? path;
+  try {
+    const snapshot = await staging.discardFile(repo, path);
+    if (!snapshot.undoable) {
+      toast.success(`Discarded changes to ${name}`);
+      return;
+    }
+    toast.withUndo(`Discarded changes to ${name}`, async () => {
+      try {
+        await staging.undoDiscard(repo, snapshot);
+        if (repoPath() === repo) {
+          await staging.load(repo);
+        }
+        toast.success(`Restored ${name}`);
+      } catch (e) {
+        toast.error(String(e));
+      }
+    });
+  } catch (e) {
+    toast.error(String(e));
+  }
 }
 
 function onStageHunk(hunk: Hunk) {
@@ -162,13 +183,18 @@ const canCommit = computed(() => {
   return staging.stagedFiles.length > 0 && commitSummary.value.trim().length > 0;
 });
 
+let amendPrefill = '';
+
 async function onAmendToggle() {
   if (amend.value && !commitSummary.value) {
-    commitSummary.value = await staging.getLastCommitSubject(repoPath());
+    amendPrefill = await staging.getLastCommitSubject(repoPath());
+    commitSummary.value = amendPrefill;
   }
   if (!amend.value) {
-    commitSummary.value = '';
-    commitDescription.value = '';
+    if (amendPrefill && commitSummary.value === amendPrefill) {
+      commitSummary.value = '';
+    }
+    amendPrefill = '';
   }
 }
 
@@ -189,6 +215,7 @@ async function onCommit() {
     commitSummary.value = '';
     commitDescription.value = '';
     amend.value = false;
+    amendPrefill = '';
     toast.success(wasAmend ? `Amended commit on ${branch}` : `Committed to ${branch}`);
   } catch (e) {
     toast.error(String(e));
@@ -292,11 +319,7 @@ async function ctxDiscardFile() {
     return;
   }
   closeFileCtxMenu();
-  try {
-    await staging.discardFile(repoPath(), m.path);
-  } catch (e) {
-    toast.error(String(e));
-  }
+  await onDiscardFile(m.path);
 }
 
 async function ctxStashFile() {
@@ -802,6 +825,9 @@ async function doAbortRebase() {
             >
               <span v-if="committing">Committing…</span>
               <span v-else-if="!commitSummary.trim() && !amend">Type a message to commit</span>
+              <span v-else-if="amend">
+                Amend last commit on <strong>{{ currentBranch }}</strong>
+              </span>
               <span v-else>
                 ○ Commit to <strong>{{ currentBranch }}</strong>
               </span>
@@ -930,12 +956,12 @@ async function doAbortRebase() {
       <template v-else-if="fileCtxMenu.mode === 'confirm-delete'">
         <div class="ctx-menu-confirm">
           <p class="ctx-menu-confirm-text">
-            Delete "{{ fileCtxMenu.path.split('/').pop() }}" from disk?
+            Delete "{{ fileCtxMenu.path.split('/').pop() }}" from disk? This can't be undone.
           </p>
-          <button class="ctx-menu-item ctx-menu-item-danger" @click="ctxDeleteFile">
-            Yes, delete
-          </button>
-          <button class="ctx-menu-item" @click="closeFileCtxMenu">Cancel</button>
+          <div class="ctx-menu-row">
+            <button class="ctx-menu-btn ctx-menu-btn-danger" @click="ctxDeleteFile">Delete</button>
+            <button class="ctx-menu-btn" @click="closeFileCtxMenu">Cancel</button>
+          </div>
         </div>
       </template>
     </div>

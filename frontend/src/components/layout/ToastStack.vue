@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { useToastStore, isLongMessage } from '../../stores/toast';
+import type { Toast } from '../../stores/toast';
 import { useLogModalStore } from '../../stores/logModal';
 
 const toast = useToastStore();
@@ -19,6 +20,12 @@ function viewLog(t: { type: string; message: string }, e: MouseEvent) {
   e.stopPropagation();
   logModal.show(t.type === 'error' ? 'Error details' : 'Details', t.message);
 }
+
+async function runAction(t: Toast, e: MouseEvent) {
+  e.stopPropagation();
+  toast.dismiss(t.id);
+  await t.action?.run();
+}
 </script>
 
 <template>
@@ -37,10 +44,20 @@ function viewLog(t: { type: string; message: string }, e: MouseEvent) {
             <template v-else-if="t.type === 'error'">✕</template>
             <template v-else>i</template>
           </span>
-          <span class="toast-msg">{{ isLongMessage(t.message) ? preview(t.message) : t.message }}</span>
+          <span class="toast-msg">{{
+            isLongMessage(t.message) ? preview(t.message) : t.message
+          }}</span>
           <button v-if="isLongMessage(t.message)" class="toast-action" @click="viewLog(t, $event)">
             View log
           </button>
+          <button v-if="t.action" class="toast-action" @click="runAction(t, $event)">
+            {{ t.action.label }}
+          </button>
+          <span
+            v-if="t.action && t.duration > 0"
+            class="toast-timer"
+            :style="{ animationDuration: `${t.duration}ms` }"
+          />
         </div>
       </TransitionGroup>
     </div>

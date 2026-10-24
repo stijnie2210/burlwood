@@ -8,6 +8,7 @@ import {
   StageHunk,
   UnstageHunk,
   DiscardFile,
+  UndoDiscard,
   FetchAll,
   PullBranch,
   Commit,
@@ -18,7 +19,7 @@ import {
   GetRebaseState,
   SyncAutostash,
 } from '../../wailsjs/go/main/App';
-import type { repo } from '../../wailsjs/go/models';
+import type { gitcli, repo } from '../../wailsjs/go/models';
 
 export type FileStatus = repo.FileStatus;
 export type FileDiff = repo.FileDiff;
@@ -147,13 +148,18 @@ export const useStagingStore = defineStore('staging', () => {
     }
   }
 
-  async function discardFile(repoPath: string, path: string) {
-    await DiscardFile(repoPath, path);
+  async function discardFile(repoPath: string, path: string): Promise<gitcli.DiscardSnapshot> {
+    const snapshot = await DiscardFile(repoPath, path);
     await load(repoPath);
     if (selectedPath.value === path) {
       diff.value = [];
       selectedPath.value = null;
     }
+    return snapshot;
+  }
+
+  async function undoDiscard(repoPath: string, snapshot: gitcli.DiscardSnapshot) {
+    await UndoDiscard(repoPath, snapshot);
   }
 
   async function fetchAll(repoPath: string) {
@@ -223,6 +229,7 @@ export const useStagingStore = defineStore('staging', () => {
     stageHunk,
     unstageHunk,
     discardFile,
+    undoDiscard,
     fetchAll,
     pullBranch,
     commit,

@@ -139,7 +139,7 @@ async function switchTo(target: string, trackRemote: boolean) {
 
 // ── Context menu ──────────────────────────────────────────────────────────
 
-type CtxMode = 'default' | 'rename' | 'confirm-delete';
+type CtxMode = 'default' | 'rename' | 'confirm-delete' | 'confirm-force-delete';
 
 interface CtxMenu {
   x: number;
@@ -289,21 +289,33 @@ function startDelete() {
 async function confirmDelete(force: boolean) {
   const menu = ctxMenu.value;
   const repoPath = repos.activeRepo?.path;
-  closeCtxMenu();
   if (!menu || !repoPath) {
+    closeCtxMenu();
     return;
   }
   try {
     await DeleteBranch(repoPath, menu.target, force);
+    closeCtxMenu();
     await branches.load(repoPath);
-    toast.success('Deleted ' + menu.label);
+    toast.success((force ? 'Force deleted ' : 'Deleted ') + menu.label);
   } catch (e: unknown) {
     const msg = String(e);
-    if (!force && msg.toLowerCase().includes('not fully merged')) {
-      toast.error('"' + menu.label + '" is not fully merged. Use force delete if you\'re sure.');
-    } else {
-      toast.error(msg);
+    if (
+      !force &&
+      msg.toLowerCase().includes('not fully merged') &&
+      ctxMenu.value?.target === menu.target
+    ) {
+      ctxMenu.value.mode = 'confirm-force-delete';
+      await nextTick();
+      const el = branchCtxMenuEl.value;
+      if (el && ctxMenu.value) {
+        const { x, y } = clampMenuPosition(el, ctxMenu.value.x, ctxMenu.value.y);
+        ctxMenu.value = { ...ctxMenu.value, x, y };
+      }
+      return;
     }
+    closeCtxMenu();
+    toast.error(msg);
   }
 }
 
@@ -615,14 +627,30 @@ async function confirmStashRename() {
       <!-- Delete confirmation mode -->
       <template v-else-if="ctxMenu.mode === 'confirm-delete'">
         <div class="ctx-menu-confirm">
-          <p class="ctx-menu-confirm-text">Delete "{{ ctxMenu.label }}"?</p>
-          <button class="ctx-menu-item ctx-menu-item-danger" @click="confirmDelete(false)">
-            Delete
-          </button>
-          <button class="ctx-menu-item ctx-menu-item-danger" @click="confirmDelete(true)">
-            Force Delete
-          </button>
-          <button class="ctx-menu-item" @click="closeCtxMenu()">Cancel</button>
+          <p class="ctx-menu-confirm-text">
+            Delete "{{ ctxMenu.label }}"? Git only deletes it if its commits are merged.
+          </p>
+          <div class="ctx-menu-row">
+            <button class="ctx-menu-btn ctx-menu-btn-danger-soft" @click="confirmDelete(false)">
+              Delete
+            </button>
+            <button class="ctx-menu-btn" @click="closeCtxMenu()">Cancel</button>
+          </div>
+        </div>
+      </template>
+
+      <template v-else-if="ctxMenu.mode === 'confirm-force-delete'">
+        <div class="ctx-menu-confirm">
+          <p class="ctx-menu-confirm-text ctx-menu-confirm-text--warn">
+            "{{ ctxMenu.label }}" has commits that aren't merged into any other branch. Force
+            deleting it leaves them reachable only through the reflog.
+          </p>
+          <div class="ctx-menu-row">
+            <button class="ctx-menu-btn ctx-menu-btn-danger" @click="confirmDelete(true)">
+              Force delete
+            </button>
+            <button class="ctx-menu-btn" @click="closeCtxMenu()">Keep branch</button>
+          </div>
         </div>
       </template>
     </div>

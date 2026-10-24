@@ -3,6 +3,10 @@ import { ref, nextTick, onMounted, onUnmounted } from 'vue';
 import { clampMenuPosition } from '../../composables/useContextMenu';
 import type { GraphRow } from '../../stores/commits';
 import { useToastStore } from '../../stores/toast';
+import { useCommitsStore } from '../../stores/commits';
+import { useBranchesStore } from '../../stores/branches';
+import { useStagingStore } from '../../stores/staging';
+import { useReposStore } from '../../stores/repos';
 import {
   CheckoutRef,
   CreateBranchAt,
@@ -12,6 +16,8 @@ import {
   PushTag,
   ForcePushTag,
   ResetBranch,
+  HardResetBranch,
+  UndoHardReset,
 } from '../../../wailsjs/go/main/App';
 
 const props = defineProps<{
@@ -126,6 +132,10 @@ async function revert(commitImmediately: boolean) {
 }
 
 async function reset(resetMode: 'soft' | 'mixed' | 'hard') {
+  if (resetMode === 'hard') {
+    await hardReset();
+    return;
+  }
   try {
     await ResetBranch(props.repoPath, props.row.hash, resetMode);
     toast.success(`Branch reset (${resetMode}) to ${props.row.shortHash}`);
@@ -134,6 +144,40 @@ async function reset(resetMode: 'soft' | 'mixed' | 'hard') {
     toast.error(String(e));
   }
   emit('close');
+}
+
+async function hardReset() {
+  const repo = props.repoPath;
+  const short = props.row.shortHash;
+  try {
+    const undo = await HardResetBranch(repo, props.row.hash);
+    await reloadRepo(repo);
+    const lost = undo.stash ? ', local changes discarded' : '';
+    toast.withUndo(`Hard reset to ${short}${lost}`, async () => {
+      try {
+        await UndoHardReset(repo, undo);
+        toast.success(`Reset undone, back at ${undo.head.slice(0, 7)}`);
+      } catch (e) {
+        toast.error(String(e));
+      }
+      await reloadRepo(repo);
+    });
+  } catch (e) {
+    toast.error(String(e));
+  }
+  emit('close');
+}
+
+// The menu is unmounted by the time Undo is clicked, so stores are reloaded directly.
+async function reloadRepo(repo: string) {
+  if (useReposStore().activeRepo?.path !== repo) {
+    return;
+  }
+  await Promise.all([
+    useCommitsStore().load(repo),
+    useBranchesStore().load(repo),
+    useStagingStore().load(repo),
+  ]);
 }
 
 function openTagInput() {
@@ -188,7 +232,7 @@ async function pushCreatedTag() {
     } else {
       await PushTag(props.repoPath, name);
     }
-    toast.success(`Tag '${name}' pushed`);
+    toast.success(tagMoved.value ? `Tag '${name}' force-pushed` : `Tag '${name}' pushed`);
   } catch (e) {
     toast.error(String(e));
   }
@@ -211,12 +255,18 @@ async function pushTag(name: string) {
     <!-- ── Revert confirmation ──────────────────── -->
     <template v-if="mode === 'revert-confirm'">
       <div class="ctx-input-header">Revert {{ row.shortHash }}</div>
-      <div class="ctx-confirm-question">Commit the reverted changes immediately?</div>
-      <div class="ctx-confirm-row">
-        <button class="ctx-confirm-btn ctx-confirm-btn--yes" @click="revert(true)">Yes</button>
-        <button class="ctx-confirm-btn ctx-confirm-btn--no" @click="revert(false)">No</button>
-        <button class="ctx-confirm-btn ctx-confirm-btn--cancel" @click="emit('close')">
-          Cancel
+      <div class="ctx-choices">
+        <button class="ctx-choice" @click="revert(true)">
+          <span class="ctx-choice-title">Revert and commit</span>
+          <span class="ctx-choice-desc"
+            >Creates a new commit that undoes {{ row.shortHash }}</span
+          >
+        </button>
+        <button class="ctx-choice" @click="revert(false)">
+          <span class="ctx-choice-title">Stage the revert</span>
+          <span class="ctx-choice-desc"
+            >Leaves the changes staged so you can edit them first</span
+          >
         </button>
       </div>
     </template>
@@ -271,12 +321,27 @@ async function pushTag(name: string) {
 
     <!-- ── Tag created ────────────────────────────── -->
     <template v-else-if="mode === 'tag-created'">
-      <div class="ctx-input-header">Tag '{{ inputVal }}' {{ tagMoved ? 'moved' : 'created' }}</div>
+      <div class="ctx-input-header">
+        Tag '{{ inputVal }}' {{ tagMoved ? 'moved' : 'created' }}
+      </div>
+      <div v-if="tagMoved" class="ctx-confirm-question">
+        The remote still points '{{ inputVal }}' at the old commit. Force-pushing replaces it
+        there, and anyone who already fetched it keeps the old one.
+      </div>
       <div class="ctx-confirm-row">
-        <button class="ctx-confirm-btn ctx-confirm-btn--yes" @click="pushCreatedTag">
+        <button
+          v-if="tagMoved"
+          class="ctx-confirm-btn ctx-confirm-btn--danger"
+          @click="pushCreatedTag"
+        >
+          Force-push tag
+        </button>
+        <button v-else class="ctx-confirm-btn ctx-confirm-btn--yes" @click="pushCreatedTag">
           Push tag
         </button>
-        <button class="ctx-confirm-btn ctx-confirm-btn--cancel" @click="emit('close')">Done</button>
+        <button class="ctx-confirm-btn ctx-confirm-btn--cancel" @click="emit('close')">
+          Done
+        </button>
       </div>
     </template>
 
