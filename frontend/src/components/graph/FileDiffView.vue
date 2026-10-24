@@ -3,6 +3,7 @@ import { computed, onMounted, onUnmounted, ref, watch } from 'vue';
 import { useDetailWidth } from '../../composables/useDetailWidth';
 import { isImageFile, imageDataUrl } from '../../utils/imageUtils';
 import { highlightLine, languageForPath } from '../../utils/highlight';
+import { useLineBudget } from '../../composables/useLineBudget';
 
 const fileListWidth = useDetailWidth();
 
@@ -29,6 +30,11 @@ const repos = useReposStore();
 
 const file = computed(() =>
   commits.selectedFileIndex !== null ? commits.diff[commits.selectedFileIndex] : null
+);
+
+const { visible, hiddenLines, revealAll } = useLineBudget(
+  () => file.value?.hunks ?? [],
+  () => `${commits.selectedHash}:${commits.selectedFileIndex}`
 );
 
 const selectedRow = computed(
@@ -152,10 +158,10 @@ onUnmounted(() => document.removeEventListener('keydown', onKeyDown));
         </template>
         <template v-else>
           <div v-if="file.hunks.length === 0" class="fdv-notice">No changes</div>
-          <div v-for="(hunk, hi) in file.hunks" :key="hunk.header + hi" class="fdv-hunk">
-            <div class="fdv-hunk-header">{{ hunk.header }}</div>
+          <div v-for="(entry, hi) in visible" :key="entry.hunk.header + hi" class="fdv-hunk">
+            <div class="fdv-hunk-header">{{ entry.hunk.header }}</div>
             <div
-              v-for="(line, li) in hunk.lines"
+              v-for="(line, li) in entry.lines"
               :key="li"
               class="diff-line"
               :class="`diff-line--${line.type}`"
@@ -168,6 +174,9 @@ onUnmounted(() => document.removeEventListener('keydown', onKeyDown));
               <span class="diff-content" v-html="highlightLine(line.content, lang)"></span>
             </div>
           </div>
+          <button v-if="hiddenLines" class="diff-show-all" @click="revealAll">
+            Show {{ hiddenLines.toLocaleString() }} more lines
+          </button>
         </template>
       </div>
 

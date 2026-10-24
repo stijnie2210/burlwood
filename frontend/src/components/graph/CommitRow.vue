@@ -21,6 +21,14 @@ const displayDate = computed(() => {
   return formatDate(props.row.timestamp, prefsStore.prefs.dateFormat, prefsStore.now);
 });
 
+const MAX_LABELS = 2;
+const visibleLabels = computed(() => props.row.labels.slice(0, MAX_LABELS));
+const hiddenLabels = computed(() => props.row.labels.slice(MAX_LABELS));
+
+function labelText(l: GraphRow['labels'][number]): string {
+  return l.type === 'remote' ? `${l.remote}/${l.name}` : l.name;
+}
+
 const canvasRef = ref<HTMLCanvasElement | null>(null);
 
 watchEffect(() => {
@@ -46,9 +54,20 @@ watchEffect(() => {
     />
     <span class="row-hash">{{ row.shortHash }}</span>
     <span class="row-labels">
-      <span v-for="l in row.labels" :key="l.name" class="label" :class="`label--${l.type}`">{{
-        l.type === 'remote' ? `${l.remote}/${l.name}` : l.name
-      }}</span>
+      <span
+        v-for="l in visibleLabels"
+        :key="l.name"
+        class="label"
+        :class="`label--${l.type}`"
+        :title="labelText(l)"
+        >{{ labelText(l) }}</span
+      >
+      <span
+        v-if="hiddenLabels.length"
+        class="label label--more"
+        :title="hiddenLabels.map(labelText).join('\n')"
+        >+{{ hiddenLabels.length }}</span
+      >
     </span>
     <span class="row-subject">{{ row.subject }}</span>
     <span class="row-author">{{ row.author }}</span>

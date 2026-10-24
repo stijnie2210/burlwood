@@ -2,6 +2,7 @@
 import { computed } from 'vue';
 import type { FileDiff, Hunk } from '../../stores/staging';
 import { highlightLine, languageForPath } from '../../utils/highlight';
+import { useLineBudget } from '../../composables/useLineBudget';
 
 const props = defineProps<{
   diffs: FileDiff[];
@@ -32,6 +33,11 @@ const flatHunks = computed(() => {
 });
 
 const isBinary = computed(() => props.diffs.some((d) => d.isBinary));
+
+const { visible, hiddenLines, revealAll } = useLineBudget(
+  () => flatHunks.value,
+  () => `${props.path}:${props.mode}`
+);
 </script>
 
 <template>
@@ -71,22 +77,24 @@ const isBinary = computed(() => props.diffs.some((d) => d.isBinary));
 
     <!-- Hunks -->
     <div v-else class="hunks-scroll">
-      <div v-for="(hunk, hi) in flatHunks" :key="hunk.header + hi" class="hunk-block">
+      <div v-for="(entry, hi) in visible" :key="entry.hunk.header + hi" class="hunk-block">
         <div class="hunk-header-row">
-          <span class="hunk-header-text">{{ hunk.header }}</span>
-          <button
-            v-if="mode === 'stage'"
-            class="hunk-btn stage-btn"
-            @click="emit('stage-hunk', hunk)"
-          >
-            Stage Hunk
-          </button>
-          <button v-else class="hunk-btn unstage-btn" @click="emit('unstage-hunk', hunk)">
-            Unstage Hunk
-          </button>
+          <span class="hunk-header-text">{{ entry.hunk.header }}</span>
+          <template v-if="!entry.truncated">
+            <button
+              v-if="mode === 'stage'"
+              class="hunk-btn stage-btn"
+              @click="emit('stage-hunk', entry.hunk)"
+            >
+              Stage Hunk
+            </button>
+            <button v-else class="hunk-btn unstage-btn" @click="emit('unstage-hunk', entry.hunk)">
+              Unstage Hunk
+            </button>
+          </template>
         </div>
         <div
-          v-for="(line, li) in hunk.lines"
+          v-for="(line, li) in entry.lines"
           :key="li"
           class="diff-line"
           :class="`diff-line--${line.type}`"
@@ -99,6 +107,9 @@ const isBinary = computed(() => props.diffs.some((d) => d.isBinary));
           <span class="diff-content" v-html="highlightLine(line.content, lang)"></span>
         </div>
       </div>
+      <button v-if="hiddenLines" class="diff-show-all" @click="revealAll">
+        Show {{ hiddenLines.toLocaleString() }} more lines
+      </button>
     </div>
   </div>
 </template>

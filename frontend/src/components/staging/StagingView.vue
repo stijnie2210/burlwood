@@ -144,13 +144,23 @@ function onUnstageHunk(hunk: Hunk) {
   }
 }
 async function onStageAll() {
-  for (const f of staging.unstagedFiles) {
-    await staging.stageFile(repoPath(), f.path);
+  try {
+    await staging.stageFiles(
+      repoPath(),
+      staging.unstagedFiles.map((f) => f.path)
+    );
+  } catch (e) {
+    toast.error(String(e));
   }
 }
 async function onUnstageAll() {
-  for (const f of staging.stagedFiles) {
-    await staging.unstageFile(repoPath(), f.path);
+  try {
+    await staging.unstageFiles(
+      repoPath(),
+      staging.stagedFiles.map((f) => f.path)
+    );
+  } catch (e) {
+    toast.error(String(e));
   }
 }
 

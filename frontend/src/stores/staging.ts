@@ -8,6 +8,8 @@ import {
   StageHunk,
   UnstageHunk,
   DiscardFile,
+  StageFiles,
+  UnstageFiles,
   UndoDiscard,
   FetchAll,
   PullBranch,
@@ -130,6 +132,16 @@ export const useStagingStore = defineStore('staging', () => {
     await load(repoPath);
   }
 
+  async function stageFiles(repoPath: string, paths: string[]) {
+    await StageFiles(repoPath, paths);
+    await load(repoPath);
+  }
+
+  async function unstageFiles(repoPath: string, paths: string[]) {
+    await UnstageFiles(repoPath, paths);
+    await load(repoPath);
+  }
+
   async function stageHunk(repoPath: string, path: string, hunk: Hunk) {
     const patch = buildHunkPatch(path, hunk);
     await StageHunk(repoPath, patch);
@@ -226,6 +238,8 @@ export const useStagingStore = defineStore('staging', () => {
     selectFile,
     stageFile,
     unstageFile,
+    stageFiles,
+    unstageFiles,
     stageHunk,
     unstageHunk,
     discardFile,

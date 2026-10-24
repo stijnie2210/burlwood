@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { watch, ref, nextTick, onMounted, onUnmounted } from 'vue';
+import { watch, ref, computed, nextTick, onMounted, onUnmounted } from 'vue';
 import {
   clampMenuPosition,
   focusFirstMenuItem,
@@ -38,6 +38,18 @@ interface CollapsedState {
   remote: boolean;
   stashes: boolean;
 }
+
+const branchFilter = ref('');
+const filteredLocal = computed(() => {
+  const q = branchFilter.value.trim().toLowerCase();
+  return q ? branches.local.filter((b) => b.name.toLowerCase().includes(q)) : branches.local;
+});
+const filteredRemote = computed(() => {
+  const q = branchFilter.value.trim().toLowerCase();
+  return q
+    ? branches.remote.filter((b) => `${b.remote}/${b.name}`.toLowerCase().includes(q))
+    : branches.remote;
+});
 
 const collapsed = ref<CollapsedState>({ local: false, remote: false, stashes: false });
 const remoteHeight = ref(200);
@@ -509,7 +521,17 @@ async function confirmStashRename() {
     </div>
 
     <div v-else class="sidebar-content">
-      <section class="branch-section">
+      <div class="branch-filter-row">
+        <input
+          v-model="branchFilter"
+          class="branch-filter"
+          type="search"
+          placeholder="Filter branches"
+          aria-label="Filter branches"
+          @keydown.esc="branchFilter = ''"
+        />
+      </div>
+      <section class="branch-section local-section">
         <h3 class="section-title">
           <button
             type="button"
@@ -523,9 +545,9 @@ async function confirmStashRename() {
             Local Branches
           </button>
         </h3>
-        <ul v-if="!collapsed.local" class="branch-list">
+        <ul v-if="!collapsed.local" class="branch-list local-list">
           <li
-            v-for="b in branches.local"
+            v-for="b in filteredLocal"
             :key="b.name"
             class="branch-item"
             :class="{ current: b.isCurrent }"
@@ -580,7 +602,7 @@ async function confirmStashRename() {
           :style="{ maxHeight: remoteHeight + 'px' }"
         >
           <li
-            v-for="b in branches.remote"
+            v-for="b in filteredRemote"
             :key="`${b.remote}/${b.name}`"
             class="branch-item remote"
             :title="'Double-click to check out ' + b.remote + '/' + b.name"

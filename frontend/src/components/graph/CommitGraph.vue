@@ -24,12 +24,15 @@ const filteredRows = computed(() => {
   if (!q) {
     return commits.rows;
   }
-  return commits.rows.filter(
-    (r) =>
-      r.hash.startsWith(q) ||
-      r.subject.toLowerCase().includes(q) ||
-      r.author.toLowerCase().includes(q)
-  );
+  // Lane edges describe neighbouring rows, which a filtered list no longer has; show dots only.
+  return commits.rows
+    .filter(
+      (r) =>
+        r.hash.startsWith(q) ||
+        r.subject.toLowerCase().includes(q) ||
+        r.author.toLowerCase().includes(q)
+    )
+    .map((r) => ({ ...r, edges: [], edgesIn: [] }));
 });
 
 const selectedIndex = computed(() =>
