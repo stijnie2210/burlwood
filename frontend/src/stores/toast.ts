@@ -14,6 +14,7 @@ export interface Toast {
   type: ToastType;
   duration: number;
   action?: ToastAction;
+  paused?: boolean;
 }
 
 const PREVIEW_LIMIT = 160;
@@ -27,6 +28,12 @@ let nextId = 1;
 
 export const useToastStore = defineStore('toast', () => {
   const toasts = ref<Toast[]>([]);
+  const timers = new Map<number, { handle: ReturnType<typeof setTimeout>; deadline: number }>();
+  const remaining = new Map<number, number>();
+
+  function schedule(id: number, ms: number) {
+    timers.set(id, { handle: setTimeout(() => dismiss(id), ms), deadline: Date.now() + ms });
+  }
 
   function push(
     message: string,
@@ -38,12 +45,52 @@ export const useToastStore = defineStore('toast', () => {
     const id = nextId++;
     toasts.value.push({ id, message, type, duration: ms, action });
     if (ms > 0) {
-      setTimeout(() => dismiss(id), ms);
+      schedule(id, ms);
     }
     return id;
   }
 
+  // Hovering or focusing a toast holds it, so an Undo can't expire while you reach for it.
+  function pause(id: number) {
+    const timer = timers.get(id);
+    const t = toasts.value.find((x) => x.id === id);
+    if (!timer || !t) {
+      return;
+    }
+    clearTimeout(timer.handle);
+    timers.delete(id);
+    remaining.set(id, Math.max(1000, timer.deadline - Date.now()));
+    t.paused = true;
+  }
+
+  function resume(id: number) {
+    const ms = remaining.get(id);
+    const t = toasts.value.find((x) => x.id === id);
+    if (ms === undefined || !t) {
+      return;
+    }
+    remaining.delete(id);
+    t.paused = false;
+    schedule(id, ms);
+  }
+
+  function undoLatest(): boolean {
+    const t = [...toasts.value].reverse().find((x) => x.action?.label === 'Undo');
+    if (!t?.action) {
+      return false;
+    }
+    dismiss(t.id);
+    t.action.run();
+    return true;
+  }
+
   function dismiss(id: number) {
+    const timer = timers.get(id);
+    if (timer) {
+      clearTimeout(timer.handle);
+      timers.delete(id);
+    }
+    remaining.delete(id);
     const i = toasts.value.findIndex((t) => t.id === id);
     if (i !== -1) {
       toasts.value.splice(i, 1);
@@ -60,5 +107,5 @@ export const useToastStore = defineStore('toast', () => {
     return push(message, 'info', UNDO_WINDOW_MS, { label: 'Undo', run: undo });
   }
 
-  return { toasts, push, dismiss, success, error, withUndo };
+  return { toasts, push, dismiss, pause, resume, undoLatest, success, error, withUndo };
 });

@@ -78,8 +78,9 @@ const { onKeydown } = useDialog(() => prefs.modalOpen, panelRef, onCancel);
             <h3 class="prefs-section-title">General</h3>
 
             <div class="prefs-field prefs-field--stacked">
-              <label class="prefs-label">External editor</label>
+              <label class="prefs-label" for="prefs-editor">External editor</label>
               <input
+                id="prefs-editor"
                 v-model="draft.editor"
                 class="prefs-input"
                 placeholder="e.g. code  (empty = use $VISUAL / $EDITOR)"
@@ -106,7 +107,11 @@ const { onKeydown } = useDialog(() => prefs.modalOpen, panelRef, onCancel);
             <div class="prefs-row">
               <span class="prefs-label">Enable auto-fetch</span>
               <label class="toggle">
-                <input v-model="draft.autoFetchEnabled" type="checkbox" />
+                <input
+                  v-model="draft.autoFetchEnabled"
+                  aria-label="Enable auto-fetch"
+                  type="checkbox"
+                />
                 <span class="toggle-track"><span class="toggle-thumb" /></span>
               </label>
             </div>
@@ -115,6 +120,7 @@ const { onKeydown } = useDialog(() => prefs.modalOpen, panelRef, onCancel);
               <span class="prefs-label">Interval</span>
               <select
                 v-model="draft.autoFetchIntervalSecs"
+                aria-label="Auto-fetch interval"
                 class="prefs-select"
                 :disabled="!draft.autoFetchEnabled"
               >
@@ -131,7 +137,11 @@ const { onKeydown } = useDialog(() => prefs.modalOpen, panelRef, onCancel);
 
             <div class="prefs-row">
               <span class="prefs-label">Initial commit limit</span>
-              <select v-model="draft.commitGraphLimit" class="prefs-select">
+              <select
+                v-model="draft.commitGraphLimit"
+                aria-label="Initial commit limit"
+                class="prefs-select"
+              >
                 <option v-for="n in LIMIT_OPTIONS" :key="n" :value="n">
                   {{ n.toLocaleString() }}
                 </option>
@@ -145,7 +155,11 @@ const { onKeydown } = useDialog(() => prefs.modalOpen, panelRef, onCancel);
 
             <div class="prefs-row">
               <span class="prefs-label">Context lines</span>
-              <select v-model="draft.diffContextLines" class="prefs-select">
+              <select
+                v-model="draft.diffContextLines"
+                aria-label="Context lines"
+                class="prefs-select"
+              >
                 <option v-for="n in CONTEXT_OPTIONS" :key="n" :value="n">{{ n }}</option>
               </select>
             </div>
@@ -377,6 +391,10 @@ const { onKeydown } = useDialog(() => prefs.modalOpen, panelRef, onCancel);
   transition:
     background 0.15s,
     border-color 0.15s;
+}
+.toggle input:focus-visible + .toggle-track {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
 }
 .toggle input:checked + .toggle-track {
   background: var(--accent-fill);

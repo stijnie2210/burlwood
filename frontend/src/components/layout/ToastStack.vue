@@ -36,22 +36,54 @@ async function runAction(t: Toast, e: MouseEvent) {
           v-for="t in toast.toasts"
           :key="t.id"
           class="toast"
-          :class="`toast--${t.type}`"
-          @click="toast.dismiss(t.id)"
+          :class="[`toast--${t.type}`, { paused: t.paused }]"
+          :role="t.type === 'error' ? 'alert' : undefined"
+          @click="!t.action && toast.dismiss(t.id)"
+          @mouseenter="toast.pause(t.id)"
+          @mouseleave="toast.resume(t.id)"
+          @focusin="toast.pause(t.id)"
+          @focusout="toast.resume(t.id)"
         >
-          <span class="toast-icon">
-            <template v-if="t.type === 'success'">✓</template>
-            <template v-else-if="t.type === 'error'">✕</template>
-            <template v-else>i</template>
-          </span>
+          <svg class="toast-icon" width="14" height="14" viewBox="0 0 14 14" aria-hidden="true">
+            <path
+              v-if="t.type === 'success'"
+              d="M3 7.5l2.5 2.5L11 4.5"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.6"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            />
+            <path
+              v-else-if="t.type === 'error'"
+              d="M4 4l6 6M10 4l-6 6"
+              stroke="currentColor"
+              stroke-width="1.6"
+              stroke-linecap="round"
+            />
+            <g v-else fill="currentColor">
+              <circle cx="7" cy="3.8" r="1.1" />
+              <rect x="6.1" y="6" width="1.8" height="5" rx="0.9" />
+            </g>
+          </svg>
           <span class="toast-msg">{{
             isLongMessage(t.message) ? preview(t.message) : t.message
           }}</span>
           <button v-if="isLongMessage(t.message)" class="toast-action" @click="viewLog(t, $event)">
             View log
           </button>
-          <button v-if="t.action" class="toast-action" @click="runAction(t, $event)">
+          <button
+            v-if="t.action"
+            class="toast-action"
+            :title="t.action.label === 'Undo' ? 'Undo (⌘Z)' : undefined"
+            @click="runAction(t, $event)"
+          >
             {{ t.action.label }}
+          </button>
+          <button class="toast-close" aria-label="Dismiss" @click.stop="toast.dismiss(t.id)">
+            <svg width="8" height="8" viewBox="0 0 8 8" aria-hidden="true">
+              <path d="M1 1l6 6M7 1L1 7" stroke="currentColor" stroke-width="1.4" />
+            </svg>
           </button>
           <span
             v-if="t.action && t.duration > 0"
@@ -119,12 +151,30 @@ async function runAction(t: Toast, e: MouseEvent) {
 }
 
 .toast-icon {
-  font-size: var(--text-meta);
-  font-weight: 700;
   flex-shrink: 0;
-  width: 14px;
-  text-align: center;
-  line-height: 1;
+}
+
+.toast-close {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 18px;
+  height: 18px;
+  padding: 0;
+  background: none;
+  border: none;
+  border-radius: 4px;
+  color: var(--text-tertiary);
+  cursor: pointer;
+}
+.toast-close:hover {
+  background: var(--surface-hover);
+  color: var(--text-primary);
+}
+
+.toast.paused .toast-timer {
+  animation-play-state: paused;
 }
 
 .toast-msg {

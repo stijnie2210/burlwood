@@ -1,9 +1,10 @@
 <script setup lang="ts">
-import { ref, nextTick, onMounted, onUnmounted } from 'vue';
+import { ref, nextTick, onMounted, onUnmounted, watch } from 'vue';
 import {
   clampMenuPosition,
   focusFirstMenuItem,
   handleMenuKeydown,
+  keepFocusInMenu,
 } from '../../composables/useContextMenu';
 import type { GraphRow } from '../../stores/commits';
 import { useToastStore } from '../../stores/toast';
@@ -40,6 +41,7 @@ const toast = useToastStore();
 
 type Mode = 'menu' | 'branch' | 'tag' | 'move-tag' | 'tag-created' | 'revert-confirm';
 const mode = ref<Mode>('menu');
+watch(mode, () => nextTick(() => keepFocusInMenu(menuEl.value)));
 const inputVal = ref('');
 const tagMoved = ref(false);
 const inputEl = ref<HTMLInputElement | null>(null);
@@ -260,7 +262,7 @@ async function pushTag(name: string) {
 
 <template>
   <Teleport to="body">
-    <div ref="menuEl" class="ctx-menu" :style="style" @click.stop>
+    <div ref="menuEl" class="ctx-menu" role="menu" :style="style" @click.stop>
       <!-- ── Revert confirmation ──────────────────── -->
       <template v-if="mode === 'revert-confirm'">
         <div class="ctx-input-header">Revert {{ row.shortHash }}</div>
@@ -360,33 +362,41 @@ async function pushTag(name: string) {
 
         <div class="ctx-divider" />
 
-        <button class="ctx-item" @click="copyHash(false)">Copy short SHA</button>
-        <button class="ctx-item" @click="copyHash(true)">Copy full SHA</button>
+        <button role="menuitem" class="ctx-item" @click="copyHash(false)">Copy short SHA</button>
+        <button role="menuitem" class="ctx-item" @click="copyHash(true)">Copy full SHA</button>
 
         <div class="ctx-divider" />
 
-        <button class="ctx-item" @click="checkout">Checkout commit</button>
-        <button class="ctx-item" @click="openBranchInput">Create branch here…</button>
+        <button role="menuitem" class="ctx-item" @click="checkout">Checkout commit</button>
+        <button role="menuitem" class="ctx-item" @click="openBranchInput">
+          Create branch here…
+        </button>
 
         <div class="ctx-divider" />
 
-        <button class="ctx-item" @click="openRevertConfirm">Revert commit</button>
+        <button role="menuitem" class="ctx-item" @click="openRevertConfirm">Revert commit</button>
 
         <div class="ctx-divider" />
 
         <div class="ctx-group-label">Reset branch to here</div>
-        <button class="ctx-item ctx-item--indent" @click="reset('soft')">Soft — keep staged</button>
-        <button class="ctx-item ctx-item--indent" @click="reset('mixed')">
+        <button role="menuitem" class="ctx-item ctx-item--indent" @click="reset('soft')">
+          Soft — keep staged
+        </button>
+        <button role="menuitem" class="ctx-item ctx-item--indent" @click="reset('mixed')">
           Mixed — keep working tree
         </button>
-        <button class="ctx-item ctx-item--indent ctx-item--danger" @click="reset('hard')">
+        <button
+          role="menuitem"
+          class="ctx-item ctx-item--indent ctx-item--danger"
+          @click="reset('hard')"
+        >
           Hard — discard all changes
         </button>
 
         <div class="ctx-divider" />
 
-        <button class="ctx-item" @click="openTagInput">Create tag here…</button>
-        <button class="ctx-item" @click="openMoveTagInput">Move tag here…</button>
+        <button role="menuitem" class="ctx-item" @click="openTagInput">Create tag here…</button>
+        <button role="menuitem" class="ctx-item" @click="openMoveTagInput">Move tag here…</button>
 
         <template v-if="row.labels.some((l) => l.type === 'tag')">
           <div class="ctx-divider" />

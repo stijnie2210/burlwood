@@ -4,6 +4,7 @@ import {
   clampMenuPosition,
   focusFirstMenuItem,
   handleMenuKeydown,
+  keepFocusInMenu,
   menuEventFor,
 } from '../../composables/useContextMenu';
 import { useReposStore } from '../../stores/repos';
@@ -221,6 +222,17 @@ function restoreMenuFocus() {
   }
 }
 
+// One Tab stop per list; arrow keys move within it.
+const roving = ref({ local: 0, remote: 0, stash: 0 });
+function rovingTab(list: 'local' | 'remote' | 'stash', i: number, length: number) {
+  return i === Math.min(roving.value[list], length - 1) ? 0 : -1;
+}
+
+watch(
+  () => ctxMenu.value?.mode,
+  () => nextTick(() => keepFocusInMenu(branchCtxMenuEl.value))
+);
+
 function focusSiblingItem(e: KeyboardEvent, dir: 1 | -1) {
   const li = e.currentTarget as HTMLElement;
   const next = (
@@ -398,6 +410,11 @@ const stashCtxMenu = ref<StashCtxMenu | null>(null);
 const stashRenameInputRef = ref<HTMLInputElement | null>(null);
 const stashCtxMenuEl = ref<HTMLElement | null>(null);
 
+watch(
+  () => stashCtxMenu.value?.mode,
+  () => nextTick(() => keepFocusInMenu(stashCtxMenuEl.value))
+);
+
 async function openStashCtxMenu(e: MouseEvent, entry: StashEntry) {
   e.preventDefault();
   e.stopPropagation();
@@ -544,14 +561,24 @@ async function confirmStashRename() {
             Local Branches
           </button>
         </h3>
-        <ul v-if="!collapsed.local" class="branch-list local-list">
+        <ul
+          v-if="!collapsed.local"
+          class="branch-list local-list"
+          role="listbox"
+          aria-label="Local branches"
+        >
           <li
-            v-for="b in filteredLocal"
+            v-for="(b, i) in filteredLocal"
             :key="b.name"
             class="branch-item"
             :class="{ current: b.isCurrent }"
-            :title="b.isCurrent ? b.name + ' (current)' : 'Double-click to switch to ' + b.name"
-            tabindex="0"
+            role="option"
+            :aria-current="b.isCurrent ? 'true' : undefined"
+            :title="
+              b.isCurrent ? b.name + ' (current)' : 'Double-click or Enter to switch to ' + b.name
+            "
+            :tabindex="rovingTab('local', i, filteredLocal.length)"
+            @focus="roving.local = i"
             @dblclick="switchTo(b.name, false)"
             @keydown.enter="switchTo(b.name, false)"
             @keydown.up.prevent.stop="focusSiblingItem($event, -1)"
@@ -561,19 +588,21 @@ async function confirmStashRename() {
             "
             @contextmenu="openCtxMenu($event, b.name, b.name, true, b.isCurrent)"
           >
-            <span class="branch-icon">{{ b.isCurrent ? '●' : '○' }}</span>
+            <span class="branch-icon" aria-hidden="true">{{ b.isCurrent ? '●' : '○' }}</span>
             <span class="branch-name">{{ b.name }}</span>
             <template v-if="b.isCurrent">
               <span
                 v-if="branches.aheadBehind.ahead > 0"
                 class="sync-badge ahead"
                 title="Commits to push"
+                :aria-label="`${branches.aheadBehind.ahead} to push`"
                 >↑{{ branches.aheadBehind.ahead }}</span
               >
               <span
                 v-if="branches.aheadBehind.behind > 0"
                 class="sync-badge behind"
                 title="Commits to pull"
+                :aria-label="`${branches.aheadBehind.behind} to pull`"
                 >↓{{ branches.aheadBehind.behind }}</span
               >
             </template>
@@ -598,14 +627,18 @@ async function confirmStashRename() {
         <ul
           v-if="!collapsed.remote"
           class="branch-list remote-list"
+          role="listbox"
+          aria-label="Remote branches"
           :style="{ maxHeight: remoteHeight + 'px' }"
         >
           <li
-            v-for="b in filteredRemote"
+            v-for="(b, i) in filteredRemote"
             :key="`${b.remote}/${b.name}`"
             class="branch-item remote"
-            :title="'Double-click to check out ' + b.remote + '/' + b.name"
-            tabindex="0"
+            role="option"
+            :title="'Double-click or Enter to check out ' + b.remote + '/' + b.name"
+            :tabindex="rovingTab('remote', i, filteredRemote.length)"
+            @focus="roving.remote = i"
             @dblclick="switchTo(b.remote + '/' + b.name, true)"
             @keydown.enter="switchTo(b.remote + '/' + b.name, true)"
             @keydown.up.prevent.stop="focusSiblingItem($event, -1)"
@@ -647,14 +680,22 @@ async function confirmStashRename() {
             Stashes
           </button>
         </h3>
-        <ul v-if="!collapsed.stashes && stash.entries.length > 0" class="branch-list stash-list">
+        <ul
+          v-if="!collapsed.stashes && stash.entries.length > 0"
+          class="branch-list stash-list"
+          role="listbox"
+          aria-label="Stashes"
+        >
           <li
-            v-for="entry in stash.entries"
+            v-for="(entry, i) in stash.entries"
             :key="entry.ref"
             class="branch-item stash-item"
             :class="{ 'stash-selected': commits.selectedHash === entry.hash }"
+            role="option"
+            :aria-selected="commits.selectedHash === entry.hash"
             :title="entry.message"
-            tabindex="0"
+            :tabindex="rovingTab('stash', i, stash.entries.length)"
+            @focus="roving.stash = i"
             @click="selectStash(entry)"
             @keydown.enter="selectStash(entry)"
             @keydown.up.prevent.stop="focusSiblingItem($event, -1)"
@@ -678,6 +719,7 @@ async function confirmStashRename() {
       v-if="ctxMenu"
       ref="branchCtxMenuEl"
       class="ctx-menu"
+      role="menu"
       :style="{ left: ctxMenu.x + 'px', top: ctxMenu.y + 'px' }"
       @keydown="handleMenuKeydown($event, branchCtxMenuEl, closeCtxMenu)"
     >
@@ -687,6 +729,7 @@ async function confirmStashRename() {
       <template v-if="ctxMenu.mode === 'default'">
         <button
           v-if="!ctxMenu.isCurrent"
+          role="menuitem"
           class="ctx-menu-item ctx-menu-item-primary"
           @click="
             switchTo(ctxMenu!.target, !ctxMenu!.isLocal);
@@ -695,15 +738,20 @@ async function confirmStashRename() {
         >
           Checkout
         </button>
-        <button v-if="ctxMenu.isLocal" class="ctx-menu-item" @click="pushBranch()">Push</button>
-        <button class="ctx-menu-item" @click="copyBranchName()">Copy branch name</button>
-        <button class="ctx-menu-item" @click="rebaseOnto(ctxMenu!.target)">
+        <button v-if="ctxMenu.isLocal" role="menuitem" class="ctx-menu-item" @click="pushBranch()">
+          Push
+        </button>
+        <button role="menuitem" class="ctx-menu-item" @click="copyBranchName()">
+          Copy branch name
+        </button>
+        <button role="menuitem" class="ctx-menu-item" @click="rebaseOnto(ctxMenu!.target)">
           Rebase current branch onto this
         </button>
         <template v-if="ctxMenu.isLocal">
           <div class="ctx-menu-divider" />
-          <button class="ctx-menu-item" @click="startRename()">Rename</button>
+          <button role="menuitem" class="ctx-menu-item" @click="startRename()">Rename</button>
           <button
+            role="menuitem"
             class="ctx-menu-item ctx-menu-item-danger"
             :disabled="ctxMenu.isCurrent"
             :title="ctxMenu.isCurrent ? 'Cannot delete the current branch' : ''"
@@ -770,17 +818,28 @@ async function confirmStashRename() {
       v-if="stashCtxMenu"
       ref="stashCtxMenuEl"
       class="ctx-menu"
+      role="menu"
       :style="{ left: stashCtxMenu.x + 'px', top: stashCtxMenu.y + 'px' }"
       @keydown="handleMenuKeydown($event, stashCtxMenuEl, closeStashCtxMenu)"
     >
       <div class="ctx-menu-label">{{ stashCtxMenu.ref }}</div>
 
       <template v-if="stashCtxMenu.mode === 'default'">
-        <button class="ctx-menu-item ctx-menu-item-primary" @click="applyStash()">Apply</button>
-        <button class="ctx-menu-item ctx-menu-item-primary" @click="popStash()">Pop</button>
+        <button role="menuitem" class="ctx-menu-item ctx-menu-item-primary" @click="applyStash()">
+          Apply
+        </button>
+        <button role="menuitem" class="ctx-menu-item ctx-menu-item-primary" @click="popStash()">
+          Pop
+        </button>
         <div class="ctx-menu-divider" />
-        <button class="ctx-menu-item" @click="startStashRename()">Rename</button>
-        <button class="ctx-menu-item ctx-menu-item-danger" @click="startStashDrop()">Drop</button>
+        <button role="menuitem" class="ctx-menu-item" @click="startStashRename()">Rename</button>
+        <button
+          role="menuitem"
+          class="ctx-menu-item ctx-menu-item-danger"
+          @click="startStashDrop()"
+        >
+          Drop
+        </button>
       </template>
 
       <template v-else-if="stashCtxMenu.mode === 'rename'">

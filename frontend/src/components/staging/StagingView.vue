@@ -14,6 +14,7 @@ import {
   clampMenuPosition,
   focusFirstMenuItem,
   handleMenuKeydown,
+  keepFocusInMenu,
   menuEventFor,
 } from '../../composables/useContextMenu';
 import {
@@ -292,6 +293,11 @@ async function openFileCtxMenu(e: MouseEvent, path: string, section: FileCtxMenu
 }
 
 let fileMenuReturnFocus: HTMLElement | null = null;
+
+watch(
+  () => fileCtxMenu.value?.mode,
+  () => nextTick(() => keepFocusInMenu(fileCtxMenuEl.value))
+);
 
 function closeFileCtxMenu() {
   fileCtxMenu.value = null;
@@ -787,7 +793,8 @@ async function doAbortRebase() {
               <span class="file-name" :title="file.path">{{ shortPath(file.path) }}</span>
               <button
                 class="inline-btn stage-inline"
-                title="Stage file"
+                tabindex="-1"
+                title="Stage file (Space)"
                 :aria-label="`Stage ${file.path}`"
                 @click.stop="onStageFile(file.path)"
               >
@@ -829,7 +836,8 @@ async function doAbortRebase() {
               <span class="file-name" :title="file.path">{{ shortPath(file.path) }}</span>
               <button
                 class="inline-btn unstage-inline"
-                title="Unstage file"
+                tabindex="-1"
+                title="Unstage file (Space)"
                 :aria-label="`Unstage ${file.path}`"
                 @click.stop="onUnstageFile(file.path)"
               >
@@ -953,6 +961,7 @@ async function doAbortRebase() {
       v-if="fileCtxMenu"
       ref="fileCtxMenuEl"
       class="ctx-menu"
+      role="menu"
       :style="{ left: fileCtxMenu.x + 'px', top: fileCtxMenu.y + 'px' }"
       @keydown="handleMenuKeydown($event, fileCtxMenuEl, closeFileCtxMenu)"
     >
@@ -962,36 +971,51 @@ async function doAbortRebase() {
       <template v-if="fileCtxMenu.mode === 'default'">
         <!-- Unstaged-only actions -->
         <template v-if="fileCtxMenu.section === 'unstaged'">
-          <button class="ctx-menu-item ctx-menu-item-primary" @click="ctxStageFile">
+          <button role="menuitem" class="ctx-menu-item ctx-menu-item-primary" @click="ctxStageFile">
             Stage file
           </button>
-          <button class="ctx-menu-item ctx-menu-item-danger" @click="ctxDiscardFile">
+          <button
+            role="menuitem"
+            class="ctx-menu-item ctx-menu-item-danger"
+            @click="ctxDiscardFile"
+          >
             Discard changes
           </button>
           <div class="ctx-menu-divider" />
-          <button class="ctx-menu-item" @click="fileCtxMenu!.mode = 'ignore'">
+          <button role="menuitem" class="ctx-menu-item" @click="fileCtxMenu!.mode = 'ignore'">
             Ignore <span style="float: right; opacity: 0.5">▸</span>
           </button>
-          <button class="ctx-menu-item" @click="ctxStashFile">Stash file</button>
+          <button role="menuitem" class="ctx-menu-item" @click="ctxStashFile">Stash file</button>
           <div class="ctx-menu-divider" />
         </template>
 
         <!-- Staged-only actions -->
         <template v-else-if="fileCtxMenu.section === 'staged'">
-          <button class="ctx-menu-item ctx-menu-item-primary" @click="ctxUnstageFile">
+          <button
+            role="menuitem"
+            class="ctx-menu-item ctx-menu-item-primary"
+            @click="ctxUnstageFile"
+          >
             Unstage file
           </button>
           <div class="ctx-menu-divider" />
         </template>
 
         <!-- Common actions -->
-        <button class="ctx-menu-item" @click="ctxOpenDefaultApp">Open in default app</button>
-        <button class="ctx-menu-item" @click="ctxShowInFinder">Show in Finder</button>
-        <button class="ctx-menu-item" @click="ctxOpenInEditor">Open in editor</button>
+        <button role="menuitem" class="ctx-menu-item" @click="ctxOpenDefaultApp">
+          Open in default app
+        </button>
+        <button role="menuitem" class="ctx-menu-item" @click="ctxShowInFinder">
+          Show in Finder
+        </button>
+        <button role="menuitem" class="ctx-menu-item" @click="ctxOpenInEditor">
+          Open in editor
+        </button>
         <div class="ctx-menu-divider" />
-        <button class="ctx-menu-item" @click="ctxCopyPath">Copy path</button>
+        <button role="menuitem" class="ctx-menu-item" @click="ctxCopyPath">Copy path</button>
         <button
           v-if="fileCtxMenu.section !== 'conflict'"
+          role="menuitem"
           class="ctx-menu-item"
           @click="ctxSavePatch"
         >
@@ -1001,7 +1025,7 @@ async function doAbortRebase() {
         <!-- Unstaged: delete -->
         <template v-if="fileCtxMenu.section === 'unstaged'">
           <div class="ctx-menu-divider" />
-          <button class="ctx-menu-item ctx-menu-item-danger" @click="ctxDeleteFile">
+          <button role="menuitem" class="ctx-menu-item ctx-menu-item-danger" @click="ctxDeleteFile">
             Delete file
           </button>
         </template>
@@ -1009,10 +1033,15 @@ async function doAbortRebase() {
 
       <!-- Ignore submenu -->
       <template v-else-if="fileCtxMenu.mode === 'ignore'">
-        <button class="ctx-menu-item" @click="fileCtxMenu!.mode = 'default'">← Back</button>
+        <button role="menuitem" class="ctx-menu-item" @click="fileCtxMenu!.mode = 'default'">
+          ← Back
+        </button>
         <div class="ctx-menu-divider" />
-        <button class="ctx-menu-item" @click="ctxIgnore('file')">Ignore this file</button>
+        <button role="menuitem" class="ctx-menu-item" @click="ctxIgnore('file')">
+          Ignore this file
+        </button>
         <button
+          role="menuitem"
           class="ctx-menu-item"
           :disabled="!fileExt(fileCtxMenu.path)"
           @click="ctxIgnore('ext')"
@@ -1020,6 +1049,7 @@ async function doAbortRebase() {
           Ignore all *.{{ fileExt(fileCtxMenu.path) }} files
         </button>
         <button
+          role="menuitem"
           class="ctx-menu-item"
           :disabled="!fileDir(fileCtxMenu.path)"
           @click="ctxIgnore('dir')"

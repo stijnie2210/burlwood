@@ -2,6 +2,7 @@
 import { ref, computed, watch, nextTick, onMounted, onUnmounted } from 'vue';
 import { useVirtualizer } from '@tanstack/vue-virtual';
 import { useCommitsStore } from '../../stores/commits';
+import type { GraphRow } from '../../stores/commits';
 import { useReposStore } from '../../stores/repos';
 import { useToastStore } from '../../stores/toast';
 import { CELL_W } from './graphRenderer';
@@ -176,6 +177,22 @@ onUnmounted(() => {
   window.removeEventListener('gitgood:find', openSearch);
 });
 
+function rowLabel(row: GraphRow | undefined): string | undefined {
+  if (!row) {
+    return undefined;
+  }
+  const refs = row.labels.map((l) => (l.type === 'remote' ? `${l.remote}/${l.name}` : l.name));
+  return [
+    row.subject,
+    refs.length ? `refs ${refs.join(', ')}` : '',
+    row.author,
+    row.date,
+    row.shortHash,
+  ]
+    .filter(Boolean)
+    .join(', ');
+}
+
 function onRowClick(index: number) {
   const row = filteredRows.value[index];
   if (row && repos.activeRepo) {
@@ -268,11 +285,7 @@ async function onMenuRefresh() {
           :aria-selected="commits.selectedHash === filteredRows[item.index]?.hash"
           :aria-posinset="item.index + 1"
           :aria-setsize="filteredRows.length"
-          :aria-label="
-            filteredRows[item.index]
-              ? `${filteredRows[item.index].shortHash} ${filteredRows[item.index].subject}`
-              : undefined
-          "
+          :aria-label="rowLabel(filteredRows[item.index])"
           :style="{
             position: 'absolute',
             top: 0,

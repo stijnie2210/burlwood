@@ -18,6 +18,7 @@ import { useCommitsStore } from './stores/commits';
 import { useStagingStore } from './stores/staging';
 import { useBranchesStore } from './stores/branches';
 import { usePrefsStore } from './stores/prefs';
+import { useToastStore } from './stores/toast';
 import logoUrl from './assets/images/logo-icon.png';
 
 const repos = useReposStore();
@@ -25,6 +26,7 @@ const commits = useCommitsStore();
 const staging = useStagingStore();
 const branches = useBranchesStore();
 const prefsStore = usePrefsStore();
+const toast = useToastStore();
 onMounted(async () => {
   await prefsStore.load();
   await repos.restoreSession();
@@ -183,6 +185,11 @@ function onGlobalKeyDown(e: KeyboardEvent) {
     return;
   }
   if (!e.metaKey && !e.ctrlKey) {
+    return;
+  }
+  // Outside text fields, ⌘Z undoes the last discard or hard reset while its Undo toast is up.
+  if (e.key === 'z' && !e.shiftKey && toast.undoLatest()) {
+    e.preventDefault();
     return;
   }
   const action = SHORTCUTS[e.key];

@@ -5,14 +5,40 @@ const commits = useCommitsStore();
 
 type FileDiff = (typeof commits.diff)[0];
 
+// Same letters as the working tree (git's own A/M/D/R).
 function fileStatus(file: FileDiff): string {
   if (!file.oldPath) {
-    return '+';
+    return 'A';
   }
-  if (!file.newPath || file.newPath === file.oldPath) {
-    return file.hunks.length ? '~' : '';
+  if (!file.newPath) {
+    return 'D';
   }
-  return '→';
+  if (file.newPath !== file.oldPath) {
+    return 'R';
+  }
+  return 'M';
+}
+
+const STATUS_NAMES: Record<string, string> = {
+  A: 'added',
+  D: 'deleted',
+  R: 'renamed',
+  M: 'modified',
+};
+
+function focusSibling(e: KeyboardEvent, dir: 1 | -1) {
+  const el = e.currentTarget as HTMLElement;
+  const next = (
+    dir === 1 ? el.nextElementSibling : el.previousElementSibling
+  ) as HTMLElement | null;
+  if (next?.classList.contains('file-item')) {
+    next.focus();
+  }
+}
+
+function tabStop(fi: number): number {
+  const active = commits.selectedFileIndex ?? 0;
+  return fi === active ? 0 : -1;
 }
 </script>
 
@@ -25,17 +51,15 @@ function fileStatus(file: FileDiff): string {
       :key="file.newPath ?? file.oldPath ?? fi"
       class="file-item"
       :class="{ active: fi === commits.selectedFileIndex }"
+      :tabindex="tabStop(fi)"
+      :aria-label="`${file.newPath || file.oldPath}, ${STATUS_NAMES[fileStatus(file)]}`"
       @click="commits.selectFile(fi)"
+      @keydown.down.prevent.stop="focusSibling($event, 1)"
+      @keydown.up.prevent.stop="focusSibling($event, -1)"
     >
-      <span
-        class="file-status"
-        :class="{
-          'status-add': fileStatus(file) === '+',
-          'status-mod': fileStatus(file) === '~',
-          'status-ren': fileStatus(file) === '→',
-        }"
-        >{{ fileStatus(file) }}</span
-      >
+      <span class="file-status" :class="`status-${fileStatus(file)}`" aria-hidden="true">{{
+        fileStatus(file)
+      }}</span>
       <span class="file-path">{{ file.newPath || file.oldPath }}</span>
       <span v-if="file.isBinary" class="file-badge">binary</span>
       <span class="file-stats">
@@ -92,13 +116,16 @@ function fileStatus(file: FileDiff): string {
   flex-shrink: 0;
   font-family: var(--font-mono);
 }
-.status-add {
+.status-A {
   color: var(--add);
 }
-.status-mod {
+.status-M {
   color: var(--modified);
 }
-.status-ren {
+.status-D {
+  color: var(--del);
+}
+.status-R {
   color: var(--accent-text);
 }
 

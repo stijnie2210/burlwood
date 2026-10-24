@@ -62,3 +62,12 @@ export function menuEventFor(e: KeyboardEvent): MouseEvent {
     cancelable: true,
   });
 }
+
+// Switching a menu into a confirm or input mode removes the focused button; pull focus back
+// inside so Escape and the arrow keys keep working.
+export function keepFocusInMenu(el: HTMLElement | null | undefined) {
+  if (!el || el.contains(document.activeElement)) {
+    return;
+  }
+  el.querySelector<HTMLElement>('input, ' + MENU_ITEMS)?.focus();
+}
