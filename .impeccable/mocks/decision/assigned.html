@@ -1,0 +1,137 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>The Flitch</title>
+<style>
+  :root{--heart:#2a1a10;--burl:#8a5230;--amber:#cc8a4e;--sap:#f3ddb8;--grain:#5a3420}
+  html,body{margin:0;background:var(--heart);font-family:"Bricolage Grotesque",-apple-system,system-ui,sans-serif;color:var(--heart)}
+  .leaf{position:relative;overflow:hidden;background:linear-gradient(160deg,var(--amber),var(--burl))}
+  .leaf svg.grain{position:absolute;inset:0;width:100%;height:100%}
+  .gutter{position:absolute;left:50%;top:0;bottom:0;width:1px;background:var(--heart);opacity:.4}
+  .in{position:relative}
+  .mono{font-family:ui-monospace,"SF Mono",Menlo,monospace}
+  .stamp{display:inline-block;border:2px solid var(--heart);padding:3px 9px;font-size:13px;font-weight:600;letter-spacing:.02em;background:var(--sap)}
+  nav{display:flex;align-items:center;justify-content:space-between;padding:22px 48px;color:var(--sap);font-size:16px;font-weight:600}
+  nav .links{display:flex;gap:28px}
+  .hero{height:900px}
+  .word{position:absolute;top:118px;left:0;right:0;display:grid;grid-template-columns:1fr 150px 1fr;align-items:center;font-size:150px;font-weight:700;letter-spacing:-.045em;line-height:1;color:var(--sap)}
+  .word span:first-child{text-align:right}.word span:last-child{text-align:left}
+  .line{position:absolute;top:300px;left:0;right:0;text-align:center;font-size:30px;font-weight:600}
+  .sub{position:absolute;top:350px;left:50%;transform:translateX(-50%);width:640px;text-align:center;font-size:18px;line-height:1.5}
+  .cta{position:absolute;top:430px;left:0;right:0;display:flex;justify-content:center;gap:12px;align-items:center}
+  .btn{background:var(--heart);color:var(--sap);font-size:18px;font-weight:600;padding:14px 22px;border-radius:6px}
+  .ghost{background:transparent;color:var(--heart);border:2px solid var(--heart)}
+  .meta{position:absolute;top:500px;left:0;right:0;text-align:center;font-size:13px}
+  .inlay{position:absolute;left:96px;right:96px;top:560px;border:8px solid var(--heart);border-bottom:0;background:var(--heart)}
+  .inlay img{display:block;width:100%}
+  .tl{position:absolute;top:84px;left:48px}.tr{position:absolute;top:84px;right:48px}
+  section.leaf{padding:110px 96px 120px;background:var(--heart);color:var(--sap)}
+  section.leaf + section.leaf{border-top:1px solid rgba(243,221,184,.15)}
+  section.leaf h2{color:var(--sap)} section.leaf .stamp{color:var(--heart)}
+  section.leaf table{color:var(--heart)} .plat{color:var(--heart)}
+  .frame{border-color:#3a2618}
+  .head{display:flex;gap:24px;align-items:baseline;margin-bottom:36px}
+  h2{font-size:64px;letter-spacing:-.03em;margin:0;color:var(--sap);line-height:1}
+  .two{display:grid;grid-template-columns:5fr 7fr;gap:56px;align-items:start}
+  p{font-size:19px;line-height:1.55;margin:0 0 14px;max-width:34em}
+  .frame{border:8px solid var(--heart);background:var(--heart)}.frame img{display:block;width:100%}
+  table{width:100%;border-collapse:collapse;font-size:17px;background:var(--sap)}
+  td,th{border-bottom:1px solid rgba(42,26,16,.25);padding:12px 16px;text-align:left;vertical-align:top}
+  th{font-size:13px}
+  pre{background:var(--heart);color:var(--sap);padding:18px 20px;font-size:15px;margin:0}
+  .plat{display:grid;grid-template-columns:repeat(3,1fr);border:2px solid var(--heart);background:var(--sap)}
+  .plat div{padding:26px;border-right:2px solid var(--heart)}.plat div:last-child{border-right:0}
+  .plat h3{font-size:28px;margin:0 0 8px}
+  footer{padding:36px 48px;color:var(--sap);display:flex;justify-content:space-between;font-size:15px}
+</style></head><body>
+
+<header class="leaf hero">
+  <svg class="grain" data-knot="0.5,0.235" data-seed="1"></svg>
+  <div class="in">
+    <nav><span style="font-size:22px">burlwood</span><span class="links"><span>Features</span><span>Install</span><span>GitHub</span></span></nav>
+  </div>
+  <span class="stamp mono tl">LEAF 01 · v0.3.0</span><span class="stamp mono tr">LEAF 01 · v0.3.0</span>
+  <div class="word"><span>burl</span><span></span><span>wood</span></div>
+  <div class="line">A fast, free git client for the Mac.</div>
+  <div class="sub">Read history as a graph, stage single hunks, settle conflicts. One native app: no account, no subscription, no telemetry.</div>
+  <div class="cta"><span class="btn">Download for macOS</span><span class="btn ghost">Linux · Windows</span></div>
+  <div class="meta mono">v0.3.0 · universal DMG · free under GPL-3.0</div>
+  <div class="inlay"><img src="commit-graph.webp" alt=""></div>
+</header>
+
+<section class="leaf">
+  
+  <div class="in two">
+    <div>
+      <div class="head"><span class="stamp mono">LEAF 02</span></div>
+      <h2>Read the history.</h2><br>
+      <p>Every branch, tag and stash gets its own lane, and the graph scrolls smoothly through thousands of commits. ⌘F finds a commit; its changed files sit grouped by folder.</p>
+      <p>Checkout, branch, tag, revert or reset from any row. A hard reset can be undone.</p>
+    </div>
+    <div class="frame"><img src="commit-graph.webp" alt=""></div>
+  </div>
+</section>
+
+<section class="leaf">
+  
+  <div class="in two" style="grid-template-columns:7fr 5fr">
+    <div class="frame"><img src="working-tree.webp" alt=""></div>
+    <div>
+      <div class="head"><span class="stamp mono">LEAF 03</span></div>
+      <h2>Shape the commit.</h2><br>
+      <p>Stage a whole file or a single hunk. The patch is built from exactly the lines on screen. Discard has Undo.</p>
+      <p>Unified or side by side, with the changed words marked.</p>
+    </div>
+  </div>
+</section>
+
+<section class="leaf">
+  
+  <div class="in">
+    <div class="head"><span class="stamp mono">LEAF 04</span><h2>The cutting list.</h2></div>
+    <table class="mono"><tr><th>NO.</th><th>WHAT</th><th>HOW</th></tr>
+      <tr><td>01</td><td>Conflicts</td><td>Pick ours or theirs per conflict, diff3 and zdiff3 aware</td></tr>
+      <tr><td>02</td><td>Remotes</td><td>Background fetch, pull with autostash, push with upstream, force-with-lease</td></tr>
+      <tr><td>03</td><td>Branches</td><td>Switch with your changes along, rename, delete, push, rebase</td></tr>
+      <tr><td>04</td><td>Stashes</td><td>Create, apply, pop, rename, drop</td></tr>
+      <tr><td>05</td><td>Errors</td><td>git's output as one sentence and a next step; raw output one click away</td></tr>
+      <tr><td>06</td><td>Tabs</td><td>Several repositories at once, restored on launch</td></tr>
+    </table>
+  </div>
+</section>
+
+<section class="leaf">
+  
+  <div class="in">
+    <div class="head"><span class="stamp mono">LEAF 05</span><h2>Take a leaf.</h2></div>
+    <div class="plat">
+      <div><h3>macOS</h3><p>Universal DMG. Unsigned, so clear the quarantine flag once.</p><pre>xattr -dr com.apple.quarantine \
+  /Applications/Burlwood.app</pre></div>
+      <div><h3>Linux</h3><p>AppImage. Needs WebKit2GTK 4.1.</p></div>
+      <div><h3>Windows</h3><p>Zip with burlwood.exe.</p></div>
+    </div>
+  </div>
+</section>
+<footer class="mono"><span>burlwood · GPL-3.0 · © 2026 Stijn Mommersteeg</span><span>github.com/stijnie2210/burlwood</span></footer>
+
+<script>
+function rng(s){return()=>(s=(s*16807)%2147483647)/2147483647}
+document.querySelectorAll('svg.grain').forEach(svg=>{
+  const box=svg.parentElement.getBoundingClientRect(),W=box.width,H=box.height,r=rng(+svg.dataset.seed*7919);
+  const [fx,fy]=svg.dataset.knot.split(',').map(Number);
+  const half=W/2,knots=[{x:fx*W,y:fy*H,rx:150,ry:100}];
+  for(let i=0;i<1;i++)knots.push({x:r()*half,y:r()*H,rx:50+r()*40,ry:30+r()*25});
+  const mirrored=knots.flatMap(k=>k.x<half-1||k.x>half+1?[k,{...k,x:W-k.x}]:[k]);
+  svg.setAttribute('viewBox',`0 0 ${W} ${H}`);
+  let d='';const gap=60;
+  for(let y0=-gap*3;y0<H+gap*3;y0+=gap){
+    let p='';for(let x=0;x<=W;x+=10){const m=x<=half?x:W-x;let y=y0+Math.sin(m/210+y0/70)*5;
+      for(const k of mirrored){const dy=y0-k.y,s=dy>=0?1:-1,gx=Math.exp(-(((x-k.x)/(k.rx*2.1))**2));y+=s*gx*k.ry*1.7*Math.exp(-Math.abs(dy)/(k.ry*2.4))}
+      p+=(x?'L':'M')+x.toFixed(1)+' '+y.toFixed(1)}
+    d+=`<path d="${p}"/>`}
+  for(const k of mirrored)for(const f of[.6,1.05])d+=`<ellipse cx="${k.x}" cy="${k.y}" rx="${k.rx*f}" ry="${k.ry*f}"/>`;
+  let lane='';const k=knots[0];
+  if(svg.dataset.seed==='1'){const L=`M0 ${H*.66} C ${W*.22} ${H*.66} ${W*.36} ${k.y+150} ${k.x-30} ${k.y+40} Q ${k.x-12} ${k.y+6} ${k.x} ${k.y}`,R1=`M${k.x} ${k.y} Q ${k.x+12} ${k.y+6} ${k.x+30} ${k.y+40} C ${W*.64} ${k.y+150} ${W*.78} ${H*.52} ${W} ${H*.52}`,R2=`M${k.x} ${k.y} Q ${k.x+14} ${k.y+10} ${k.x+40} ${k.y+56} C ${W*.62} ${k.y+230} ${W*.8} ${H*.74} ${W} ${H*.74}`;lane=`<circle cx="${k.x}" cy="${k.y}" r="24" fill="#2a1a10" stroke="#f3ddb8" stroke-width="9"/>`}
+  svg.innerHTML=`<g fill="none" stroke="#5a3420" stroke-opacity=".35" stroke-width="2.6" stroke-linecap="round">${d}</g>${lane}`;
+});
+</script>
+</body></html>
