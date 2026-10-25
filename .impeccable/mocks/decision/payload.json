@@ -1,0 +1,219 @@
+{
+  "title": "Choose the visual world for the Burlwood website",
+  "question": "Same hand, reworked to your notes: The Flitch calmed (grain only in the opening, quiet heartwood leaves below) and Walnut & Aluminium worked out as a full hi-fi rack with a working function selector. Neither mentions pre-1.0 or backups. Open each full size from the expand chip and scroll.",
+  "options": [
+    {
+      "id": "assigned",
+      "label": "The Flitch",
+      "kicker": "THE ROLL",
+      "lineage": "a veneer merchant's sample book: consecutive burl leaves, bookmatched and numbered",
+      "thesis": "A flitch is a log's history cut into numbered leaves, so the page is one: burl veneer drawn in the icon's grain, with the commit lane running through it.",
+      "palette": [
+        "#2a1a10",
+        "#8a5230",
+        "#cc8a4e",
+        "#f3ddb8",
+        "#5a3420"
+      ],
+      "materials": [
+        "bookmatched burl veneer, drawn as live contour grain",
+        "stamped leaf labels",
+        "the app set in as a marquetry inlay"
+      ],
+      "viewport": "'burl ● wood' split by the HEAD knot over calm bookmatched grain; one line, Download for macOS, the commit graph rising as an inlay. Below, quiet heartwood leaves: history, working tree, the cutting list, install.",
+      "risk": "The literal reading of the name: if the grain is timid or textured like stock wood, it reads as a rustic theme instead of the icon brought to life.",
+      "raised": [
+        {
+          "from": "challenger-chromatophore",
+          "raise": "Git meaning is drawn into the grain itself: lanes, forks and the HEAD knot are grain lines, not icons in cards."
+        },
+        {
+          "from": "challenger-azulejo",
+          "raise": "Sections are whole leaves of the flitch, numbered in order, never fractional card grids."
+        },
+        {
+          "from": "challenger-ospaaal",
+          "raise": "Veneer owns whole regions edge to edge; there is no neutral grey page ground."
+        },
+        {
+          "from": "challenger-sixpack",
+          "raise": "One fixed reading sweep, leaf 01 to the download leaf, like a cross-check."
+        }
+      ],
+      "html": ".impeccable/mocks/decision/assigned.html"
+    },
+    {
+      "id": "model-pick",
+      "label": "Walnut & Aluminium",
+      "kicker": "IMPECCABLE’S PICK",
+      "lineage": "1970s hi-fi catalogues: walnut cabinets around brushed-aluminium faceplates",
+      "thesis": "Burlwood as a hi-fi receiver: a brushed-aluminium faceplate between walnut cheeks, the app behind the dial glass.",
+      "palette": [
+        "#3b2416",
+        "#6b4128",
+        "#c9c6bf",
+        "#efe9de",
+        "#e0a03a"
+      ],
+      "materials": [
+        "walnut side cheeks",
+        "brushed aluminium faceplates with screws",
+        "engraved wide-caps legends",
+        "rotary selector, pilot lamp, VU meters"
+      ],
+      "viewport": "The faceplate: the app in a dark dial window with a rotary function selector (Graph · Stage · Diff · Branches) that switches the view; headline, the download as a pilot-lit pushbutton, and Added/Removed meters. Below, stacked units: commits, working tree, specifications, installation.",
+      "risk": "Familiar: retro hi-fi is a well-worn indie Mac app look, and the most likely place this category lands.",
+      "html": ".impeccable/mocks/decision/model-pick.html"
+    },
+    {
+      "id": "challenger-cathode",
+      "label": "Struck Cathode",
+      "verdict": "competitive",
+      "lineage": "nixie decade counters behind bronze anode gauze",
+      "thesis": "Every commit hash present at once as unlit ghosts; HEAD is the one struck forward in orange.",
+      "palette": [
+        "#0d1220",
+        "#ff8a2a",
+        "#8a6a3e",
+        "#e9e2d4"
+      ],
+      "materials": [
+        "bronze wire gauze",
+        "glowing cathode numerals",
+        "ink-blue black"
+      ],
+      "viewport": "A wall of ghosted 7-character hashes behind gauze; one hash glows, the wordmark and download struck forward beside it.",
+      "case": "Developers know nixie glow and hashes by heart, so it holds identification; it loses clarity because a hash wall says nothing about what the app does.",
+      "risk": "Reads as a novelty clock, not a git client, unless the screenshots carry the explanation.",
+      "html": ".impeccable/mocks/decision/challenger-cathode.html"
+    },
+    {
+      "id": "challenger-chromatophore",
+      "label": "Chromatophore Skin",
+      "verdict": "declined",
+      "lineage": "cephalopod skin as a living display",
+      "thesis": "The surface itself changes pattern to signal state.",
+      "palette": [
+        "#f1e6d6",
+        "#8c3b26",
+        "#2fb6a6",
+        "#3b2a22"
+      ],
+      "materials": [
+        "pigment cells",
+        "travelling waves"
+      ],
+      "viewport": "A pale living surface rippling with patterns.",
+      "case": "Fuses poorly: no developer reads a git client through squid skin, and it hides the product.",
+      "risk": "Pure atmosphere, no product.",
+      "kept": "State drawn into the material itself, not boxed."
+    },
+    {
+      "id": "challenger-azulejo",
+      "label": "Azulejo Hall",
+      "verdict": "declined",
+      "lineage": "tin-glazed tile station halls",
+      "thesis": "History painted in cobalt across a tile grid.",
+      "palette": [
+        "#f6f3ea",
+        "#1f4aa8",
+        "#d7a72a"
+      ],
+      "materials": [
+        "tin glaze",
+        "cobalt wash",
+        "grout seams"
+      ],
+      "viewport": "A framed cobalt panel telling the app's story.",
+      "case": "Fuses poorly: cobalt on white fights the warm graphite app and the wood icon.",
+      "risk": "Tourist souvenir.",
+      "kept": "Layout snaps to whole units, never fractions."
+    },
+    {
+      "id": "challenger-ospaaal",
+      "label": "Solidarity Silkscreen",
+      "verdict": "declined",
+      "lineage": "OSPAAAL screen-printed posters",
+      "thesis": "One emblem, flat fearless fields, a repeating slogan border.",
+      "palette": [
+        "#e2342b",
+        "#f2c21b",
+        "#f3ead8",
+        "#1a1a1a"
+      ],
+      "materials": [
+        "flat silkscreen ink"
+      ],
+      "viewport": "The knot as a centred emblem in hot flat fields.",
+      "case": "Fuses poorly: political-poster urgency is the wrong voice for a calm hobby git client.",
+      "risk": "Shouts.",
+      "kept": "Colour fields commit to whole regions."
+    },
+    {
+      "id": "challenger-sixpack",
+      "label": "Night Six-Pack",
+      "verdict": "declined",
+      "lineage": "aircraft night instrument panel",
+      "thesis": "Six calm gauges cross-checked in a fixed sweep.",
+      "palette": [
+        "#0b0c0c",
+        "#f4f4f0",
+        "#7cf29a",
+        "#e3a43a"
+      ],
+      "materials": [
+        "matte black panel",
+        "luminous dials"
+      ],
+      "viewport": "Six gauges, one per capability.",
+      "case": "Fuses poorly: gauges want numbers, and there are no benchmarks to show without inventing them.",
+      "risk": "Fake data or empty dials.",
+      "kept": "A fixed reading order through the page."
+    },
+    {
+      "id": "challenger-chaekgeori",
+      "label": "Chaekgeori Shelf",
+      "verdict": "declined",
+      "lineage": "reverse-perspective bookshelf screens",
+      "thesis": "An inventory cabinet that opens toward you.",
+      "palette": [
+        "#e9e1cf",
+        "#4f8a74",
+        "#b2392b"
+      ],
+      "materials": [
+        "mineral pigment on silk"
+      ],
+      "viewport": "Feature boxes in reverse perspective.",
+      "case": "Fuses poorly: an inventory of boxes is the feature grid in costume.",
+      "risk": "Disorienting.",
+      "kept": "No cast shadows; objects are outlined."
+    }
+  ],
+  "reroll": {
+    "registers": [
+      "safer",
+      "bolder"
+    ]
+  },
+  "canon": true,
+  "canonCard": {
+    "label": "The category standard",
+    "thesis": "What Mac git clients ship (Fork, Tower, GitKraken), executed impeccably.",
+    "palette": [
+      "#141210",
+      "#ede9e4",
+      "#2f6fdc"
+    ],
+    "materials": [
+      "dark ground",
+      "centred app icon",
+      "large screenshot",
+      "feature grid"
+    ],
+    "viewport": "Icon, headline and download centred over a large app screenshot, a feature grid below.",
+    "risk": "Indistinguishable from the competition by design.",
+    "html": ".impeccable/mocks/decision/canon.html"
+  },
+  "steer": true
+}

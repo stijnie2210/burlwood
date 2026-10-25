@@ -1,0 +1,144 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Walnut and Aluminium</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..800&family=Bricolage+Grotesque:opsz,wght@12..96,700&display=swap" rel="stylesheet">
+<style>
+  :root{--walnut-d:#2b190f;--walnut:#4a2c1a;--walnut-l:#6b4128;--alu:#d6d4cf;--alu-d:#b9b6af;--ink:#1b1a18;--ink-2:#4a4844;--amber:#e8a33a;--glass:#141210}
+  *{box-sizing:border-box}
+  html,body{margin:0;background:var(--walnut-d);font-family:Archivo,-apple-system,system-ui,sans-serif;color:var(--ink)}
+  .rack{margin:0 auto;padding:0 72px;background:
+     repeating-linear-gradient(92deg,transparent 0 9px,rgba(0,0,0,.08) 9px 11px,transparent 11px 23px),
+     linear-gradient(90deg,var(--walnut-d),var(--walnut) 2.5%,var(--walnut-l) 4%,var(--walnut) 5%,var(--walnut) 95%,var(--walnut-l) 96%,var(--walnut) 97.5%,var(--walnut-d))}
+  .unit{position:relative;background:
+     repeating-linear-gradient(0deg,rgba(255,255,255,.18) 0 1px,rgba(0,0,0,.035) 1px 2px,transparent 2px 3px),
+     linear-gradient(180deg,#dcdad5,#c9c6bf);border-top:1px solid #f1efea;border-bottom:3px solid #8f8c85}
+  .unit + .unit{margin-top:14px}
+  .screw{position:absolute;width:12px;height:12px;border-radius:50%;background:radial-gradient(circle at 35% 35%,#f4f3f0,#9b978f);border:1px solid #7d7a73}
+  .screw::after{content:"";position:absolute;left:2px;right:2px;top:5px;height:1.5px;background:#6e6b65;transform:rotate(35deg)}
+  .s1{left:14px;top:14px}.s2{right:14px;top:14px}.s3{left:14px;bottom:14px}.s4{right:14px;bottom:14px}
+  .eng{font-stretch:125%;font-weight:600;letter-spacing:.14em;text-transform:uppercase;font-size:11px;color:var(--ink-2)}
+  .top{display:flex;align-items:center;justify-content:space-between;padding:22px 48px;border-bottom:1px solid #a9a69f}
+  .wm{font-family:"Bricolage Grotesque",sans-serif;font-weight:700;font-size:26px;letter-spacing:-.03em;color:var(--ink)}
+  .links{display:flex;gap:30px}
+  .hero{display:grid;grid-template-columns:minmax(0,1.55fr) minmax(0,1fr);gap:44px;padding:36px 48px 40px}
+  .window{background:var(--glass);border:10px solid var(--ink);border-radius:6px;aspect-ratio:16/10;overflow:hidden;position:relative}
+  .window img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;transition:opacity .25s}
+  .window::after{content:"";position:absolute;inset:0;background:linear-gradient(165deg,rgba(255,255,255,.09),transparent 40%)}
+  .selector{display:flex;align-items:center;gap:26px;margin-top:22px}
+  .knob{width:84px;height:84px;border-radius:50%;flex:none;position:relative;background:
+     repeating-conic-gradient(#e9e7e2 0 4deg,#a6a39c 4deg 8deg);border:2px solid #77746d}
+  .knob::before{content:"";position:absolute;inset:12px;border-radius:50%;background:radial-gradient(circle at 40% 35%,#f2f1ed,#b3b0a9)}
+  .knob i{position:absolute;left:50%;top:14px;width:3px;height:20px;margin-left:-1.5px;background:var(--ink);transform-origin:50% 28px}
+  .positions{display:flex;gap:6px}
+  .pos{background:none;border:0;padding:6px 10px;cursor:default}
+  .pos b{display:block;width:6px;height:6px;border-radius:50%;margin:0 auto 7px;background:#8f8c85}
+  .pos[aria-pressed=true] b{background:var(--amber)} .pos[aria-pressed=true] .eng{color:var(--ink)}
+  h1{font-size:54px;line-height:1.02;font-weight:750;letter-spacing:-.025em;margin:6px 0 18px;font-stretch:88%}
+  .lede{font-size:18px;line-height:1.5;margin:0 0 30px;color:#2c2a27;max-width:28em}
+  .power{display:flex;align-items:center;gap:18px}
+  .lamp{width:16px;height:16px;border-radius:50%;background:radial-gradient(circle at 40% 35%,#ffe0a3,var(--amber) 55%,#a5661a);border:2px solid #5d5a54}
+  .push{display:inline-flex;align-items:center;gap:12px;background:linear-gradient(#2a2826,#121110);color:#f1efea;font-weight:650;font-size:18px;padding:16px 24px;border-radius:5px;border:1px solid #000;box-shadow:inset 0 1px 0 rgba(255,255,255,.15)}
+  .also{margin-top:16px}
+  .also a{color:var(--ink);text-decoration:underline;text-underline-offset:3px}
+  .divide{height:1px;background:#a9a69f;margin:30px 0 20px}
+  .meters{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  .meter{background:#efe3c2;border:6px solid var(--ink);border-radius:4px;height:92px;position:relative;overflow:hidden}
+  .meter .arc{position:absolute;left:12%;right:12%;top:30px;height:120px;border-top:2px solid var(--ink);border-radius:50%}
+  .meter .needle{position:absolute;left:50%;bottom:-10px;width:2px;height:84px;background:#b8321f;transform-origin:50% 100%}
+  .meter .eng{position:absolute;left:0;right:0;bottom:8px;text-align:center;color:var(--ink)}
+  .meter .v{position:absolute;top:8px;left:0;right:0;text-align:center;font:600 13px ui-monospace,Menlo,monospace}
+  /* lower units */
+  .row{display:grid;grid-template-columns:240px 1fr;gap:40px;padding:42px 48px}
+  .row h2{font-size:34px;font-stretch:88%;letter-spacing:-.02em;margin:8px 0 0;line-height:1.05}
+  .row p{font-size:17px;line-height:1.55;margin:0 0 12px;max-width:36em}
+  .shots{display:grid;grid-template-columns:1fr 1fr;gap:24px}
+  .shots .window{aspect-ratio:16/10}
+  .spec{width:100%;border-collapse:collapse;font-size:16px}
+  .spec td{padding:11px 0;border-bottom:1px solid #a9a69f;vertical-align:top}
+  .spec td:first-child{width:220px}
+  .plats{display:grid;grid-template-columns:repeat(3,1fr);gap:24px}
+  .plats h3{font-size:22px;margin:6px 0 6px;font-stretch:88%}
+  pre{background:var(--glass);color:#ede9e4;padding:14px 16px;font-size:13px;border-radius:3px;margin:10px 0 0;overflow:auto}
+  footer{padding:28px 72px 40px;color:#d8c6b2;display:flex;justify-content:space-between}
+  footer .eng{color:#d8c6b2}
+</style></head><body>
+<div class="rack">
+  <header class="unit">
+    <span class="screw s1"></span><span class="screw s2"></span><span class="screw s3"></span><span class="screw s4"></span>
+    <div class="top"><span class="wm">burlwood</span><span class="links eng"><span>Features</span><span>Specifications</span><span>Install</span><span>Source</span></span></div>
+    <div class="hero">
+      <div>
+        <div class="window"><img id="shot" src="commit-graph.webp" alt=""></div>
+        <div class="selector">
+          <div class="knob"><i id="pointer"></i></div>
+          <div class="positions" role="group" aria-label="Function">
+            <button class="pos" aria-pressed="true" data-src="commit-graph.webp" data-pos="center" data-angle="-60"><b></b><span class="eng">Graph</span></button>
+            <button class="pos" aria-pressed="false" data-src="working-tree.webp" data-pos="center" data-angle="-20"><b></b><span class="eng">Stage</span></button>
+            <button class="pos" aria-pressed="false" data-src="working-tree.webp" data-pos="78% 25%" data-zoom="1.8" data-angle="20"><b></b><span class="eng">Diff</span></button>
+            <button class="pos" aria-pressed="false" data-src="commit-graph.webp" data-pos="0% 20%" data-zoom="2.2" data-angle="60"><b></b><span class="eng">Branches</span></button>
+          </div>
+        </div>
+      </div>
+      <div>
+        <span class="eng">Git client · Model v0.3.0</span>
+        <h1>A fast, free git client for the Mac.</h1>
+        <p class="lede">Read history as a graph, stage single hunks, settle conflicts. One native app on your system git: no account, no subscription, no telemetry.</p>
+        <div class="power"><span class="lamp" aria-hidden="true"></span><span class="push">Download for macOS</span></div>
+        <div class="also eng">Universal DMG · also for <a>Linux</a> and <a>Windows</a></div>
+        <div class="divide"></div>
+        <div class="meters">
+          <div class="meter"><div class="arc"></div><div class="needle" style="transform:rotate(28deg)"></div><span class="v">+2165</span><span class="eng">Added</span></div>
+          <div class="meter"><div class="arc"></div><div class="needle" style="transform:rotate(-14deg)"></div><span class="v">−589</span><span class="eng">Removed</span></div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <section class="unit">
+    <span class="screw s1"></span><span class="screw s2"></span><span class="screw s3"></span><span class="screw s4"></span>
+    <div class="row"><div><span class="eng">Unit 2 · Commits</span><h2>Read the history.</h2></div>
+      <div class="shots"><div><p>Every branch, tag and stash gets its own lane, and the graph scrolls smoothly through thousands of commits. ⌘F finds one.</p><p>Checkout, branch, tag, revert or reset from any row. A hard reset can be undone.</p></div>
+      <div class="window"><img src="commit-graph.webp" alt=""></div></div></div>
+  </section>
+
+  <section class="unit">
+    <span class="screw s1"></span><span class="screw s2"></span><span class="screw s3"></span><span class="screw s4"></span>
+    <div class="row"><div><span class="eng">Unit 3 · Working tree</span><h2>Shape the commit.</h2></div>
+      <div class="shots"><div class="window"><img src="working-tree.webp" alt=""></div><div><p>Stage a whole file or a single hunk; the patch is built from exactly the lines on screen. Discard has Undo.</p><p>Pick ours or theirs per conflict, diff3 and zdiff3 aware.</p></div></div></div>
+  </section>
+
+  <section class="unit">
+    <span class="screw s1"></span><span class="screw s2"></span><span class="screw s3"></span><span class="screw s4"></span>
+    <div class="row"><div><span class="eng">Specifications</span><h2>What's inside.</h2></div>
+      <table class="spec">
+        <tr><td class="eng">Engine</td><td>Your system git, so your config, hooks and SSH agent apply</td></tr>
+        <tr><td class="eng">Build</td><td>One native binary: Go and Vue 3 in the system webview, no Electron</td></tr>
+        <tr><td class="eng">Remotes</td><td>Background fetch, pull with autostash, push with upstream, force-with-lease</td></tr>
+        <tr><td class="eng">Errors</td><td>git's output as one sentence and a next step; the raw output one click away</td></tr>
+        <tr><td class="eng">Tabs</td><td>Several repositories at once, restored on the next launch</td></tr>
+        <tr><td class="eng">Licence</td><td>GPL-3.0. No account, no subscription, no telemetry</td></tr>
+      </table></div>
+  </section>
+
+  <section class="unit">
+    <span class="screw s1"></span><span class="screw s2"></span><span class="screw s3"></span><span class="screw s4"></span>
+    <div class="row"><div><span class="eng">Installation</span><h2>Plug it in.</h2></div>
+      <div class="plats">
+        <div><span class="eng">Input 1</span><h3>macOS</h3><p>Universal DMG. Not signed with an Apple Developer ID, so clear the quarantine flag once.</p><pre>xattr -dr com.apple.quarantine \
+  /Applications/Burlwood.app</pre></div>
+        <div><span class="eng">Input 2</span><h3>Linux</h3><p>AppImage. Needs WebKit2GTK 4.1.</p></div>
+        <div><span class="eng">Input 3</span><h3>Windows</h3><p>Zip with burlwood.exe.</p></div>
+      </div></div>
+  </section>
+</div>
+<footer><span class="eng">burlwood · GPL-3.0 · © 2026 Stijn Mommersteeg</span><span class="eng">github.com/stijnie2210/burlwood</span></footer>
+<script>
+const shot=document.getElementById('shot'),ptr=document.getElementById('pointer');ptr.style.transform='rotate(-60deg)';
+document.querySelectorAll('.pos').forEach(b=>b.addEventListener('click',()=>{
+  document.querySelectorAll('.pos').forEach(o=>o.setAttribute('aria-pressed',o===b));
+  ptr.style.transform=`rotate(${b.dataset.angle}deg)`;shot.src=b.dataset.src;shot.style.objectPosition=b.dataset.pos;
+  shot.style.transform=`scale(${b.dataset.zoom||1})`;shot.style.transformOrigin=b.dataset.pos;
+}));
+</script>
+</body></html>
