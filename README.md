@@ -6,7 +6,7 @@
 
 A fast desktop Git client, built first for macOS. One native binary made with [Wails](https://wails.io): a Go backend and a Vue 3 frontend, no Electron and no local web server.
 
-Burlwood (formerly gitgood) is a hobby project and still early (v0.1.x). Expect rough edges, and keep your usual backups of anything precious.
+Burlwood (formerly gitgood) is a hobby project and still early (pre-1.0). Expect rough edges, and keep your usual backups of anything precious.
 
 ![The commit graph with a commit's changed files](assets/screenshots/commit-graph.png)
 
