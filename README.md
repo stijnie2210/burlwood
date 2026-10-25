@@ -72,8 +72,8 @@ Unzip `burlwood-windows-amd64.zip` and run `burlwood.exe`.
 Requirements:
 
 - Go 1.25+
-- Node.js 20.19+ or 22.12+
-- [Wails CLI](https://wails.io/docs/gettingstarted/installation) v2
+- Node.js 20.19+, 22.13+ or 24+ (not 23)
+- [Wails CLI](https://wails.io/docs/gettingstarted/installation) v2.17, the version `go.mod` pins: `go install github.com/wailsapp/wails/v2/cmd/wails@v2.17.0`
 
 ```bash
 wails dev        # development build with hot reload
