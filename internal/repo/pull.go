@@ -4,10 +4,14 @@ import (
 	"strings"
 	"sync"
 
-	"gitgood/internal/gitcli"
+	"burlwood/internal/gitcli"
 )
 
-const autostashMessage = "gitgood-autostash"
+const (
+	autostashMessage = "burlwood-autostash"
+	// Written before the rename; still matched so a pull left conflicted across the update gets its stash back.
+	legacyAutostashMessage = "gitgood-autostash"
+)
 
 type autostashPhase int
 
@@ -205,7 +209,7 @@ func topAutostashRef(repoPath string) (string, bool, error) {
 	}
 	for line := range strings.SplitSeq(trimmed, "\n") {
 		ref, msg, ok := strings.Cut(line, "\t")
-		if ok && strings.Contains(msg, autostashMessage) {
+		if ok && (strings.Contains(msg, autostashMessage) || strings.Contains(msg, legacyAutostashMessage)) {
 			return ref, true, nil
 		}
 	}

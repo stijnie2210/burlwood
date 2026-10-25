@@ -17,11 +17,7 @@ type Session struct {
 }
 
 func sessionPath() (string, error) {
-	dir, err := os.UserConfigDir()
-	if err != nil {
-		return "", err
-	}
-	return filepath.Join(dir, "gitgood", "session.json"), nil
+	return configPath("session.json")
 }
 
 func LoadSession() (*Session, error) {

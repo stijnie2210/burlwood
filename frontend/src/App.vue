@@ -19,7 +19,7 @@ import { useStagingStore } from './stores/staging';
 import { useBranchesStore } from './stores/branches';
 import { usePrefsStore } from './stores/prefs';
 import { useToastStore } from './stores/toast';
-import logoUrl from './assets/images/logo-icon.png';
+import logoUrl from './assets/images/logo-icon.svg';
 
 const repos = useReposStore();
 const commits = useCommitsStore();
@@ -150,7 +150,7 @@ function makeResizer(
   };
 }
 
-const SIDEBAR_KEY = 'gitgood:sidebar-width';
+const SIDEBAR_KEY = 'burlwood:sidebar-width';
 const sidebarWidth = ref(parseInt(localStorage.getItem(SIDEBAR_KEY) ?? '240', 10));
 watch(sidebarWidth, (v) => localStorage.setItem(SIDEBAR_KEY, String(v)));
 const detailWidth = useDetailWidth();
@@ -186,7 +186,7 @@ function runAction(action: string) {
     prefsStore.openModal();
   } else if (action === 'find' && repos.activeRepo) {
     viewMode.value = 'commits';
-    nextTick(() => window.dispatchEvent(new CustomEvent('gitgood:find')));
+    nextTick(() => window.dispatchEvent(new CustomEvent('burlwood:find')));
   }
 }
 
@@ -256,7 +256,7 @@ onUnmounted(() => {
       <main class="main-panel">
         <div v-if="!repos.activeRepo" class="welcome">
           <img :src="logoUrl" class="welcome-logo" alt="" />
-          <h1 class="welcome-brand">git<span>good</span></h1>
+          <h1 class="welcome-brand">burl<span>wood</span></h1>
           <p>Open a repository to get started.</p>
           <button @click="repos.pickAndOpen()">Open Repository</button>
 

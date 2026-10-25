@@ -10,9 +10,9 @@ import (
 
 	"github.com/wailsapp/wails/v2/pkg/runtime"
 
-	"gitgood/internal/gitcli"
-	"gitgood/internal/graph"
-	"gitgood/internal/repo"
+	"burlwood/internal/gitcli"
+	"burlwood/internal/graph"
+	"burlwood/internal/repo"
 )
 
 type App struct {

@@ -1,4 +1,4 @@
-# gitgood — Development Reference
+# Burlwood — Development Reference
 
 GitKraken replacement. Single-binary desktop app: **Wails v2** (Go backend + Vue 3 frontend, no HTTP server, direct Go↔Vue bindings via auto-generated TypeScript).
 
@@ -12,7 +12,7 @@ Always use braces for if statements — never single-line `if (x) return` or `if
 
 ```bash
 wails dev        # hot-reload dev build (regenerates TS bindings automatically)
-wails build      # production .app bundle → build/bin/gitgood.app
+wails build      # production .app bundle → build/bin/Burlwood.app
 go build ./...   # Go-only compile check
 go test ./internal/... && go vet ./internal/...
 
@@ -78,9 +78,10 @@ internal/gitcli/
                                     HardResetWithUndo/UndoHardReset (stash create + previous HEAD)
 internal/repo/
   manager.go                        Manager{map[string]*git.Repository}; Open/Close/Get
-                                    RecentEntry → ~/Library/Application Support/gitgood/repos.json
+                                    RecentEntry → ~/Library/Application Support/burlwood/repos.json
   prefs.go / session.go /           AppPrefs (editor, auto-fetch, graph limit, diff context, date format, pull mode),
     windowprefs.go                  open tabs + active tab, window frame — JSON files next to repos.json
+  configdir.go                      configPath(): the settings folder; moves the pre-rename `gitgood` folder once
   branches.go                       ListBranches (for-each-ref), GetAheadBehind
   commits.go                        GetCommitGraph (git log --all --date-order + stashes + ref labels), GetCommitDiff
                                     buildHunks() — context lines from prefs.DiffContextLines
@@ -135,7 +136,7 @@ frontend/src/
     layout/LogViewerModal.vue       Full git output with Copy (stores/logModal.ts)
     layout/ToastStack.vue           Renders stores/toast.ts
     graph/CommitGraph.vue           @tanstack/vue-virtual virtualizer; canvas-per-row; resizable graph column
-                                    (width in localStorage `gitgood:graph-width`)
+                                    (width in localStorage `burlwood:graph-width`)
     graph/CommitRow.vue             Single row: canvas + shortHash + labels + subject
     graph/CommitDetail.vue          Commit metadata + CommitFileList / FileDiffView
     graph/CommitFileList.vue        Changed files with A/M/D/R status

@@ -37,7 +37,7 @@ const commits = useCommitsStore();
 const staging = useStagingStore();
 const toast = useToastStore();
 
-const STAGING_FL_KEY = 'gitgood:stagingFileListWidth';
+const STAGING_FL_KEY = 'burlwood:stagingFileListWidth';
 const fileListWidth = ref(parseInt(localStorage.getItem(STAGING_FL_KEY) ?? '300', 10));
 watch(fileListWidth, (v) => localStorage.setItem(STAGING_FL_KEY, String(v)));
 

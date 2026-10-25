@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	"gitgood/internal/gitcli"
+	"burlwood/internal/gitcli"
 )
 
 type SwitchResult struct {
@@ -45,7 +45,7 @@ func (m *Manager) SwitchBranch(repoPath, target string, trackRemote bool) (Switc
 		}
 	}
 
-	stashMsg := "gitgood: auto-stash before switching to " + target
+	stashMsg := "burlwood: auto-stash before switching to " + target
 	if err := gitcli.StashPushNamed(repoPath, stashMsg); err != nil {
 		return SwitchResult{}, fmt.Errorf("stash failed: %w", err)
 	}

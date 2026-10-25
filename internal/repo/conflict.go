@@ -6,7 +6,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"gitgood/internal/gitcli"
+	"burlwood/internal/gitcli"
 )
 
 type ConflictContent struct {

@@ -4,7 +4,7 @@ import (
 	"strconv"
 	"strings"
 
-	"gitgood/internal/gitcli"
+	"burlwood/internal/gitcli"
 )
 
 type BranchInfo struct {

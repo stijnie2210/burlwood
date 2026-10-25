@@ -7,7 +7,7 @@ import (
 	"sync"
 )
 
-const pathMarker = "__GITGOOD_PATH__"
+const pathMarker = "__BURLWOOD_PATH__"
 
 var (
 	shellPathOnce  sync.Once

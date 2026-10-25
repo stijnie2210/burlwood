@@ -56,7 +56,7 @@ const collapsed = ref<CollapsedState>({ local: false, remote: false, stashes: fa
 const remoteHeight = ref(200);
 
 function prefsKey(repoPath: string) {
-  return `gitgood:sidebar:prefs:${repoPath}`;
+  return `burlwood:sidebar:prefs:${repoPath}`;
 }
 
 function loadPrefs(repoPath: string) {
@@ -863,7 +863,7 @@ async function confirmStashRename() {
         <div class="ctx-menu-confirm">
           <p class="ctx-menu-confirm-text">
             Drop "{{ stashCtxMenu.ref }}"? Its changes are deleted from the stash list and can't be
-            restored from gitgood.
+            restored from Burlwood.
           </p>
           <div class="ctx-menu-row">
             <button class="ctx-menu-btn ctx-menu-btn-danger" @click="confirmStashDrop()">

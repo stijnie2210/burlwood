@@ -5,7 +5,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"gitgood/internal/gitcli"
+	"burlwood/internal/gitcli"
 )
 
 func gitIn(t *testing.T, dir string, args ...string) string {

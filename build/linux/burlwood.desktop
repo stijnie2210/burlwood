@@ -1,7 +1,7 @@
 [Desktop Entry]
-Name=GitGood
-Exec=gitgood
-Icon=gitgood
+Name=Burlwood
+Exec=burlwood
+Icon=burlwood
 Type=Application
 Categories=Development;
 Terminal=false

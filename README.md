@@ -1,12 +1,12 @@
 <p align="center">
-  <img src="frontend/src/assets/images/logo-icon.png" alt="" width="96">
+  <img src="assets/brand/burlwood-icon.svg" alt="" width="128">
 </p>
 
-<h1 align="center">gitgood</h1>
+<h1 align="center">Burlwood</h1>
 
 A fast desktop Git client, built first for macOS. One native binary made with [Wails](https://wails.io): a Go backend and a Vue 3 frontend, no Electron and no local web server.
 
-gitgood is a hobby project and still early (v0.1.x). Expect rough edges, and keep your usual backups of anything precious.
+Burlwood (formerly gitgood) is a hobby project and still early (v0.1.x). Expect rough edges, and keep your usual backups of anything precious.
 
 ![The commit graph with a commit's changed files](assets/screenshots/commit-graph.png)
 
@@ -29,16 +29,16 @@ Not supported yet: HTTPS authentication for private repositories. SSH remotes wo
 
 ## Installing
 
-Download the latest build from [Releases](https://github.com/stijnie2210/gitgood/releases).
+Download the latest build from [Releases](https://github.com/stijnie2210/burlwood/releases).
 
-gitgood calls the `git` on your system for most operations, so git must be installed and on your `PATH`.
+Burlwood calls the `git` on your system for most operations, so git must be installed and on your `PATH`.
 
 ### macOS
 
-Open `gitgood-mac-universal.dmg` and drag gitgood to Applications. The app isn't signed with an Apple Developer ID, so macOS blocks it on the first launch. Clear the quarantine flag once:
+Open `burlwood-mac-universal.dmg` and drag Burlwood to Applications. The app isn't signed with an Apple Developer ID, so macOS blocks it on the first launch. Clear the quarantine flag once:
 
 ```bash
-xattr -dr com.apple.quarantine /Applications/gitgood.app
+xattr -dr com.apple.quarantine /Applications/Burlwood.app
 ```
 
 ### Linux
@@ -59,13 +59,13 @@ sudo pacman -S webkit2gtk-4.1
 Then make it executable and run it:
 
 ```bash
-chmod +x gitgood-linux-amd64.AppImage
-./gitgood-linux-amd64.AppImage
+chmod +x burlwood-linux-amd64.AppImage
+./burlwood-linux-amd64.AppImage
 ```
 
 ### Windows
 
-Unzip `gitgood-windows-amd64.zip` and run `gitgood.exe`.
+Unzip `burlwood-windows-amd64.zip` and run `burlwood.exe`.
 
 ## Building from source
 
@@ -97,4 +97,4 @@ The Go side runs your system `git` for almost everything and parses its output; 
 
 Copyright © 2026 Stijn Mommersteeg
 
-gitgood is free software: you can redistribute it and/or modify it under the terms of the [GNU General Public License v3.0](LICENSE). If you distribute a modified version, it must also be released under the GPL with its source code.
+Burlwood is free software: you can redistribute it and/or modify it under the terms of the [GNU General Public License v3.0](LICENSE). If you distribute a modified version, it must also be released under the GPL with its source code.

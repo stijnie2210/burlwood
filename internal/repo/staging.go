@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	"gitgood/internal/gitcli"
+	"burlwood/internal/gitcli"
 )
 
 func (m *Manager) StageFile(repoPath, path string) error {

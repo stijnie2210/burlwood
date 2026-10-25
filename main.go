@@ -19,14 +19,14 @@ func main() {
 	app := NewApp()
 
 	appMenu := menu.NewMenu()
-	gitgoodMenu := appMenu.AddSubmenu("gitgood")
-	gitgoodMenu.AddText("Settings…", keys.CmdOrCtrl(","), func(_ *menu.CallbackData) {
+	appNameMenu := appMenu.AddSubmenu("Burlwood")
+	appNameMenu.AddText("Settings…", keys.CmdOrCtrl(","), func(_ *menu.CallbackData) {
 		if app.ctx != nil {
 			runtime.EventsEmit(app.ctx, "open-preferences")
 		}
 	})
-	gitgoodMenu.AddSeparator()
-	gitgoodMenu.AddText("Quit gitgood", keys.CmdOrCtrl("q"), func(_ *menu.CallbackData) {
+	appNameMenu.AddSeparator()
+	appNameMenu.AddText("Quit Burlwood", keys.CmdOrCtrl("q"), func(_ *menu.CallbackData) {
 		if app.ctx != nil {
 			runtime.Quit(app.ctx)
 		}
@@ -59,7 +59,7 @@ func main() {
 	viewMenu.AddText("Find Commit…", keys.CmdOrCtrl("f"), emit("find"))
 
 	err := wails.Run(&options.App{
-		Title:     "gitgood",
+		Title:     "Burlwood",
 		Width:     1440,
 		Height:    900,
 		MinWidth:  960,

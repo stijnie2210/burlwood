@@ -7,8 +7,8 @@ import (
 
 	gogitdiff "github.com/go-git/go-git/v5/plumbing/format/diff"
 
-	"gitgood/internal/gitcli"
-	"gitgood/internal/graph"
+	"burlwood/internal/gitcli"
+	"burlwood/internal/graph"
 )
 
 func (m *Manager) GetCommitGraph(repoPath string, limit int) ([]graph.GraphRow, error) {

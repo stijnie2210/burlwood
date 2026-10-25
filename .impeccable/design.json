@@ -1,7 +1,7 @@
 {
   "schemaVersion": 2,
   "generatedAt": "2026-10-24T20:05:33+00:00",
-  "title": "Design System: gitgood",
+  "title": "Design System: Burlwood",
   "extensions": {
     "colorMeta": {
       "accent-fill": {
@@ -546,7 +546,7 @@
   ],
   "narrative": {
     "northStar": "The Lab Notebook",
-    "overview": "gitgood is where a developer reads what happened and decides what happens next. The notebook metaphor sets the priorities: the entries (commit history, diffs, conflicts) are the content, and everything around them is the binding. It should be quiet, neutral, and steady enough to read for hours. The chrome uses macOS's own vocabulary (system fonts, neutral greys, system-blue actions, blue-highlighted menus) so the app feels at home next to Xcode and Finder rather than like a themed web page.\n\nColour is reserved for meaning. A green line was added and a red line was removed. Orange is a modified file. Blue is the thing you can act on. If a colour does not carry one of those meanings, it should not be there. The UI is dense because git work is dense, but it is never cramped: text stays at or above 11px, every text level clears 4.5:1 contrast, and code gets its own monospace voice.\n\nDestructive operations are written like careful notebook corrections: they name their consequence and can be undone where git allows (discard and hard reset show an Undo toast). Anything that can't be undone, such as force-pushing or force-deleting, gets its own explicit, red-filled step.",
+    "overview": "Burlwood is where a developer reads what happened and decides what happens next. The notebook metaphor sets the priorities: the entries (commit history, diffs, conflicts) are the content, and everything around them is the binding. It should be quiet, neutral, and steady enough to read for hours. The chrome uses macOS's own vocabulary (system fonts, neutral greys, system-blue actions, blue-highlighted menus) so the app feels at home next to Xcode and Finder rather than like a themed web page.\n\nColour is reserved for meaning. A green line was added and a red line was removed. Orange is a modified file. Blue is the thing you can act on. If a colour does not carry one of those meanings, it should not be there. The UI is dense because git work is dense, but it is never cramped: text stays at or above 11px, every text level clears 4.5:1 contrast, and code gets its own monospace voice.\n\nDestructive operations are written like careful notebook corrections: they name their consequence and can be undone where git allows (discard and hard reset show an Undo toast). Anything that can't be undone, such as force-pushing or force-deleting, gets its own explicit, red-filled step.",
     "keyCharacteristics": [
       "Neutral grey surfaces layered by tone, not by borders or shadows",
       "One accent (system blue) for actions, focus and selection",
