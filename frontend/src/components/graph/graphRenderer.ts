@@ -2,7 +2,7 @@ import type { GraphRow } from '../../stores/commits';
 
 const CELL_W = 14;
 const DOT_R = 4;
-const KNOT_R = 6;
+const KNOT_R = 5.5;
 
 export { CELL_W };
 

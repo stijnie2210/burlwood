@@ -133,12 +133,17 @@ watch(
   () => virtualizer.value.scrollToIndex(0)
 );
 
-// A commit picked elsewhere (a tag in the sidebar, a parent link) may be off-screen.
-watch(selectedIndex, (idx) => {
-  if (idx >= 0) {
-    virtualizer.value.scrollToIndex(idx, { align: 'auto' });
+// A commit picked elsewhere (a tag in the sidebar, a parent link) may be off-screen. Only a new
+// selection scrolls: rows shifting under a kept selection (auto-fetch, search) must not.
+watch(
+  () => commits.selectedHash,
+  () => {
+    const idx = selectedIndex.value;
+    if (idx >= 0) {
+      virtualizer.value.scrollToIndex(idx, { align: 'auto' });
+    }
   }
-});
+);
 
 const fetchStatus = computed(() => {
   // The shared clock ticks once a minute, so a fetch can be newer than "now".

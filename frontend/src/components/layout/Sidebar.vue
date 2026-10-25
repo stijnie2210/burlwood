@@ -152,6 +152,7 @@ watch(
       branches.load(path);
       stash.load(path);
       loadPrefs(path);
+      collapsedRemotes.value = {};
     } else {
       branches.clear();
       stash.clear();
@@ -260,6 +261,15 @@ const roving = ref({ local: 0, remote: 0, tag: 0, stash: 0 });
 function rovingTab(list: 'local' | 'remote' | 'tag' | 'stash', i: number, length: number) {
   return i === Math.min(roving.value[list], length - 1) ? 0 : -1;
 }
+
+// The remote branches' single Tab stop must be on a branch that is rendered, not inside a
+// collapsed group.
+const remoteTabStop = computed(() => {
+  const visible = remoteGroups.value
+    .filter((g) => remoteExpanded(g.remote))
+    .flatMap((g) => g.items.map((item) => item.index));
+  return visible.includes(roving.value.remote) ? roving.value.remote : (visible[0] ?? -1);
+});
 
 watch(
   () => ctxMenu.value?.mode,
@@ -750,7 +760,7 @@ async function confirmStashRename() {
                 role="option"
                 data-list="remote"
                 :title="'Double-click or Enter to check out ' + b.remote + '/' + b.name"
-                :tabindex="rovingTab('remote', i, filteredRemote.length)"
+                :tabindex="i === remoteTabStop ? 0 : -1"
                 @focus="roving.remote = i"
                 @dblclick="switchTo(b.remote + '/' + b.name, true)"
                 @keydown.enter="switchTo(b.remote + '/' + b.name, true)"

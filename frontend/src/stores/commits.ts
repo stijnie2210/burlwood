@@ -5,6 +5,7 @@ import type { graph, repo } from '../../wailsjs/go/models';
 import { usePrefsStore } from './prefs';
 import { isActive } from './repos';
 import { describeGitError } from '../utils/gitErrors';
+import { orderByFolder } from '../utils/folders';
 
 export type GraphRow = graph.GraphRow;
 export type FileDiff = repo.FileDiff;
@@ -104,7 +105,7 @@ export const useCommitsStore = defineStore('commits', () => {
     try {
       const result = await GetCommitDiff(repoPath, hash);
       if (currentRepoPath.value === repoPath && selectedHash.value === hash) {
-        diff.value = result;
+        diff.value = orderByFolder(result, (f) => f.newPath || f.oldPath || '');
       }
     } catch (e) {
       if (currentRepoPath.value === repoPath) {

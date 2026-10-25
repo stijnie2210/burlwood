@@ -102,3 +102,33 @@ func TestCommitGraph_HidesRemoteHEADLabel(t *testing.T) {
 		t.Fatalf("want main and origin/main, got %v", names)
 	}
 }
+
+// git quotes non-ASCII paths by default, which used to leave binary files without a name.
+func TestCommitDiff_NonASCIIBinaryPath(t *testing.T) {
+	dir := newRepo(t)
+	writeRepoFile(t, dir, "café.png", "\x00\x01\x02binary")
+	gitIn(t, dir, "add", ".")
+	gitIn(t, dir, "commit", "-q", "-m", "add image")
+	head := gitIn(t, dir, "rev-parse", "HEAD")
+
+	diffs, err := getCommitDiffShell(dir, head[:len(head)-1])
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(diffs) != 1 || !diffs[0].IsBinary || diffs[0].NewPath != "café.png" {
+		t.Fatalf("want binary café.png, got %+v", diffs)
+	}
+}
+
+func TestCommitGraph_DetachedHEADGetsHeadLabel(t *testing.T) {
+	dir := newRepo(t)
+	writeRepoFile(t, dir, "a.txt", "two\n")
+	gitIn(t, dir, "commit", "-q", "-am", "second")
+	gitIn(t, dir, "checkout", "-q", "--detach", "HEAD~1")
+	head := gitIn(t, dir, "rev-parse", "HEAD")
+
+	labels := buildLabelMapShell(dir)[head[:len(head)-1]]
+	if len(labels) == 0 || labels[0].Type != "head" || labels[0].Name != "HEAD" {
+		t.Fatalf("want a HEAD label first on the detached commit, got %+v", labels)
+	}
+}

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { parentDir } from '../../utils/folders';
 import { ref, watch, computed, onMounted, onUnmounted, nextTick } from 'vue';
 import type { Ref } from 'vue';
 import { isImageFile, imageDataUrl } from '../../utils/imageUtils';
@@ -63,11 +64,6 @@ const startResize = makeResizer(fileListWidth, 180, 520);
 
 function baseName(p: string) {
   return p.split('/').pop() ?? p;
-}
-
-function parentDir(p: string) {
-  const slash = p.lastIndexOf('/');
-  return slash === -1 ? '' : p.slice(0, slash);
 }
 
 const repoPath = () => repos.activeRepo?.path ?? '';
@@ -1462,6 +1458,7 @@ async function doAbortRebase() {
 .file-name {
   flex: 1;
   min-width: 0;
+  color: var(--text-primary);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -1469,7 +1466,6 @@ async function doAbortRebase() {
 .file-base {
   font-family: var(--font-mono);
   font-size: var(--text-row);
-  color: var(--text-primary);
 }
 .file-dir {
   margin-left: 6px;

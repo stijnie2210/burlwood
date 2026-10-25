@@ -162,6 +162,15 @@ func buildLabelMapShell(repoPath string) map[string][]graph.Label {
 		labelMap[hash] = append(labelMap[hash], label)
 	}
 
+	// A detached HEAD has no branch to carry the "head" label, so it gets one of its own.
+	if headBranch == "" {
+		if head, err := gitcli.Run(repoPath, "rev-parse", "HEAD"); err == nil {
+			if hash := strings.TrimSpace(head.Stdout); hash != "" {
+				labelMap[hash] = append([]graph.Label{{Name: "HEAD", Type: "head"}}, labelMap[hash]...)
+			}
+		}
+	}
+
 	stashResult, _ := gitcli.Run(repoPath, "stash", "list", "--format=%gd\t%H")
 	if stashResult.Stdout != "" {
 		for line := range strings.SplitSeq(strings.TrimSpace(stashResult.Stdout), "\n") {
@@ -212,7 +221,7 @@ func (m *Manager) GetCommitDiff(repoPath, hash string) ([]FileDiff, error) {
 func getCommitDiffShell(repoPath, hash string) ([]FileDiff, error) {
 	prefs, _ := LoadPrefs()
 	ctx := fmt.Sprintf("-U%d", prefs.DiffContextLines)
-	result, err := gitcli.Run(repoPath, "diff-tree", "--no-commit-id", "-p", "--root", ctx, hash)
+	result, err := gitcli.Run(repoPath, "-c", "core.quotePath=false", "diff-tree", "--no-commit-id", "-p", "--root", ctx, hash)
 	if err != nil {
 		return nil, fmt.Errorf("git diff-tree: %w", err)
 	}
@@ -222,7 +231,7 @@ func getCommitDiffShell(repoPath, hash string) ([]FileDiff, error) {
 	// Stash and merge commits have multiple parents and diff-tree prints nothing for them.
 	// diff-tree ignores --first-parent, so "-m --first-parent" emitted one diff per parent and
 	// every file showed up twice; compare against the first parent directly instead.
-	result, err = gitcli.Run(repoPath, "diff", ctx, hash+"^1", hash)
+	result, err = gitcli.Run(repoPath, "-c", "core.quotePath=false", "diff", ctx, hash+"^1", hash)
 	if err != nil || result.Stdout == "" {
 		return []FileDiff{}, nil
 	}

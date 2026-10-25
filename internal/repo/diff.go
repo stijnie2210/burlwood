@@ -71,7 +71,7 @@ func (m *Manager) GetWorkingDiff(repoPath, path string, staged bool) ([]FileDiff
 		// Check for untracked file: diff against /dev/null
 		st, _ := gitcli.Run(repoPath, "status", "--porcelain", "--", path)
 		if len(st.Stdout) >= 2 && st.Stdout[0] == '?' {
-			result, err := gitcli.Run(repoPath, "diff", "--no-index", ctx, "/dev/null", path)
+			result, err := gitcli.Run(repoPath, "-c", "core.quotePath=false", "diff", "--no-index", ctx, "/dev/null", path)
 			if err != nil {
 				// exit code 1 = differences found — not an error for --no-index
 				if e, ok := err.(*gitcli.ExitError); ok && e.Code == 1 {
@@ -87,9 +87,9 @@ func (m *Manager) GetWorkingDiff(repoPath, path string, staged bool) ([]FileDiff
 
 	var args []string
 	if staged {
-		args = []string{"diff", "--cached", ctx, "--", path}
+		args = []string{"-c", "core.quotePath=false", "diff", "--cached", ctx, "--", path}
 	} else {
-		args = []string{"diff", ctx, "--", path}
+		args = []string{"-c", "core.quotePath=false", "diff", ctx, "--", path}
 	}
 	result, err := gitcli.Run(repoPath, args...)
 	if err != nil {
@@ -114,19 +114,29 @@ func parseUnifiedDiff(output string) []FileDiff {
 	var diffs []FileDiff
 	var cur *FileDiff
 	var curHunk *Hunk
+	var curHeader string
 	oldLineNo, newLineNo := 0, 0
+
+	finish := func() {
+		if curHunk != nil {
+			cur.Hunks = append(cur.Hunks, *curHunk)
+			curHunk = nil
+		}
+		if cur.OldPath == "" && cur.NewPath == "" {
+			cur.OldPath = headerPath(curHeader)
+			cur.NewPath = cur.OldPath
+		}
+		diffs = append(diffs, *cur)
+	}
 
 	for line := range strings.SplitSeq(output, "\n") {
 		switch {
 		case strings.HasPrefix(line, "diff --git "):
 			if cur != nil {
-				if curHunk != nil {
-					cur.Hunks = append(cur.Hunks, *curHunk)
-					curHunk = nil
-				}
-				diffs = append(diffs, *cur)
+				finish()
 			}
 			cur = &FileDiff{Hunks: []Hunk{}}
+			curHeader = line
 
 		case cur == nil:
 		case strings.HasPrefix(line, "--- "):
@@ -178,12 +188,24 @@ func parseUnifiedDiff(output string) []FileDiff {
 	}
 
 	if cur != nil {
-		if curHunk != nil {
-			cur.Hunks = append(cur.Hunks, *curHunk)
-		}
-		diffs = append(diffs, *cur)
+		finish()
 	}
 	return diffs
+}
+
+// A mode-only change has no ---/+++ or Binary line, so the path comes from "diff --git a/P b/P".
+// The header is ambiguous when the path contains " b/", but both halves name the same path here.
+func headerPath(header string) string {
+	rest := strings.TrimPrefix(header, "diff --git ")
+	n := (len(rest) - len("a/ b/")) / 2
+	if n <= 0 || len(rest) != 2*n+len("a/ b/") || !strings.HasPrefix(rest, "a/") {
+		return ""
+	}
+	p := rest[2 : 2+n]
+	if rest[2+n:] != " b/"+p {
+		return ""
+	}
+	return p
 }
 
 // Binary diffs have no ---/+++ lines; the paths only appear in "Binary files a/x and b/x differ".

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 import { useCommitsStore } from '../../stores/commits';
+import { parentDir } from '../../utils/folders';
 
 const commits = useCommitsStore();
 
@@ -57,8 +58,7 @@ const entries = computed<FileEntry[]>(() =>
 const groups = computed(() => {
   const byDir = new Map<string, FileEntry[]>();
   for (const e of entries.value) {
-    const slash = e.path.lastIndexOf('/');
-    const dir = slash === -1 ? '/' : e.path.slice(0, slash);
+    const dir = parentDir(e.path) || '/';
     const list = byDir.get(dir);
     if (list) {
       list.push(e);

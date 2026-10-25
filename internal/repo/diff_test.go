@@ -294,6 +294,20 @@ Binary files a/icon.png and b/icon.png differ
 	}
 }
 
+func TestParseUnifiedDiff_ModeChangeOnly(t *testing.T) {
+	input := `diff --git a/scripts/run me.sh b/scripts/run me.sh
+old mode 100644
+new mode 100755
+`
+	diffs := parseUnifiedDiff(input)
+	if len(diffs) != 1 {
+		t.Fatalf("expected 1 FileDiff, got %d", len(diffs))
+	}
+	if diffs[0].OldPath != "scripts/run me.sh" || diffs[0].NewPath != "scripts/run me.sh" {
+		t.Errorf("paths = (%q, %q), want both %q", diffs[0].OldPath, diffs[0].NewPath, "scripts/run me.sh")
+	}
+}
+
 func TestParseUnifiedDiff_MultipleFiles(t *testing.T) {
 	input := `diff --git a/a.go b/a.go
 --- a/a.go

@@ -118,6 +118,7 @@ frontend/src/
     date.ts                         formatDate (relative | absolute, from prefs)
     diffRows.ts                     changedRanges (word-level change within a paired line), pairChanges, splitRows
     initials.ts                     author initials for the avatar circles
+    folders.ts                      parentDir, orderByFolder (commit diffs are stored in folder order)
   App.smoke.test.ts                 mounts the whole app on stubbed Wails bindings — catches setup-time crashes
   assets/labels.css                 ref/tag/stash label pills, rendered by graph/RefLabel.vue
   assets/fonts/                     Bricolage Grotesque subset for the welcome wordmark only (SIL OFL)
@@ -244,3 +245,10 @@ Right-click on any file item (conflicts, unstaged, staged). Items are contextual
 
 - Branch context menu: Merge into current, Set upstream
 - HTTPS auth via go-keyring for push/pull on private repos (SSH agent already works)
+- A commit selected outside the loaded rows (a parent past the commit limit, an old tag, or one hidden by Find) shows
+  only its files: CommitDetail has no row for its hash, subject and parent links
+- Changed-word highlight (`utils/diffRows.ts`) works on UTF-16 units and ASCII word characters: an emoji can split,
+  and a mark inside a string literal breaks the syntax colours after it
+- Copy hash gives no feedback when the clipboard write fails; select-by-hash and copy-hash each exist twice
+  (CommitGraph/CommitDetail, Sidebar selectTag/selectStash)
+- ListTags peels nested annotated tags one level only, and a tag that shares a branch's name shows as `tags/<name>`
