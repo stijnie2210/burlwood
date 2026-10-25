@@ -1,6 +1,6 @@
 {
   "schemaVersion": 2,
-  "generatedAt": "2026-10-24T20:05:33+00:00",
+  "generatedAt": "2026-10-25T19:25:33+00:00",
   "title": "Design System: Burlwood",
   "extensions": {
     "colorMeta": {
@@ -9,14 +9,14 @@
         "displayName": "System Blue",
         "canonical": "oklch(56.2% 0.179 260)",
         "tonalRamp": [
-          "#000925",
-          "#0a224a",
-          "#1e3e74",
-          "#345c9f",
-          "#517cc6",
-          "#789fe0",
-          "#a5c5fb",
-          "#d7f0ff"
+          "#000826",
+          "#001f5a",
+          "#003994",
+          "#195ac5",
+          "#3d7dec",
+          "#6ea4ff",
+          "#abcaff",
+          "#e5efff"
         ]
       },
       "accent-fill-hover": {
@@ -24,14 +24,14 @@
         "displayName": "System Blue (hover)",
         "canonical": "oklch(52.9% 0.170 260)",
         "tonalRamp": [
-          "#000925",
-          "#0a224a",
-          "#1e3e74",
-          "#345c9f",
-          "#517cc6",
-          "#789fe0",
-          "#a5c5fb",
-          "#d7f0ff"
+          "#000826",
+          "#001f59",
+          "#003994",
+          "#1f5bc0",
+          "#417ee7",
+          "#6ea4ff",
+          "#abcaff",
+          "#e5efff"
         ]
       },
       "accent-text": {
@@ -39,134 +39,134 @@
         "displayName": "Link Blue",
         "canonical": "oklch(71.4% 0.152 254)",
         "tonalRamp": [
-          "#000a24",
-          "#01234a",
-          "#134073",
-          "#285e9e",
-          "#457fc5",
-          "#70a1de",
-          "#9fc7fa",
-          "#d2f2ff"
+          "#000b1f",
+          "#00244d",
+          "#004180",
+          "#0c60b4",
+          "#3883da",
+          "#5fa8ff",
+          "#a4cdff",
+          "#e4f0ff"
         ]
       },
       "surface-sunken": {
         "role": "neutral",
-        "displayName": "Ink Well",
-        "canonical": "oklch(19.2% 0.004 286)",
+        "displayName": "Gauge Face",
+        "canonical": "oklch(18.4% 0.005 67)",
         "tonalRamp": [
-          "#0b0b0d",
-          "#242426",
-          "#3f3f42",
-          "#5d5d60",
-          "#7d7d7f",
-          "#9e9ea1",
-          "#c4c4c7",
-          "#eeeef1"
+          "#0d0b09",
+          "#272522",
+          "#44413f",
+          "#63615e",
+          "#84827f",
+          "#a7a4a2",
+          "#cbc8c6",
+          "#f1eeeb"
         ]
       },
       "surface-base": {
         "role": "neutral",
-        "displayName": "Notebook Page",
-        "canonical": "oklch(22.3% 0.004 286)",
+        "displayName": "Panel",
+        "canonical": "oklch(21.1% 0.005 68)",
         "tonalRamp": [
-          "#0b0b0d",
-          "#242426",
-          "#3f3f42",
-          "#5d5d60",
-          "#7d7d7f",
-          "#9e9ea1",
-          "#c4c4c6",
-          "#eeeef1"
+          "#0d0b09",
+          "#272522",
+          "#44413f",
+          "#63615e",
+          "#84827f",
+          "#a7a4a2",
+          "#cbc8c6",
+          "#f1eeeb"
         ]
       },
       "surface-raised": {
         "role": "neutral",
-        "displayName": "Ruled Line",
-        "canonical": "oklch(25.3% 0.006 286)",
+        "displayName": "Bezel",
+        "canonical": "oklch(24.0% 0.006 78)",
         "tonalRamp": [
-          "#0b0b0d",
-          "#242427",
-          "#3f3f43",
-          "#5d5d61",
-          "#7d7d80",
-          "#9e9ea2",
-          "#c3c4c8",
-          "#eeeef2"
+          "#0d0b08",
+          "#272522",
+          "#44423e",
+          "#63615d",
+          "#84827e",
+          "#a7a5a1",
+          "#cbc9c5",
+          "#f1eeea"
         ]
       },
       "surface-chrome": {
         "role": "neutral",
-        "displayName": "Binding",
-        "canonical": "oklch(27.8% 0.005 286)",
+        "displayName": "Housing",
+        "canonical": "oklch(26.7% 0.007 68)",
         "tonalRamp": [
-          "#0b0b0d",
-          "#242427",
-          "#3f3f43",
-          "#5d5d61",
-          "#7d7d80",
-          "#9e9ea2",
-          "#c4c4c7",
-          "#eeeef2"
+          "#0d0b08",
+          "#272421",
+          "#45413e",
+          "#64605d",
+          "#85827e",
+          "#a8a4a0",
+          "#ccc8c4",
+          "#f2eeea"
         ]
       },
       "surface-overlay": {
         "role": "neutral",
-        "displayName": "Loose Leaf",
-        "canonical": "oklch(30.2% 0.005 286)",
+        "displayName": "Overlay",
+        "canonical": "oklch(29.5% 0.008 75)",
         "tonalRamp": [
-          "#0b0b0d",
-          "#242427",
-          "#3f3f42",
-          "#5d5d61",
-          "#7d7d80",
-          "#9e9ea2",
-          "#c4c4c7",
-          "#eeeef2"
+          "#0d0b07",
+          "#272521",
+          "#45413d",
+          "#64615c",
+          "#85827d",
+          "#a8a49f",
+          "#ccc8c3",
+          "#f2eee8"
         ]
       },
       "surface-field": {
         "role": "neutral",
         "displayName": "Field",
-        "canonical": "oklch(21.4% 0.004 286)",
+        "canonical": "oklch(19.7% 0.005 68)",
         "tonalRamp": [
-          "#0b0b0d",
-          "#242426",
-          "#3f3f42",
-          "#5d5d60",
-          "#7d7d7f",
-          "#9e9ea1",
-          "#c4c4c6",
-          "#eeeef1"
+          "#0d0b09",
+          "#272522",
+          "#44413f",
+          "#63615e",
+          "#84827f",
+          "#a7a4a2",
+          "#cbc8c6",
+          "#f1eeeb"
         ]
       },
       "surface-control": {
         "role": "neutral",
         "displayName": "Control",
-        "canonical": "oklch(34.2% 0.007 286)",
+        "canonical": "oklch(33.6% 0.009 68)",
         "tonalRamp": [
-          "#0b0b0e",
-          "#242427",
-          "#3f3f43",
-          "#5d5d61",
-          "#7d7d81",
-          "#9e9ea3",
-          "#c3c3c8",
-          "#eeeef3"
+          "#0e0a07",
+          "#282421",
+          "#45413d",
+          "#65605c",
+          "#86817d",
+          "#a9a49f",
+          "#cdc8c3",
+          "#f3ede8"
         ]
       },
       "surface-control-hover": {
         "role": "neutral",
         "displayName": "Control Hover",
-        "canonical": "oklch(38.1% 0.007 286)",
+        "canonical": "oklch(37.4% 0.010 74)",
         "tonalRamp": [
-          "#0b0b0e",
-          "#242427",
-          "#3f3f43",
-          "#5d5d61",
-          "#7d7d81",
-          "#9e9ea2",
-          "#c3c3c8",
-          "#eeeef3"
+          "#0e0b07",
+          "#282420",
+          "#45413c",
+          "#65605b",
+          "#86817c",
+          "#a9a49e",
+          "#cdc8c2",
+          "#f3eee7"
         ]
       },
       "surface-selected": {
@@ -174,118 +174,118 @@
         "displayName": "Selection",
         "canonical": "oklch(33.3% 0.070 263)",
         "tonalRamp": [
-          "#010825",
-          "#112246",
-          "#2b3f65",
-          "#485d86",
-          "#677da8",
-          "#879fcb",
-          "#acc5f3",
-          "#d8efff"
+          "#000728",
+          "#122347",
+          "#2d4167",
+          "#4c6189",
+          "#6c83ad",
+          "#8ea6d2",
+          "#b1caf8",
+          "#e6efff"
         ]
       },
       "border-subtle": {
         "role": "neutral",
         "displayName": "Hairline",
-        "canonical": "oklch(31.0% 0.005 286)",
+        "canonical": "oklch(30.3% 0.008 75)",
         "tonalRamp": [
-          "#0b0b0d",
-          "#242427",
-          "#3f3f42",
-          "#5d5d60",
-          "#7d7d80",
-          "#9e9ea2",
-          "#c4c4c7",
-          "#eeeef2"
+          "#0d0b08",
+          "#272521",
+          "#45413d",
+          "#64615c",
+          "#85827d",
+          "#a8a49f",
+          "#ccc8c3",
+          "#f2eee8"
         ]
       },
       "border": {
         "role": "neutral",
         "displayName": "Border",
-        "canonical": "oklch(35.8% 0.007 286)",
+        "canonical": "oklch(35.1% 0.010 74)",
         "tonalRamp": [
-          "#0b0b0e",
-          "#242427",
-          "#3f3f43",
-          "#5d5d61",
-          "#7d7d81",
-          "#9e9ea3",
-          "#c3c3c8",
-          "#eeeef3"
+          "#0e0b07",
+          "#282420",
+          "#45413c",
+          "#65605b",
+          "#86817c",
+          "#a9a49e",
+          "#cdc8c2",
+          "#f3eee7"
         ]
       },
       "border-strong": {
         "role": "neutral",
         "displayName": "Strong Border",
-        "canonical": "oklch(41.8% 0.008 286)",
+        "canonical": "oklch(40.8% 0.012 72)",
         "tonalRamp": [
-          "#0b0b0f",
-          "#242328",
-          "#3f3f44",
-          "#5d5d62",
-          "#7d7d82",
-          "#9e9ea3",
-          "#c3c3c9",
-          "#eeeef4"
+          "#0e0a06",
+          "#29241f",
+          "#46413b",
+          "#66605a",
+          "#87817b",
+          "#aaa49d",
+          "#cec8c1",
+          "#f4ede6"
         ]
       },
       "text-primary": {
         "role": "neutral",
         "displayName": "Primary Text",
-        "canonical": "oklch(93.2% 0.003 286)",
+        "canonical": "oklch(93.6% 0.008 74)",
         "tonalRamp": [
-          "#0b0b0c",
-          "#242425",
-          "#3f3f41",
-          "#5d5d5f",
-          "#7d7d7f",
-          "#9e9ea0",
-          "#c4c4c6",
-          "#eeeef0"
+          "#0d0b08",
+          "#272521",
+          "#45413d",
+          "#64615c",
+          "#85827d",
+          "#a8a4a0",
+          "#ccc8c4",
+          "#f2eee9"
         ]
       },
       "text-secondary": {
         "role": "neutral",
         "displayName": "Secondary Text",
-        "canonical": "oklch(80.9% 0.007 286)",
+        "canonical": "oklch(81.0% 0.013 75)",
         "tonalRamp": [
-          "#0b0b0e",
-          "#242427",
-          "#3f3f43",
-          "#5d5d61",
-          "#7d7d81",
-          "#9e9ea3",
-          "#c3c3c8",
-          "#eeeef3"
+          "#0e0a06",
+          "#29241e",
+          "#46413a",
+          "#666059",
+          "#87817a",
+          "#aaa49c",
+          "#cec8c0",
+          "#f4ede5"
         ]
       },
       "text-tertiary": {
         "role": "neutral",
         "displayName": "Tertiary Text",
-        "canonical": "oklch(71.1% 0.007 286)",
+        "canonical": "oklch(74.7% 0.016 77)",
         "tonalRamp": [
-          "#0b0b0e",
-          "#242427",
-          "#3f3f43",
-          "#5d5d62",
-          "#7d7d81",
-          "#9e9ea3",
-          "#c3c3c9",
-          "#eeeef3"
+          "#0f0a04",
+          "#2a241c",
+          "#474139",
+          "#676057",
+          "#888178",
+          "#aba49a",
+          "#cfc8be",
+          "#f5ede3"
         ]
       },
       "text-on-accent": {
         "role": "neutral",
         "displayName": "On Accent",
-        "canonical": "oklch(100.0% 0.000 90)",
+        "canonical": "oklch(100.0% 0.000 0)",
         "tonalRamp": [
           "#0b0b0b",
-          "#242424",
-          "#404040",
-          "#5d5d5d",
-          "#7d7d7d",
-          "#9e9e9e",
-          "#c4c4c4",
+          "#252525",
+          "#424242",
+          "#616161",
+          "#828282",
+          "#a5a5a5",
+          "#c9c9c9",
           "#eeeeee"
         ]
       },
@@ -294,14 +294,14 @@
         "displayName": "Diff Green",
         "canonical": "oklch(74.7% 0.160 151)",
         "tonalRamp": [
-          "#001200",
-          "#002e0d",
-          "#004e22",
-          "#177039",
-          "#3a9256",
-          "#6bb17d",
-          "#9cd4a9",
-          "#d1fbda"
+          "#001003",
+          "#002e12",
+          "#005024",
+          "#007537",
+          "#089c4d",
+          "#45c16f",
+          "#6fe692",
+          "#c7ffd3"
         ]
       },
       "add-fg": {
@@ -309,14 +309,29 @@
         "displayName": "Pale Diff Green",
         "canonical": "oklch(89.6% 0.076 154)",
         "tonalRamp": [
-          "#001201",
-          "#002e11",
-          "#184b2d",
-          "#386a4a",
-          "#588b69",
-          "#79ad89",
-          "#9ed3ae",
-          "#cffcdc"
+          "#001004",
+          "#002e15",
+          "#1a4d2f",
+          "#3c6e4d",
+          "#5d906e",
+          "#7fb38f",
+          "#a3d8b3",
+          "#c8fed8"
+        ]
+      },
+      "add-change-bg": {
+        "role": "secondary",
+        "displayName": "Changed Word (added)",
+        "canonical": "oklch(74.7% 0.160 151 / 0.3)",
+        "tonalRamp": [
+          "#001003",
+          "#002e12",
+          "#005024",
+          "#007537",
+          "#089c4d",
+          "#45c16f",
+          "#6fe692",
+          "#c7ffd3"
         ]
       },
       "del": {
@@ -325,13 +340,13 @@
         "canonical": "oklch(73.4% 0.163 26)",
         "tonalRamp": [
           "#1f0001",
-          "#430f0e",
-          "#6b2623",
-          "#953e39",
-          "#bb5d56",
-          "#d8847c",
-          "#f6afa8",
-          "#ffdfd9"
+          "#4d0005",
+          "#81000e",
+          "#aa2d2c",
+          "#d2524c",
+          "#fa776e",
+          "#ffb3ab",
+          "#ffe9e6"
         ]
       },
       "del-fg": {
@@ -340,13 +355,28 @@
         "canonical": "oklch(85.7% 0.077 25)",
         "tonalRamp": [
           "#1f0001",
-          "#421010",
-          "#622e2b",
-          "#844c48",
-          "#a66b66",
-          "#ca8c86",
-          "#f2b1ab",
-          "#ffdfda"
+          "#431111",
+          "#65302d",
+          "#884f4b",
+          "#ac706b",
+          "#d1928d",
+          "#f8b6b0",
+          "#ffe9e6"
+        ]
+      },
+      "del-change-bg": {
+        "role": "secondary",
+        "displayName": "Changed Word (removed)",
+        "canonical": "oklch(73.4% 0.163 26 / 0.3)",
+        "tonalRamp": [
+          "#1f0001",
+          "#4d0005",
+          "#81000e",
+          "#aa2d2c",
+          "#d2524c",
+          "#fa776e",
+          "#ffb3ab",
+          "#ffe9e6"
         ]
       },
       "modified": {
@@ -354,14 +384,14 @@
         "displayName": "Signal Orange",
         "canonical": "oklch(77.6% 0.145 70)",
         "tonalRamp": [
-          "#1a0400",
-          "#3b1a00",
-          "#603400",
-          "#864f00",
-          "#ab6e0f",
-          "#c89351",
-          "#e7bb88",
-          "#ffe8c2"
+          "#140800",
+          "#361f00",
+          "#5d3900",
+          "#875500",
+          "#b37200",
+          "#de9324",
+          "#ffba63",
+          "#ffebd4"
         ]
       },
       "untracked": {
@@ -369,14 +399,14 @@
         "displayName": "Untracked Cyan",
         "canonical": "oklch(77.8% 0.105 214)",
         "tonalRamp": [
-          "#00101b",
-          "#002c3c",
-          "#004b60",
-          "#006b82",
-          "#008da4",
-          "#3eafc6",
-          "#81d3e6",
-          "#bffaff"
+          "#000e12",
+          "#002b33",
+          "#004b58",
+          "#006d7f",
+          "#0b92a9",
+          "#45b6cd",
+          "#6edbf3",
+          "#d2f6ff"
         ]
       },
       "danger-fill": {
@@ -385,13 +415,13 @@
         "canonical": "oklch(54.1% 0.186 27)",
         "tonalRamp": [
           "#1f0000",
-          "#430f0c",
-          "#6b2621",
-          "#953e37",
-          "#bb5d53",
-          "#d8847a",
-          "#f6b0a6",
-          "#ffdfd8"
+          "#4d0002",
+          "#810007",
+          "#b31a1a",
+          "#dc473e",
+          "#ff7366",
+          "#ffb3a9",
+          "#ffe9e5"
         ]
       },
       "danger-fill-hover": {
@@ -400,13 +430,13 @@
         "canonical": "oklch(49.8% 0.173 27)",
         "tonalRamp": [
           "#1f0000",
-          "#430f0c",
-          "#6b2621",
-          "#953e37",
-          "#bb5d54",
-          "#d8847a",
-          "#f6b0a6",
-          "#ffdfd8"
+          "#4d0002",
+          "#810007",
+          "#ae2622",
+          "#d64e44",
+          "#ff7366",
+          "#ffb3a9",
+          "#ffe9e5"
         ]
       },
       "tag": {
@@ -414,14 +444,14 @@
         "displayName": "Brass",
         "canonical": "oklch(79.0% 0.139 85)",
         "tonalRamp": [
-          "#170700",
-          "#351f00",
-          "#573a00",
-          "#7c5600",
-          "#9e7600",
-          "#bc994c",
-          "#ddc084",
-          "#ffecbf"
+          "#110a00",
+          "#312200",
+          "#553e00",
+          "#7b5c00",
+          "#a47b00",
+          "#cc9d23",
+          "#f2c252",
+          "#ffedc6"
         ]
       },
       "stash": {
@@ -429,14 +459,59 @@
         "displayName": "Lilac",
         "canonical": "oklch(74.3% 0.131 304)",
         "tonalRamp": [
-          "#110320",
-          "#2d1743",
-          "#4b306a",
-          "#6c4a93",
-          "#8d69b8",
-          "#ad8ed3",
-          "#d0b7f1",
-          "#f7e5ff"
+          "#130025",
+          "#340457",
+          "#522a79",
+          "#724b9d",
+          "#946cc2",
+          "#b78fe8",
+          "#d7b9ff",
+          "#f3eaff"
+        ]
+      },
+      "avatar": {
+        "role": "neutral",
+        "displayName": "Avatar",
+        "canonical": "oklch(42.2% 0.030 61)",
+        "tonalRamp": [
+          "#140801",
+          "#302216",
+          "#4e3f32",
+          "#6e5e50",
+          "#907f70",
+          "#b4a192",
+          "#d8c5b6",
+          "#feeadb"
+        ]
+      },
+      "brand-sapwood": {
+        "role": "tertiary",
+        "displayName": "Sapwood",
+        "canonical": "oklch(90.6% 0.054 81)",
+        "tonalRamp": [
+          "#120900",
+          "#322200",
+          "#513f1e",
+          "#715e3d",
+          "#937f5d",
+          "#b7a27f",
+          "#dcc6a2",
+          "#ffeccc"
+        ]
+      },
+      "brand-heartwood": {
+        "role": "tertiary",
+        "displayName": "Heartwood",
+        "canonical": "oklch(23.6% 0.031 53)",
+        "tonalRamp": [
+          "#150701",
+          "#312117",
+          "#503e33",
+          "#705d51",
+          "#927e71",
+          "#b6a093",
+          "#dac4b7",
+          "#ffeadd"
         ]
       }
     },
@@ -484,6 +559,21 @@
         "name": "toast-slide",
         "value": "transform/opacity 0.2s ease",
         "purpose": "Toast enter/leave."
+      },
+      {
+        "name": "welcome-rise",
+        "value": "520ms cubic-bezier(0.16, 1, 0.3, 1)",
+        "purpose": "The welcome screen rises once into place from 8px below; off under Reduce Motion."
+      },
+      {
+        "name": "welcome-rise",
+        "value": "520ms cubic-bezier(0.16, 1, 0.3, 1)",
+        "purpose": "The welcome screen rises once into place from 8px below; off under Reduce Motion."
+      },
+      {
+        "name": "welcome-rise",
+        "value": "520ms cubic-bezier(0.16, 1, 0.3, 1)",
+        "purpose": "The welcome screen rises once into place from 8px below; off under Reduce Motion."
       }
     ]
   },
@@ -502,7 +592,7 @@
       "refersTo": "button-secondary",
       "description": "Neutral control fill for everything that is not the primary action.",
       "html": "<button class=\"ds-btn-secondary\">Type a message to commit</button>",
-      "css": ".ds-btn-secondary{width:240px;padding:8px;border:none;border-radius:5px;background:var(--surface-control,#38383c);color:var(--text-secondary,#c0c0c5);font:500 12px -apple-system,BlinkMacSystemFont,system-ui,sans-serif;cursor:pointer}.ds-btn-secondary:hover{background:var(--surface-control-hover,#424246)}.ds-btn-secondary:focus-visible{outline:2px solid var(--focus-ring,#5aa5ff);outline-offset:2px}"
+      "css": ".ds-btn-secondary{width:240px;padding:8px;border:none;border-radius:5px;background:var(--surface-control,#3a3632);color:var(--text-secondary,#c6c0b8);font:500 12px -apple-system,BlinkMacSystemFont,system-ui,sans-serif;cursor:pointer}.ds-btn-secondary:hover{background:var(--surface-control-hover,#44403b)}.ds-btn-secondary:focus-visible{outline:2px solid var(--focus-ring,#5aa5ff);outline-offset:2px}"
     },
     {
       "name": "Destructive Confirmation",
@@ -510,7 +600,7 @@
       "refersTo": "button-destructive",
       "description": "In-menu confirmation that names the consequence before a destructive step.",
       "html": "<div class=\"ds-confirm\"><p>\"feature/x\" has commits that aren't merged into any other branch. Force deleting it leaves them reachable only through the reflog.</p><div class=\"ds-row\"><button class=\"ds-danger\">Force delete</button><button class=\"ds-plain\">Keep branch</button></div></div>",
-      "css": ".ds-confirm{width:250px;padding:8px 10px;background:var(--surface-overlay,#2e2e31);border:1px solid var(--border,#3c3c40);border-radius:6px;box-shadow:0 8px 24px rgba(0,0,0,.5);font-family:-apple-system,BlinkMacSystemFont,system-ui,sans-serif}.ds-confirm p{margin:0 0 8px;font-size:11px;line-height:1.4;color:var(--danger,#ff7b72)}.ds-row{display:flex;gap:6px}.ds-danger,.ds-plain{flex:1;padding:4px 0;border:none;border-radius:4px;font-size:12px;cursor:pointer}.ds-danger{background:var(--danger-fill,#c42f2a);color:#fff;font-weight:600}.ds-danger:hover{background:var(--danger-fill-hover,#b02824)}.ds-plain{background:var(--surface-control,#38383c);color:var(--text-secondary,#c0c0c5)}.ds-plain:hover{background:var(--surface-control-hover,#424246)}"
+      "css": ".ds-confirm{width:250px;padding:8px 10px;background:var(--surface-overlay,#2f2c28);border:1px solid var(--border,#3e3a35);border-radius:6px;box-shadow:0 8px 24px rgba(0,0,0,.5);font-family:-apple-system,BlinkMacSystemFont,system-ui,sans-serif}.ds-confirm p{margin:0 0 8px;font-size:11px;line-height:1.4;color:var(--danger,#ff7b72)}.ds-row{display:flex;gap:6px}.ds-danger,.ds-plain{flex:1;padding:4px 0;border:none;border-radius:4px;font-size:12px;cursor:pointer}.ds-danger{background:var(--danger-fill,#c42f2a);color:#fff;font-weight:600}.ds-danger:hover{background:var(--danger-fill-hover,#b02824)}.ds-plain{background:var(--surface-control,#3a3632);color:var(--text-secondary,#c6c0b8)}.ds-plain:hover{background:var(--surface-control-hover,#44403b)}"
     },
     {
       "name": "Text Field",
@@ -518,7 +608,7 @@
       "refersTo": "input",
       "description": "Commit summary and inline name inputs.",
       "html": "<input class=\"ds-input\" placeholder=\"Commit summary\" />",
-      "css": ".ds-input{width:240px;padding:6px 8px;background:var(--surface-field,#19191b);border:1px solid var(--border,#3c3c40);border-radius:4px;color:var(--text-primary,#e8e8ea);font:12px -apple-system,BlinkMacSystemFont,system-ui,sans-serif;outline:none}.ds-input::placeholder{color:var(--text-tertiary,#a1a1a6)}.ds-input:focus{border-color:var(--focus-ring,#5aa5ff)}"
+      "css": ".ds-input{width:240px;padding:6px 8px;background:var(--surface-field,#171513);border:1px solid var(--border,#3e3a35);border-radius:4px;color:var(--text-primary,#ede9e4);font:12px -apple-system,BlinkMacSystemFont,system-ui,sans-serif;outline:none}.ds-input::placeholder{color:var(--text-tertiary,#b3aca2)}.ds-input:focus{border-color:var(--focus-ring,#5aa5ff)}"
     },
     {
       "name": "Context Menu",
@@ -526,35 +616,66 @@
       "refersTo": "menu",
       "description": "Teleported right-click menu; rows highlight in system blue.",
       "html": "<div class=\"ds-menu\"><div class=\"ds-menu-label\">a1b2c3d — Fix graph lanes</div><button class=\"ds-item\">Copy short SHA</button><button class=\"ds-item\">Create branch here…</button><div class=\"ds-div\"></div><button class=\"ds-item ds-danger-item\">Hard — discard all changes</button></div>",
-      "css": ".ds-menu{width:230px;padding:4px 0;background:var(--surface-overlay,#2e2e31);border:1px solid var(--border,#3c3c40);border-radius:6px;box-shadow:0 8px 24px rgba(0,0,0,.5);font-family:-apple-system,BlinkMacSystemFont,system-ui,sans-serif}.ds-menu-label{padding:5px 12px;font:11px ui-monospace,'SF Mono',Menlo,monospace;color:var(--text-tertiary,#a1a1a6)}.ds-item{display:block;width:100%;padding:6px 12px;border:none;background:none;text-align:left;font-size:12px;color:var(--text-primary,#e8e8ea);cursor:pointer}.ds-item:hover,.ds-item:focus-visible{background:var(--accent-fill,#2f6fdc);color:#fff;outline:none}.ds-danger-item{color:var(--danger,#ff7b72)}.ds-div{height:1px;margin:3px 0;background:var(--border-subtle,#303033)}"
+      "css": ".ds-menu{width:230px;padding:4px 0;background:var(--surface-overlay,#2f2c28);border:1px solid var(--border,#3e3a35);border-radius:6px;box-shadow:0 8px 24px rgba(0,0,0,.5);font-family:-apple-system,BlinkMacSystemFont,system-ui,sans-serif}.ds-menu-label{padding:5px 12px;font:11px ui-monospace,'SF Mono',Menlo,monospace;color:var(--text-tertiary,#b3aca2)}.ds-item{display:block;width:100%;padding:6px 12px;border:none;background:none;text-align:left;font-size:12px;color:var(--text-primary,#ede9e4);cursor:pointer}.ds-item:hover,.ds-item:focus-visible{background:var(--accent-fill,#2f6fdc);color:#fff;outline:none}.ds-danger-item{color:var(--danger,#ff7b72)}.ds-div{height:1px;margin:3px 0;background:var(--border-subtle,#312e2a)}"
     },
     {
       "name": "Ref Labels",
       "kind": "chip",
       "refersTo": "label-branch",
-      "description": "HEAD, branch, remote, tag and stash labels in the commit graph.",
-      "html": "<span class=\"ds-l ds-head\">HEAD</span> <span class=\"ds-l ds-branch\">main</span> <span class=\"ds-l ds-remote\">origin/main</span> <span class=\"ds-l ds-tag\">v1.2.0</span> <span class=\"ds-l ds-stash\">stash@{0}</span>",
-      "css": ".ds-l{display:inline-block;padding:1px 5px;border-radius:3px;font:500 11px -apple-system,BlinkMacSystemFont,system-ui,sans-serif;border:1px solid transparent}.ds-head{background:var(--accent-fill,#2f6fdc);color:#fff}.ds-branch{background:rgba(90,165,255,.13);color:var(--accent-text,#5aa5ff);border-color:rgba(90,165,255,.4)}.ds-remote{background:var(--surface-control,#38383c);color:var(--text-secondary,#c0c0c5);border-color:var(--border-strong,#4c4c51)}.ds-tag{background:rgba(227,179,65,.14);color:var(--tag,#e3b341);border-color:rgba(227,179,65,.35)}.ds-stash{background:rgba(190,150,239,.14);color:var(--stash,#be96ef);border-color:rgba(190,150,239,.35)}"
+      "description": "Refs in the commit list: HEAD filled with a check, branches outlined in blue, remotes with a cloud, tags with a tag mark, stashes in lilac.",
+      "html": "<span class=\"ds-l ds-head\"><svg width=\"10\" height=\"10\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M20 6L9 17l-5-5\"/></svg>main</span> <span class=\"ds-l ds-branch\">feature/sync</span> <span class=\"ds-l ds-remote\"><svg width=\"10\" height=\"10\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9z\"/></svg>origin/main</span> <span class=\"ds-l ds-tag\"><svg width=\"10\" height=\"10\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M12 2H2v10l9.3 9.3a1 1 0 0 0 1.4 0l8.6-8.6a1 1 0 0 0 0-1.4z\"/><circle cx=\"7\" cy=\"7\" r=\"1.5\"/></svg>v0.2.0</span> <span class=\"ds-l ds-stash\">stash@{0}</span>",
+      "css": ".ds-l{display:inline-flex;align-items:center;gap:3px;height:18px;padding:0 6px;border-radius:4px;border:1px solid transparent;box-sizing:border-box;font:500 11px -apple-system,BlinkMacSystemFont,system-ui,sans-serif;white-space:nowrap}.ds-head{background:var(--accent-fill,#2f6fdc);color:#fff;font-weight:600}.ds-branch{color:var(--accent-text,#5aa5ff);border-color:rgba(90,165,255,.4)}.ds-remote{color:var(--text-tertiary,#b3aca2);border-color:var(--border-strong,#4e4943);font-weight:400}.ds-tag{background:rgba(227,179,65,.14);color:var(--tag,#e3b341);border-color:rgba(227,179,65,.35)}.ds-stash{background:rgba(190,150,239,.14);color:var(--stash,#be96ef);border-color:rgba(190,150,239,.35)}"
     },
     {
       "name": "Diff Lines",
       "kind": "custom",
-      "description": "Signature component: SF Mono diff on the Ink Well surface.",
-      "html": "<div class=\"ds-diff\"><div class=\"ds-h\">@@ -12,3 +12,4 @@</div><div class=\"ds-ln\"><span>12</span><span>12</span><code> func layout() {</code></div><div class=\"ds-ln ds-del\"><span>13</span><span></span><code>-  colors := legacy</code></div><div class=\"ds-ln ds-add\"><span></span><span>13</span><code>+  colors := laneColors</code></div><div class=\"ds-ln ds-add\"><span></span><span>14</span><code>+  return build(colors)</code></div></div>",
-      "css": ".ds-diff{width:340px;background:var(--surface-sunken,#141416);font:12px/19px ui-monospace,'SF Mono',Menlo,monospace;color:var(--text-secondary,#c0c0c5)}.ds-h{padding:3px 10px;background:var(--surface-raised,#222225);color:var(--text-tertiary,#a1a1a6);font-size:11px}.ds-ln{display:flex;white-space:pre}.ds-ln span{width:36px;padding-right:6px;text-align:right;font-size:11px;color:var(--text-tertiary,#a1a1a6)}.ds-ln code{font:inherit;padding-left:6px}.ds-add{background:rgba(79,201,119,.09)}.ds-add code{color:var(--add-fg,#b6ecc6)}.ds-del{background:rgba(255,123,114,.09)}.ds-del code{color:var(--del-fg,#ffbdb7)}"
+      "description": "Signature component: SF Mono diff on the Gauge Face; the changed words of a paired line get a stronger wash.",
+      "html": "<div class=\"ds-diff\"><div class=\"ds-dl\"><span class=\"ds-n\">4</span><span class=\"ds-n\">4</span><span class=\"ds-g\"></span><span class=\"ds-c\">&lt;p align=\"center\"&gt;</span></div><div class=\"ds-dl ds-del\"><span class=\"ds-n\">5</span><span class=\"ds-n\"></span><span class=\"ds-g\">−</span><span class=\"ds-c\">&lt;h1&gt;<mark>gitgood</mark>&lt;/h1&gt;</span></div><div class=\"ds-dl ds-add\"><span class=\"ds-n\"></span><span class=\"ds-n\">5</span><span class=\"ds-g\">+</span><span class=\"ds-c\">&lt;h1&gt;<mark>Burlwood</mark>&lt;/h1&gt;</span></div></div>",
+      "css": ".ds-diff{background:var(--surface-sunken,#141210);font:12px/19px ui-monospace,'SF Mono',Menlo,monospace;padding:6px 0;min-width:360px}.ds-dl{display:flex}.ds-n{width:44px;padding-right:8px;text-align:right;color:var(--text-tertiary,#b3aca2);font-size:11px;user-select:none}.ds-g{width:16px;text-align:center;color:var(--text-tertiary,#b3aca2)}.ds-c{padding:0 16px 0 4px;white-space:pre;color:var(--text-secondary,#c6c0b8)}.ds-add{background:rgba(79,201,119,.09)}.ds-add .ds-g{color:#4fc977}.ds-add .ds-c{color:#b6ecc6}.ds-del{background:rgba(255,123,114,.09)}.ds-del .ds-g{color:#ff7b72}.ds-del .ds-c{color:#ffbdb7}.ds-c mark{color:inherit;border-radius:2px}.ds-add mark{background:rgba(79,201,119,.3)}.ds-del mark{background:rgba(255,123,114,.3)}"
+    },
+    {
+      "name": "Toolbar Button Group",
+      "kind": "nav",
+      "description": "Icon-only toolbar buttons grouped by task on a raised capsule; each has a tooltip and an accessible name.",
+      "html": "<div class=\"ds-tbgroup\"><button class=\"ds-tbtn\" title=\"Fetch (⌘R)\" aria-label=\"Fetch\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 18 18\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><line x1=\"4\" y1=\"3\" x2=\"14\" y2=\"3\"/><line x1=\"9\" y1=\"5\" x2=\"9\" y2=\"13\"/><polyline points=\"5,10 9,14 13,10\"/></svg></button><button class=\"ds-tbtn\" title=\"Pull\" aria-label=\"Pull\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 18 18\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><line x1=\"9\" y1=\"3\" x2=\"9\" y2=\"13\"/><polyline points=\"5,9 9,14 13,9\"/></svg></button><button class=\"ds-tbtn\" title=\"Push\" aria-label=\"Push\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 18 18\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><line x1=\"9\" y1=\"15\" x2=\"9\" y2=\"5\"/><polyline points=\"5,9 9,4 13,9\"/></svg></button></div>",
+      "css": ".ds-tbgroup{display:inline-flex;gap:2px;padding:2px;border-radius:8px;background:var(--surface-raised,#211f1c)}.ds-tbtn{display:flex;align-items:center;justify-content:center;width:34px;height:28px;padding:0;border:none;border-radius:6px;background:transparent;color:var(--text-secondary,#c6c0b8);cursor:default;transition:background .1s,color .1s}.ds-tbtn:hover{background:rgba(255,240,220,.06);color:var(--text-primary,#ede9e4)}.ds-tbtn:focus-visible{outline:2px solid var(--focus-ring,#5aa5ff);outline-offset:-2px}"
+    },
+    {
+      "name": "HEAD Knot",
+      "kind": "custom",
+      "description": "The checked-out commit in the graph, drawn as the app icon's knot: a heartwood core in a sapwood ring, with a gap that interrupts the lane.",
+      "html": "<div class=\"ds-lane\"><span class=\"ds-dot\"></span><span class=\"ds-knot\"></span><span class=\"ds-dot\"></span></div>",
+      "css": ".ds-lane{position:relative;display:flex;flex-direction:column;align-items:center;gap:20px;width:14px;padding:10px 0;background:linear-gradient(#6aa5f0,#6aa5f0) center/2px 100% no-repeat}.ds-dot{width:8px;height:8px;border-radius:50%;background:#6aa5f0;box-shadow:0 0 0 1.5px var(--surface-base,#1a1816)}.ds-knot{width:12px;height:12px;border-radius:50%;box-sizing:border-box;background:var(--brand-heartwood,#2a1a10);border:2.25px solid var(--brand-sapwood,#f3ddb8);box-shadow:0 0 0 1.5px var(--surface-base,#1a1816)}"
+    },
+    {
+      "name": "Welcome Wordmark",
+      "kind": "custom",
+      "description": "The lowercase wordmark on the welcome screen, the only place the brand typeface and Sapwood text appear.",
+      "html": "<div class=\"ds-welcome\"><h1 class=\"ds-wordmark\">burlwood</h1><p class=\"ds-lede\">Open a repository to get started.</p></div>",
+      "css": ".ds-welcome{text-align:center;padding:16px}.ds-wordmark{margin:0;font:600 44px/1 'Burlwood Wordmark','Bricolage Grotesque',-apple-system,BlinkMacSystemFont,system-ui,sans-serif;letter-spacing:-.02em;color:var(--brand-sapwood,#f3ddb8)}.ds-lede{margin:12px 0 0;font:400 15px -apple-system,BlinkMacSystemFont,system-ui,sans-serif;color:var(--text-secondary,#c6c0b8)}"
     }
   ],
   "narrative": {
-    "northStar": "The Lab Notebook",
-    "overview": "Burlwood is where a developer reads what happened and decides what happens next. The notebook metaphor sets the priorities: the entries (commit history, diffs, conflicts) are the content, and everything around them is the binding. It should be quiet, neutral, and steady enough to read for hours. The chrome uses macOS's own vocabulary (system fonts, neutral greys, system-blue actions, blue-highlighted menus) so the app feels at home next to Xcode and Finder rather than like a themed web page.\n\nColour is reserved for meaning. A green line was added and a red line was removed. Orange is a modified file. Blue is the thing you can act on. If a colour does not carry one of those meanings, it should not be there. The UI is dense because git work is dense, but it is never cramped: text stays at or above 11px, every text level clears 4.5:1 contrast, and code gets its own monospace voice.\n\nDestructive operations are written like careful notebook corrections: they name their consequence and can be undone where git allows (discard and hard reset show an Undo toast). Anything that can't be undone, such as force-pushing or force-deleting, gets its own explicit, red-filled step.",
+    "northStar": "The Instrument Panel, Burl-Trimmed",
+    "overview": "Burlwood is where a developer reads what happened and decides what happens next. Picture the dashboard of a classic car: the instruments are dark, precise and legible at a glance, and the burl wood frames them without ever covering a dial. Here the instruments are the commit history, diffs and conflicts; everything around them is housing. The instruments must stay quiet and steady enough to read for hours, so the housing uses macOS's own vocabulary (system fonts, system-blue actions, blue-highlighted menus) and sits at home next to Xcode and Finder. Its surfaces are warm graphite. The wood itself is trim: it appears only where nothing has to be read, as described in The Veneer Rule.\n\nColour is reserved for meaning. A green line was added and a red line was removed. Orange is a modified file. Blue is the thing you can act on. If a colour does not carry one of those meanings, it should not be there. The UI is dense because git work is dense, but it is never cramped: text stays at or above 11px, every text level clears 4.5:1 contrast, and code gets its own monospace voice.\n\nDestructive operations are guarded switches: they name their consequence and can be undone where git allows (discard and hard reset show an Undo toast). Anything that can't be undone, such as force-pushing or force-deleting, gets its own explicit, red-filled step.",
     "keyCharacteristics": [
-      "Neutral grey surfaces layered by tone, not by borders or shadows",
+      "Warm graphite surfaces layered by tone, not by borders or shadows",
       "One accent (system blue) for actions, focus and selection",
       "Git semantics own the remaining colour: add, delete, modified, untracked, ours/theirs, tag, stash",
       "SF Pro for the interface, SF Mono for anything copied from or into git",
       "Four text sizes, no decorative type"
     ],
     "rules": [
+      {
+        "name": "The System Accent Rule",
+        "body": "Never hard-code the accent: derive fills, text, focus and selection from `--accent-system` with `color-mix`, so the app follows the user's System Settings.",
+        "section": "colors"
+      },
+      {
+        "name": "The Key Window Rule",
+        "body": "Selection is accent-tinted only while the window is key; `html.window-inactive` turns it grey.",
+        "section": "colors"
+      },
       {
         "name": "The Meaning-Only Rule",
         "body": "Every hue in the interface must map to a git state or an action. A new colour needs a new meaning.",
@@ -571,8 +692,13 @@
         "section": "colors"
       },
       {
+        "name": "The Veneer Rule",
+        "body": "Burl wood is trim, not structure: the work surfaces stay neutral and the brand appears in exactly two places. Sapwood (brand-sapwood) and Heartwood (brand-heartwood) draw the checked-out commit in the graph as the knot from the app icon, a heartwood core in a sapwood ring, and Sapwood colours the welcome wordmark. Brand colours never mark git state, so they never appear in lists, labels or diffs.",
+        "section": "colors"
+      },
+      {
         "name": "The Four Sizes Rule",
-        "body": "Text uses `--text-meta`, `--text-row`, `--text-body` or `--text-title`. The only exceptions are the 32px welcome wordmark and 16px glyph icons.",
+        "body": "Text uses `--text-meta`, `--text-row`, `--text-body` or `--text-title`. The only exceptions are the 44px welcome wordmark and 16px glyph icons.",
         "section": "typography"
       },
       {
@@ -587,6 +713,7 @@
       }
     ],
     "dos": [
+      "**Do** keep the default arrow cursor on controls (macOS has no hand cursor on buttons); only resize handles change the cursor.",
       "**Do** use the semantic tokens in `style.css` for every colour, size and shadow.",
       "**Do** give each context one blue primary action and make everything else neutral.",
       "**Do** name the consequence in any destructive confirmation (\"leaves them reachable only through the reflog\").",
@@ -594,7 +721,7 @@
       "**Do** keep metadata at tertiary text or brighter; check 4.5:1 on the lightest surface it can appear on (overlay)."
     ],
     "donts": [
-      "**Don't** introduce navy or tinted backgrounds; surfaces stay neutral grey.",
+      "**Don't** introduce navy or coloured backgrounds; surfaces stay warm graphite.",
       "**Don't** use green or red for anything other than add/delete (plus ours and destructive actions).",
       "**Don't** use uppercase letter-spaced micro-labels; labels are 11px semibold in sentence case.",
       "**Don't** put shadows on inline content; only popovers and modals float.",

@@ -5,32 +5,37 @@ colors:
   accent-fill: "#2f6fdc"
   accent-fill-hover: "#2a66cc"
   accent-text: "#5aa5ff"
-  surface-sunken: "#141416"
-  surface-base: "#1b1b1d"
-  surface-raised: "#222225"
-  surface-chrome: "#28282b"
-  surface-overlay: "#2e2e31"
-  surface-field: "#19191b"
-  surface-control: "#38383c"
-  surface-control-hover: "#424246"
+  surface-sunken: "#141210"
+  surface-base: "#1a1816"
+  surface-raised: "#211f1c"
+  surface-chrome: "#282522"
+  surface-overlay: "#2f2c28"
+  surface-field: "#171513"
+  surface-control: "#3a3632"
+  surface-control-hover: "#44403b"
   surface-selected: "#22355a"
-  border-subtle: "#303033"
-  border: "#3c3c40"
-  border-strong: "#4c4c51"
-  text-primary: "#e8e8ea"
-  text-secondary: "#c0c0c5"
-  text-tertiary: "#a1a1a6"
+  border-subtle: "#312e2a"
+  border: "#3e3a35"
+  border-strong: "#4e4943"
+  text-primary: "#ede9e4"
+  text-secondary: "#c6c0b8"
+  text-tertiary: "#b3aca2"
   text-on-accent: "#ffffff"
   add: "#4fc977"
   add-fg: "#b6ecc6"
+  add-change-bg: "rgba(79, 201, 119, 0.3)"
   del: "#ff7b72"
   del-fg: "#ffbdb7"
+  del-change-bg: "rgba(255, 123, 114, 0.3)"
   modified: "#f0a43c"
   untracked: "#5ac8e0"
   danger-fill: "#c42f2a"
   danger-fill-hover: "#b02824"
   tag: "#e3b341"
   stash: "#be96ef"
+  avatar: "#5a4a3d"
+  brand-sapwood: "#f3ddb8"
+  brand-heartwood: "#2a1a10"
 typography:
   title:
     fontFamily: "-apple-system, BlinkMacSystemFont, system-ui, sans-serif"
@@ -53,7 +58,7 @@ typography:
     fontSize: "11px"
     fontWeight: 600
 rounded:
-  chip: "3px"
+  chip: "4px"
   control: "4px"
   button: "5px"
   popover: "6px"
@@ -68,7 +73,7 @@ spacing:
   inset-panel: "12px"
   row: "24px"
   toolbar: "56px"
-  file-header: "32px"
+  file-header: "40px"
 components:
   button-primary:
     backgroundColor: "{colors.accent-fill}"
@@ -113,16 +118,16 @@ components:
 
 ## Overview
 
-**Creative North Star: "The Lab Notebook"**
+**Creative North Star: "The Instrument Panel, Burl-Trimmed"**
 
-Burlwood is where a developer reads what happened and decides what happens next. The notebook metaphor sets the priorities: the entries (commit history, diffs, conflicts) are the content, and everything around them is the binding. It should be quiet, neutral, and steady enough to read for hours. The chrome uses macOS's own vocabulary (system fonts, neutral greys, system-blue actions, blue-highlighted menus) so the app feels at home next to Xcode and Finder rather than like a themed web page.
+Burlwood is where a developer reads what happened and decides what happens next. Picture the dashboard of a classic car: the instruments are dark, precise and legible at a glance, and the burl wood frames them without ever covering a dial. Here the instruments are the commit history, diffs and conflicts; everything around them is housing. The instruments must stay quiet and steady enough to read for hours, so the housing uses macOS's own vocabulary (system fonts, system-blue actions, blue-highlighted menus) and sits at home next to Xcode and Finder. Its surfaces are warm graphite. The wood itself is trim: it appears only where nothing has to be read, as described in The Veneer Rule.
 
 Colour is reserved for meaning. A green line was added and a red line was removed. Orange is a modified file. Blue is the thing you can act on. If a colour does not carry one of those meanings, it should not be there. The UI is dense because git work is dense, but it is never cramped: text stays at or above 11px, every text level clears 4.5:1 contrast, and code gets its own monospace voice.
 
-Destructive operations are written like careful notebook corrections: they name their consequence and can be undone where git allows (discard and hard reset show an Undo toast). Anything that can't be undone, such as force-pushing or force-deleting, gets its own explicit, red-filled step.
+Destructive operations are guarded switches: they name their consequence and can be undone where git allows (discard and hard reset show an Undo toast). Anything that can't be undone, such as force-pushing or force-deleting, gets its own explicit, red-filled step.
 
 **Key Characteristics:**
-- Neutral grey surfaces layered by tone, not by borders or shadows
+- Warm graphite surfaces layered by tone, not by borders or shadows
 - One accent (system blue) for actions, focus and selection
 - Git semantics own the remaining colour: add, delete, modified, untracked, ours/theirs, tag, stash
 - SF Pro for the interface, SF Mono for anything copied from or into git
@@ -130,26 +135,30 @@ Destructive operations are written like careful notebook corrections: they name 
 
 ## Colors
 
-A neutral dark palette where hue only appears when it encodes git state or an action.
+A warm graphite palette: the greys lean slightly brown, and hue only appears when it encodes git state or an action.
 
 ### Primary
 - **System Blue** (accent-fill): follows the accent colour chosen in System Settings (via WebKit's `-apple-system-control-accent`, darkened for white text); the hex here is the fallback. Solid fill for the single primary action in a context (Commit, Save & Stage, Continue Rebase, Push tag), the HEAD label, and the hovered item in every context menu. White text on it clears 4.7:1.
 - **Link Blue** (accent-text): blue as text: active toolbar button, current branch, renamed-file status, focus borders, and the "theirs" side of a conflict.
 
 ### Secondary
-- **Diff Green** (add) and **Diff Red** (del): added and removed lines, A/D status letters, ahead count, and the "ours" side of a conflict (green). Their pale variants (add-fg, del-fg) colour the code inside added and removed lines.
+- **Diff Green** (add) and **Diff Red** (del): added and removed lines, A/D status letters, ahead count, and the "ours" side of a conflict (green). Their pale variants (add-fg, del-fg) colour the code inside added and removed lines, and a stronger wash (add-change-bg, del-change-bg) marks the words that changed within a line.
 - **Signal Orange** (modified): modified files, the behind count, in-progress warnings such as the merge banner.
 - **Untracked Cyan** (untracked): untracked files only.
 - **Brass** (tag) and **Lilac** (stash): tag and stash labels, nothing else.
 
 ### Neutral
-- **Ink Well** (surface-sunken): behind diffs and code, the deepest layer.
-- **Notebook Page** (surface-base): the main canvas, commit graph background.
-- **Ruled Line** (surface-raised): bars inside panels, such as hunk headers and file action bars.
-- **Binding** (surface-chrome): tab bar, toolbar, file panel. Lighter than the page, as macOS chrome is.
-- **Frosted Binding** (surface-sidebar): the sidebar is a dark tint over the window's vibrancy (translucent window, dark appearance forced), so it reads as a macOS source list.
-- **Loose Leaf** (surface-overlay): menus, popovers, modals, toasts.
-- **Primary / Secondary / Tertiary text**: content, supporting text, and metadata (hashes, dates, line numbers). Tertiary is the floor: never go dimmer for readable text.
+- **Gauge Face** (surface-sunken): behind diffs and code, the deepest layer.
+- **Panel** (surface-base): the main canvas, commit graph background.
+- **Bezel** (surface-raised): bars inside panels, such as hunk headers, file action bars, the graph status bar and toolbar button groups.
+- **Housing** (surface-chrome): tab bar, toolbar, file panel. Lighter than the panel, as macOS chrome is.
+- **Frosted Housing** (surface-sidebar): the sidebar is a dark tint over the window's vibrancy (translucent window, dark appearance forced), so it reads as a macOS source list.
+- **Overlay** (surface-overlay): menus, popovers, modals, toasts.
+
+### Veneer
+- **Sapwood** (brand-sapwood) and **Heartwood** (brand-heartwood): the colours of the icon's knot. Used only as The Veneer Rule allows.
+- **Primary / Secondary / Tertiary text**: content, supporting text, and metadata (hashes, dates, line numbers). Tertiary is the floor: never go dimmer for readable text. It clears 4.5:1 even on hovered controls and the inactive selection.
+- **Avatar** (avatar): the circle behind an author's initials in the commit list and commit details.
 
 ### Named Rules
 **The System Accent Rule.** Never hard-code the accent: derive fills, text, focus and selection from `--accent-system` with `color-mix`, so the app follows the user's System Settings.
@@ -162,12 +171,16 @@ A neutral dark palette where hue only appears when it encodes git state or an ac
 
 **The Token Rule.** Components use `var(--token)` from `frontend/src/style.css`. A hex value in a component is a bug.
 
+**The Veneer Rule.** Burl wood is trim, not structure: the work surfaces stay neutral and the brand appears in exactly two places. Sapwood (brand-sapwood) and Heartwood (brand-heartwood) draw the checked-out commit in the graph as the knot from the app icon, a heartwood core in a sapwood ring, and Sapwood colours the welcome wordmark. Brand colours never mark git state, so they never appear in lists, labels or diffs.
+
 ## Typography
 
 **Interface Font:** SF Pro via `-apple-system` (falls back to system-ui)
 **Code Font:** SF Mono via `ui-monospace` (falls back to Menlo)
 
 **Character:** The platform's own pairing. SF Pro reads as part of macOS; SF Mono marks anything that is literally git data (hashes, paths, diffs, branch names in inputs).
+
+**Wordmark Font:** Bricolage Grotesque 600, self-hosted as a seven-letter subset (`frontend/src/assets/fonts/`, SIL OFL). It sets the lowercase "burlwood" wordmark on the welcome screen and nothing else.
 
 ### Hierarchy
 - **Title** (600, 15px): modal titles and the welcome line.
@@ -176,7 +189,7 @@ A neutral dark palette where hue only appears when it encodes git state or an ac
 - **Label** (600, 11px, sentence case): section headings, badges, metadata, line numbers. No uppercase, no letter-spacing.
 
 ### Named Rules
-**The Four Sizes Rule.** Text uses `--text-meta`, `--text-row`, `--text-body` or `--text-title`. The only exceptions are the 32px welcome wordmark and 16px glyph icons.
+**The Four Sizes Rule.** Text uses `--text-meta`, `--text-row`, `--text-body` or `--text-title`. The only exceptions are the 44px welcome wordmark and 16px glyph icons.
 
 **The Real Mono Rule.** Never write bare `monospace`; WKWebView maps it to Courier. Use `var(--font-mono)`.
 
@@ -188,7 +201,7 @@ A fixed desktop shell with as little chrome as possible:
 - **Repo tabs** (28px) appear below the toolbar only when two or more repos are open.
 - **Workspace:** resizable sidebar, main panel, and on the commit view an inspector (commit detail) on the right. Panels resize by dragging 4px handles that turn blue on hover.
 
-Spacing follows a 4px scale (`--space-1` to `--space-6`: 4/8/12/16/24/32). Every panel edge uses `--inset-panel` (12px), so sidebar, file list, banners and headers align on one vertical line. List rows are 24px (`--row-h`), commit rows 28px; file header bars are 32px (`--file-header-h`). Groups separate with more space above a section heading than below it (12px / 4px). The commit row gives way from the right in narrow panes: author hides below 720px, date below 520px. The graph column is capped at 8 lanes (drag its right edge to resize, double-click to show all lanes; the width is remembered); lanes beyond the cap fade out at the edge and a commit in a hidden lane is drawn as a hollow ring in its lane colour just inside the edge, so it isn't mistaken for part of the edge lane. Base text is left-aligned; the welcome screen and centred empty-state messages set their centring explicitly.
+Spacing follows a 4px scale (`--space-1` to `--space-6`: 4/8/12/16/24/32). Every panel edge uses `--inset-panel` (12px), so sidebar, file list, banners and headers align on one vertical line. List rows are 24px (`--row-h`), commit rows 28px; file header bars are 40px (`--file-header-h`). Groups separate with more space above a section heading than below it (12px / 4px). The commit row gives way from the right in narrow panes: author hides below 720px, date below 520px. The graph column is capped at 8 lanes (drag its right edge to resize, double-click to show all lanes; the width is remembered); lanes beyond the cap fade out at the edge and a commit in a hidden lane is drawn as a hollow ring in its lane colour just inside the edge, so it isn't mistaken for part of the edge lane. Base text is left-aligned; the welcome screen and centred empty-state messages set their centring explicitly.
 
 ## Elevation & Depth
 
@@ -203,7 +216,7 @@ Flat by default. Panels separate by tone (sunken → base → raised → chrome)
 
 ## Shapes
 
-Small, consistent radii that echo macOS controls: 3px for ref labels and badges, 4px for inputs and small buttons, 5px for primary buttons and toolbar buttons, 6px for menus and popovers (8px for the larger pull-mode menu), 10px for modals. Fully rounded pills only for count badges, preset chips and toggle tracks; circles only for conflict order numbers and the commit-graph dots.
+Small, consistent radii that echo macOS controls: 4px for ref labels, badges and small buttons, 5px for primary buttons and inline file buttons, 6px for toolbar buttons, list rows, menus and popovers, 7px for search fields, 8px for toolbar button groups and the larger pull-mode menu, 10px for modals. Fully rounded pills only for count badges, the toolbar branch chip, preset chips and toggle tracks; circles only for conflict order numbers, author initials and the commit-graph dots.
 
 ## Components
 
@@ -212,7 +225,7 @@ Small, consistent radii that echo macOS controls: 3px for ref labels and badges,
 - **Primary:** System Blue fill, white text, full width in the commit panel. Only one per context.
 - **Secondary:** control grey fill, secondary text. The idle commit button uses this until the commit is ready.
 - **Destructive:** red fill and white text, used only in a confirmation step that names the consequence (Force delete, Force-push tag, Delete from disk).
-- **Toolbar:** transparent icon-over-label buttons; hover gets a faint white wash, the active state gets the control fill and blue text.
+- **Toolbar:** icon-only 34×28 buttons, each with a tooltip and an accessible name (plus its shortcut where one exists), grouped by task (fetch/pull/push, branch/stash/pop) on a raised 8px capsule; hover gets a faint warm wash, the active state gets the control fill and blue text. The title bar also carries a read-only chip with the current branch and its ahead/behind counts, and the Find commit field (⌘F).
 
 ### Inputs / Fields
 - **Style:** field background (slightly darker than the page), 1px border, 4px radius, row-size text.
@@ -224,20 +237,22 @@ Small, consistent radii that echo macOS controls: 3px for ref labels and badges,
 - **Confirmation states:** the same menu switches mode in place to show a consequence sentence and a button row.
 
 ### Ref Labels (chips)
-- **HEAD:** solid System Blue, white text.
-- **Branch:** blue tint, Link Blue text, blue hairline.
-- **Remote:** neutral control grey, secondary text.
-- **Tag / Stash:** Brass / Lilac tint with matching text and hairline.
+- **HEAD:** solid System Blue, white text, a check mark.
+- **Branch:** Link Blue text and a blue hairline, no fill.
+- **Remote:** strong-border hairline, tertiary text, a cloud mark.
+- **Tag / Stash:** Brass / Lilac tint with matching text and hairline; tags carry a tag mark.
 
 ### Lists (branches, files, commits)
-- **Rows:** 4px vertical padding, no dividers; hover is a faint white wash, selection is the muted blue surface-selected.
+- **Rows:** 4px vertical padding, no dividers; hover is a faint warm wash, selection is the muted blue surface-selected. The current branch gets a soft accent fill and a check mark.
+- **Grouping:** remote branches sit under their remote, and a commit's changed files sit under their folder.
 - **File status:** a single coloured letter (M orange, A green, D red, R blue, ? cyan) carries the state, so colour is never the only signal.
 
 ### Toasts
 - **Style:** overlay surface with primary text; only the icon is coloured (✓ green, ✕ red, i blue). Undo toasts last 10 seconds and show a thin draining bar along the bottom edge.
 
 ### Diff Lines (signature component)
-- 12px SF Mono on 19px lines over Ink Well. Added lines get a faint green wash with pale green code, removed lines a faint red wash with pale red code. Line numbers sit in 44px tertiary columns, and hunk headers sit on a raised bar.
+- 12px SF Mono on 19px lines over Gauge Face. Added lines get a faint green wash with pale green code, removed lines a faint red wash with pale red code, and the changed words of a paired line get a stronger wash. Line numbers sit in 44px tertiary columns, and hunk headers sit on a raised bar.
+- Unified or Split (side by side), and optional wrapping of long lines; the choice is shared by every diff view. Split always wraps.
 
 ## Do's and Don'ts
 
@@ -250,7 +265,7 @@ Small, consistent radii that echo macOS controls: 3px for ref labels and badges,
 - **Do** keep metadata at tertiary text or brighter; check 4.5:1 on the lightest surface it can appear on (overlay).
 
 ### Don't:
-- **Don't** introduce navy or tinted backgrounds; surfaces stay neutral grey.
+- **Don't** introduce navy or coloured backgrounds; surfaces stay warm graphite.
 - **Don't** use green or red for anything other than add/delete (plus ours and destructive actions).
 - **Don't** use uppercase letter-spaced micro-labels; labels are 11px semibold in sentence case.
 - **Don't** put shadows on inline content; only popovers and modals float.
