@@ -1,5 +1,5 @@
 ---
-name: gitgood
+name: Burlwood
 description: A calm macOS git client for reading history and shaping commits.
 colors:
   accent-fill: "#2f6fdc"
@@ -109,13 +109,13 @@ components:
     padding: "1px 5px"
 ---
 
-# Design System: gitgood
+# Design System: Burlwood
 
 ## Overview
 
 **Creative North Star: "The Lab Notebook"**
 
-gitgood is where a developer reads what happened and decides what happens next. The notebook metaphor sets the priorities: the entries (commit history, diffs, conflicts) are the content, and everything around them is the binding. It should be quiet, neutral, and steady enough to read for hours. The chrome uses macOS's own vocabulary (system fonts, neutral greys, system-blue actions, blue-highlighted menus) so the app feels at home next to Xcode and Finder rather than like a themed web page.
+Burlwood is where a developer reads what happened and decides what happens next. The notebook metaphor sets the priorities: the entries (commit history, diffs, conflicts) are the content, and everything around them is the binding. It should be quiet, neutral, and steady enough to read for hours. The chrome uses macOS's own vocabulary (system fonts, neutral greys, system-blue actions, blue-highlighted menus) so the app feels at home next to Xcode and Finder rather than like a themed web page.
 
 Colour is reserved for meaning. A green line was added and a red line was removed. Orange is a modified file. Blue is the thing you can act on. If a colour does not carry one of those meanings, it should not be there. The UI is dense because git work is dense, but it is never cramped: text stays at or above 11px, every text level clears 4.5:1 contrast, and code gets its own monospace voice.
 

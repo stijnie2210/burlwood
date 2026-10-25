@@ -36,18 +36,18 @@ jobs:
           APPIMAGE_EXTRACT_AND_RUN: 1
         run: |
           mkdir -p AppDir/usr/bin AppDir/usr/share/applications AppDir/usr/share/icons/hicolor/1024x1024/apps
-          cp build/bin/gitgood AppDir/usr/bin/gitgood
-          cp build/appicon.png AppDir/usr/share/icons/hicolor/1024x1024/apps/gitgood.png
-          cp build/linux/gitgood.desktop AppDir/usr/share/applications/gitgood.desktop
+          cp build/bin/burlwood AppDir/usr/bin/burlwood
+          cp build/appicon.png AppDir/usr/share/icons/hicolor/1024x1024/apps/burlwood.png
+          cp build/linux/burlwood.desktop AppDir/usr/share/applications/burlwood.desktop
           ./linuxdeploy --appdir AppDir --output appimage
-          mv *x86_64.AppImage gitgood-linux-amd64.AppImage
+          mv *x86_64.AppImage burlwood-linux-amd64.AppImage
       - uses: actions/upload-artifact@v4
         with:
-          name: gitgood-linux-amd64
-          path: gitgood-linux-amd64.AppImage
+          name: burlwood-linux-amd64
+          path: burlwood-linux-amd64.AppImage
       - uses: softprops/action-gh-release@v2
         with:
-          files: gitgood-linux-amd64.AppImage
+          files: burlwood-linux-amd64.AppImage
 
   build-mac:
     runs-on: macos-latest
@@ -68,14 +68,14 @@ jobs:
       - name: Build
         run: wails build -platform darwin/universal
       - name: Create DMG
-        run: hdiutil create -volname "gitgood" -srcfolder build/bin/gitgood.app -ov -format UDZO gitgood-mac-universal.dmg
+        run: hdiutil create -volname "Burlwood" -srcfolder build/bin/Burlwood.app -ov -format UDZO burlwood-mac-universal.dmg
       - uses: actions/upload-artifact@v4
         with:
-          name: gitgood-mac-universal
-          path: gitgood-mac-universal.dmg
+          name: burlwood-mac-universal
+          path: burlwood-mac-universal.dmg
       - uses: softprops/action-gh-release@v2
         with:
-          files: gitgood-mac-universal.dmg
+          files: burlwood-mac-universal.dmg
 
   build-windows:
     runs-on: windows-latest
@@ -96,11 +96,11 @@ jobs:
       - name: Build
         run: wails build -platform windows/amd64
       - name: Zip binary
-        run: Compress-Archive -Path build/bin/gitgood.exe -DestinationPath gitgood-windows-amd64.zip
+        run: Compress-Archive -Path build/bin/burlwood.exe -DestinationPath burlwood-windows-amd64.zip
       - uses: actions/upload-artifact@v4
         with:
-          name: gitgood-windows-amd64
-          path: gitgood-windows-amd64.zip
+          name: burlwood-windows-amd64
+          path: burlwood-windows-amd64.zip
       - uses: softprops/action-gh-release@v2
         with:
-          files: gitgood-windows-amd64.zip
+          files: burlwood-windows-amd64.zip

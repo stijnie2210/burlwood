@@ -1,6 +1,6 @@
 package repo
 
-import "gitgood/internal/gitcli"
+import "burlwood/internal/gitcli"
 
 func (m *Manager) ListStashes(repoPath string) ([]gitcli.StashEntry, error) {
 	return gitcli.ListStashes(repoPath)

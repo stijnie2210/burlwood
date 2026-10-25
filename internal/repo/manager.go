@@ -84,11 +84,7 @@ type recentEntry struct {
 }
 
 func recentReposPath() (string, error) {
-	dir, err := os.UserConfigDir()
-	if err != nil {
-		return "", err
-	}
-	return filepath.Join(dir, "gitgood", "repos.json"), nil
+	return configPath("repos.json")
 }
 
 func LoadRecentRepos() ([]recentEntry, error) {

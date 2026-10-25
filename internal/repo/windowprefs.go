@@ -14,11 +14,7 @@ type WindowPrefs struct {
 }
 
 func windowPrefsPath() (string, error) {
-	dir, err := os.UserConfigDir()
-	if err != nil {
-		return "", err
-	}
-	return filepath.Join(dir, "gitgood", "window.json"), nil
+	return configPath("window.json")
 }
 
 func LoadWindowPrefs() (*WindowPrefs, error) {

@@ -5,7 +5,7 @@ import (
 	"strconv"
 	"strings"
 
-	"gitgood/internal/gitcli"
+	"burlwood/internal/gitcli"
 )
 
 type FileStatus struct {

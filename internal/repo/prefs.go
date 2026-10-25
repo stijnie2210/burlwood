@@ -35,11 +35,7 @@ func DefaultPrefs() AppPrefs {
 }
 
 func prefsPath() (string, error) {
-	dir, err := os.UserConfigDir()
-	if err != nil {
-		return "", err
-	}
-	return filepath.Join(dir, "gitgood", "prefs.json"), nil
+	return configPath("prefs.json")
 }
 
 func LoadPrefs() (AppPrefs, error) {

@@ -75,7 +75,7 @@ const items = computed(() => virtualizer.value.getVirtualItems());
 const totalSize = computed(() => virtualizer.value.getTotalSize());
 // Busy repos can have dozens of parallel lanes; the graph column is capped (8 lanes by default)
 // and resizable, so subjects don't start halfway across the window.
-const GRAPH_WIDTH_KEY = 'gitgood:graph-width';
+const GRAPH_WIDTH_KEY = 'burlwood:graph-width';
 const DEFAULT_GRAPH_WIDTH = (8 + 2) * CELL_W;
 const MIN_GRAPH_WIDTH = 4 * CELL_W;
 
@@ -207,11 +207,11 @@ function onScroll() {
 
 onMounted(() => {
   window.addEventListener('keydown', onGlobalKeyDown);
-  window.addEventListener('gitgood:find', openSearch);
+  window.addEventListener('burlwood:find', openSearch);
 });
 onUnmounted(() => {
   window.removeEventListener('keydown', onGlobalKeyDown);
-  window.removeEventListener('gitgood:find', openSearch);
+  window.removeEventListener('burlwood:find', openSearch);
 });
 
 function rowLabel(row: GraphRow | undefined): string | undefined {
