@@ -1,0 +1,132 @@
+---
+import { figureRing, grain, type Figure, type Knot } from '../lib/grain';
+
+interface Props {
+  width: number;
+  height: number;
+  knots: Knot[];
+  figure?: Figure;
+  gap?: number;
+  live?: boolean;
+  class?: string;
+}
+
+const { width, height, knots, figure, gap = 60, live = false, class: className } = Astro.props;
+const { lines, rings } = grain({ width, height, knots, gap });
+const ringScales = [0.6, 1.05];
+const knotRings = figure ? rings.filter((k) => Math.hypot(k.x - figure.x, k.y - figure.y) > 60) : rings;
+---
+
+<svg
+  class:list={['grain', className]}
+  viewBox={`0 0 ${width} ${height}`}
+  preserveAspectRatio="xMidYMid slice"
+  aria-hidden="true"
+  focusable="false"
+  data-grain={live ? JSON.stringify({ width, height, knots, gap }) : undefined}
+>
+  {
+    figure && (
+      <g class="grain-figure">
+        {figure.rings.map((ring, i) => (
+          <path d={figureRing(figure.x, figure.y, ring, i)} fill={ring.fill} />
+        ))}
+      </g>
+    )
+  }
+  <g class="grain-lines">
+    {lines.map((d) => <path d={d} />)}
+  </g>
+  <g class="grain-rings">
+    {knotRings.flatMap((k) => ringScales.map((f) => <ellipse cx={k.x} cy={k.y} rx={k.rx * f} ry={k.ry * f} />))}
+  </g>
+</svg>
+
+<style>
+  .grain {
+    display: block;
+    pointer-events: none;
+  }
+  .grain g {
+    fill: none;
+    stroke: var(--grain-line);
+    stroke-opacity: 0.5;
+    stroke-width: 2.4px;
+    stroke-linecap: round;
+  }
+
+  .grain path,
+  .grain ellipse {
+    vector-effect: non-scaling-stroke;
+  }
+</style>
+
+<script>
+  import { bookmatch, grainLine, grainRows, type Knot } from '../lib/grain';
+
+  const calm = window.matchMedia('(prefers-reduced-motion: reduce)');
+  const finePointer = window.matchMedia('(hover: hover) and (pointer: fine)');
+
+  for (const svg of document.querySelectorAll<SVGSVGElement>('svg[data-grain]')) {
+    const { width, height, knots, gap } = JSON.parse(svg.dataset.grain!) as {
+      width: number;
+      height: number;
+      knots: Knot[];
+      gap: number;
+    };
+    const area = svg.closest<HTMLElement>('[data-grain-area]') ?? svg.parentElement!;
+    const paths = [...svg.querySelectorAll<SVGPathElement>('.grain-lines path')];
+    const rows = grainRows(height, gap);
+    const base = bookmatch(knots, width);
+
+    const target = { x: width / 2, y: height / 2, strength: 0 };
+    const now = { x: width / 2, y: height / 2, strength: 0 };
+    let frame = 0;
+
+    const draw = () => {
+      now.x += (target.x - now.x) * 0.16;
+      now.y += (target.y - now.y) * 0.16;
+      now.strength += (target.strength - now.strength) * 0.08;
+
+      const pointerKnot: Knot = { x: now.x, y: now.y, rx: 120 * now.strength, ry: 78 * now.strength };
+      const all = now.strength > 0.01 ? [...base, ...bookmatch([pointerKnot], width)] : base;
+      rows.forEach((y0, i) => paths[i]?.setAttribute('d', grainLine(y0, width, all)));
+
+      const settled =
+        Math.abs(target.x - now.x) < 0.5 &&
+        Math.abs(target.y - now.y) < 0.5 &&
+        Math.abs(target.strength - now.strength) < 0.005;
+      frame = settled ? 0 : requestAnimationFrame(draw);
+    };
+
+    const wake = () => {
+      if (!frame) {
+        frame = requestAnimationFrame(draw);
+      }
+    };
+
+    area.addEventListener('pointermove', (e) => {
+      if (calm.matches || !finePointer.matches) {
+        return;
+      }
+      const ctm = svg.getScreenCTM();
+      if (!ctm) {
+        return;
+      }
+      const p = new DOMPoint(e.clientX, e.clientY).matrixTransform(ctm.inverse());
+      target.x = p.x;
+      target.y = p.y;
+      target.strength = 1;
+      if (now.strength < 0.01) {
+        now.x = p.x;
+        now.y = p.y;
+      }
+      wake();
+    });
+
+    area.addEventListener('pointerleave', () => {
+      target.strength = 0;
+      wake();
+    });
+  }
+</script>

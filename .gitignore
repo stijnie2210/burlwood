@@ -23,3 +23,7 @@ frontend/node_modules
 # Impeccable: critique sessions and the hook cache are local; DESIGN.md's sidecar is shared
 .impeccable/critique/
 .impeccable/hook.cache.json
+
+# Website
+website/dist
+website/.astro

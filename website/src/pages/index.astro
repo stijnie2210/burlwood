@@ -1,0 +1,804 @@
+---
+import { Image, getImage } from 'astro:assets';
+import Layout from '../layouts/Layout.astro';
+import Grain from '../components/Grain.astro';
+import Icon from '../components/Icon.astro';
+import { downloads, latestVersion, repo } from '../lib/release';
+import commitGraph from '../assets/commit-graph.png';
+import graphLanes from '../assets/graph-lanes.png';
+import hunkDiff from '../assets/hunk-diff.png';
+import hunkNarrow from '../assets/hunk-narrow.png';
+import commitDetail from '../assets/commit-detail.png';
+
+const version = await latestVersion();
+const detailSmall = await getImage({ src: commitDetail, widths: [390, 763], format: 'webp' });
+const hunkSmall = await getImage({ src: hunkNarrow, widths: [450, 900], format: 'webp' });
+
+const cuttingList = [
+  ['Committing', 'Commit or amend, with a warning before you rewrite commits that are already pushed'],
+  ['Branches', 'Switch, rename, delete, push and rebase from the sidebar. Switching carries your changes along and stashes them only when git refuses'],
+  ['Stashes', 'Create, apply, pop, rename and drop'],
+  ['Conflicts', 'Pick ours or theirs per conflict, diff3 and zdiff3 aware, with a banner that shows rebase progress'],
+  ['Remotes', 'Background fetch, pull in your preferred mode with automatic stashing, push with automatic upstream, force push with lease when a push is rejected'],
+  ['Errors', 'git’s error output becomes a plain sentence with a next step. The full output stays one click away'],
+  ['Tabs', 'Several repositories open at once, restored on the next launch'],
+  ['Engine', 'Your system git, so your own config, hooks and SSH agent apply'],
+  ['Build', 'One native binary: Go and Vue 3 in the system webview. No Electron, no local web server'],
+];
+
+// The main knot pushes the grain wide enough that every line bends around the burl figure instead of crossing it.
+const heroKnots = [
+  { x: 800, y: 400, rx: 300, ry: 120 },
+  { x: 250, y: 1080, rx: 64, ry: 40 },
+  { x: 470, y: 1360, rx: 52, ry: 32 },
+];
+
+// Sized so the sapwood wordmark sits on the darker steps (3.3:1 or better).
+const burl = {
+  x: 800,
+  y: 383,
+  rings: [
+    { rx: 667, ry: 139, fill: '#a86a3c' },
+    { rx: 522, ry: 116, fill: '#9d6237' },
+    { rx: 383, ry: 96, fill: '#935a33' },
+    { rx: 256, ry: 78, fill: '#8a5230' },
+  ],
+};
+
+const installKnots = [
+  { x: 800, y: 210, rx: 130, ry: 86 },
+  { x: 190, y: 700, rx: 58, ry: 36 },
+];
+---
+
+<Layout
+  title="Burlwood: a fast, free git client for the Mac"
+  description="Burlwood is a free, open-source git client for macOS. Read history as a graph, stage single hunks, settle conflicts. One native app, no account, no telemetry."
+>
+  <header class="hero" data-grain-area>
+    <nav class="top" aria-label="Main">
+      <a class="brand" href="/">burlwood</a>
+      <ul>
+        <li><a href="#history">Features</a></li>
+        <li><a href="#install">Install</a></li>
+        <li><a href={repo}>GitHub</a></li>
+      </ul>
+    </nav>
+
+    <span class="stamp hero-stamp hero-stamp-left">LEAF 01 · {version}</span>
+    <span class="stamp hero-stamp hero-stamp-right" aria-hidden="true">LEAF 01 · {version}</span>
+
+    <h1 class="wordmark">
+      <span class="sr-only">Burlwood</span>
+      <span class="half half-left" aria-hidden="true">burl</span>
+      <span class="knot" aria-hidden="true">
+        <Grain class="hero-grain" width={1600} height={1500} knots={heroKnots} figure={burl} live />
+      </span>
+      <span class="half half-right" aria-hidden="true">wood</span>
+    </h1>
+
+    <p class="line">A fast, free git client for the Mac.</p>
+    <p class="sub">
+      Read history as a graph, stage single hunks, settle conflicts. One native app on your own git: no account, no
+      subscription, no telemetry.
+    </p>
+
+    <div class="cta">
+      <a class="button button-solid" href={downloads.mac}>
+        <Icon name="download" />
+        Download for macOS
+      </a>
+      <a class="button button-outline" href="#install">Linux · Windows</a>
+    </div>
+    <p class="meta mono">{version} · universal DMG · free under GPL-3.0</p>
+
+    <figure class="inlay">
+      <picture>
+        <source media="(max-width: 719px)" srcset={detailSmall.srcSet.attribute} sizes="92vw" />
+        <Image
+        src={commitGraph}
+        alt="Burlwood's commit graph: branch lanes beside a list of commits with branch and tag labels, and the selected commit's changed files grouped by folder."
+        widths={[720, 1080, 1440, 2160, 2880]}
+        sizes="(min-width: 1360px) 1248px, 92vw"
+          loading="eager"
+          fetchpriority="high"
+        />
+      </picture>
+    </figure>
+  </header>
+
+  <main>
+    <section class="leaf" id="history" aria-labelledby="history-title">
+      <span class="stamp leaf-stamp" aria-hidden="true">LEAF 02</span>
+      <div class="leaf-grid">
+        <div class="leaf-copy">
+          <h2 id="history-title">Read the history.</h2>
+          <p>
+            Every branch, tag and stash gets its own lane, and the graph scrolls smoothly through thousands of commits.
+            <kbd>⌘F</kbd> finds a commit, and its changed files sit grouped by folder.
+          </p>
+          <p>Checkout, create a branch or tag at any commit, revert, or reset soft, mixed or hard. A hard reset can be undone.</p>
+        </div>
+        <figure class="frame frame-native">
+          <Image
+            src={graphLanes}
+            alt="Close-up of the commit graph: coloured lanes fork and merge beside commits labelled with branches, their remotes and a v0.2.0 tag."
+            widths={[554, 1108]}
+            sizes="(min-width: 600px) 554px, 92vw"
+          />
+        </figure>
+      </div>
+    </section>
+
+    <section class="leaf" id="working-tree" aria-labelledby="working-tree-title">
+      <span class="stamp leaf-stamp" aria-hidden="true">LEAF 03</span>
+      <div class="leaf-grid leaf-grid-top">
+        <h2 id="working-tree-title">Shape the commit.</h2>
+        <div class="leaf-copy">
+          <p>
+            Stage and unstage whole files or single hunks. Burlwood builds the patch from exactly the lines on screen and
+            hands it to git.
+          </p>
+          <p>
+            Diffs are syntax-highlighted, unified or side by side, with the changed words marked. Discard has Undo, and
+            images preview in place.
+          </p>
+        </div>
+      </div>
+      <figure class="frame frame-native frame-wide">
+        <picture>
+          <source media="(max-width: 719px)" srcset={hunkSmall.srcSet.attribute} sizes="92vw" />
+          <Image
+            src={hunkDiff}
+          alt="Close-up of a diff: three removed lines in red and their replacements in green, with only the changed words marked more strongly."
+          widths={[893, 1786]}
+            sizes="(min-width: 960px) 893px, 92vw"
+          />
+        </picture>
+      </figure>
+    </section>
+
+    <section class="leaf" id="features" aria-labelledby="features-title">
+      <span class="stamp leaf-stamp" aria-hidden="true">LEAF 04</span>
+      <div class="leaf-inner">
+        <h2 id="features-title">The cutting list.</h2>
+        <p class="leaf-intro">Everything else in the box, as plain as git itself.</p>
+        <table class="cutting-list">
+          <thead>
+            <tr>
+              <th scope="col">Part</th>
+              <th scope="col">What it does</th>
+            </tr>
+          </thead>
+          <tbody>
+            {
+              cuttingList.map(([part, cut]) => (
+                <tr>
+                  <th scope="row">{part}</th>
+                  <td>{cut}</td>
+                </tr>
+              ))
+            }
+            <tr class="not-yet">
+              <th scope="row">Not yet</th>
+              <td>HTTPS sign-in for private repositories. SSH remotes work through your SSH agent</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="veneer" id="install" aria-labelledby="install-title">
+      <Grain class="install-grain" width={1600} height={1000} knots={installKnots} gap={64} />
+      <span class="stamp leaf-stamp" aria-hidden="true">LEAF 05</span>
+      <div class="leaf-inner">
+        <h2 id="install-title">Take a leaf.</h2>
+        <p class="leaf-intro">
+          Free to download, free to change. Burlwood runs your system git, so git must be installed and on your
+          <code>PATH</code>.
+        </p>
+
+        <div class="platforms">
+          <article class="platform">
+            <h3>macOS</h3>
+            <p>A universal DMG. Open it and drag Burlwood to Applications.</p>
+            <p>
+              The app isn’t signed with an Apple Developer ID, so macOS blocks the first launch. Clear the quarantine flag
+              once:
+            </p>
+            <div class="command">
+              <pre><code>xattr -dr com.apple.quarantine /Applications/Burlwood.app</code></pre>
+              <button class="copy" type="button" data-copy="xattr -dr com.apple.quarantine /Applications/Burlwood.app">
+                <Icon name="copy" />
+                <span>Copy</span>
+              </button>
+            </div>
+            <a class="button button-solid" href={downloads.mac}><Icon name="download" />Download .dmg</a>
+          </article>
+
+          <article class="platform">
+            <h3>Linux</h3>
+            <p>An AppImage. It needs WebKit2GTK 4.1:</p>
+            <pre><code><span class="comment"># Fedora / RHEL</span>
+sudo dnf install webkit2gtk4.1
+<span class="comment"># Ubuntu / Debian</span>
+sudo apt install libwebkit2gtk-4.1-0
+<span class="comment"># Arch Linux</span>
+sudo pacman -S webkit2gtk-4.1</code></pre>
+            <p>Then make it executable and run it.</p>
+            <a class="button button-solid" href={downloads.linux}><Icon name="download" />Download AppImage</a>
+          </article>
+
+          <article class="platform">
+            <h3>Windows</h3>
+            <p>A zip. Unzip it and run <code>burlwood.exe</code>.</p>
+            <a class="button button-solid" href={downloads.windows}><Icon name="download" />Download .zip</a>
+          </article>
+        </div>
+
+        <p class="aside">
+          Every build is on the <a href={downloads.all}>releases page</a>, or <a href={`${repo}#building-from-source`}
+            >build it from source</a
+          >.
+        </p>
+      </div>
+    </section>
+  </main>
+
+  <footer class="foot">
+    <a class="brand" href="/">burlwood</a>
+    <p>Free software under the <a href={`${repo}/blob/main/LICENSE`}>GPL-3.0</a>. © 2026 Stijn Mommersteeg.</p>
+    <a class="foot-link" href={repo}><Icon name="github" />Source on GitHub</a>
+  </footer>
+</Layout>
+
+<style>
+  .hero {
+    position: relative;
+    isolation: isolate;
+    overflow: hidden;
+    padding-bottom: clamp(48px, 7vw, 96px);
+    background: linear-gradient(180deg, #cf8d50 0, var(--amber-low) 640px, var(--burl) 100%);
+    color: var(--heartwood);
+    text-align: center;
+  }
+
+  .top {
+    position: relative;
+    z-index: 0;
+    background: linear-gradient(#cf8d50 72%, rgba(207, 141, 80, 0));
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 24px;
+    padding: 22px var(--gutter);
+  }
+
+  .top ul {
+    display: flex;
+    gap: clamp(18px, 2.4vw, 32px);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .top a {
+    font-weight: 650;
+    font-size: 16px;
+    text-decoration: none;
+  }
+
+  .top a:hover {
+    text-decoration: underline;
+  }
+
+  .brand {
+    font-size: 22px;
+    font-weight: 700;
+    letter-spacing: -0.03em;
+    text-decoration: none;
+  }
+
+  .hero-stamp {
+    position: absolute;
+    top: 82px;
+  }
+
+  .hero-stamp-left {
+    left: var(--gutter);
+  }
+
+  .hero-stamp-right {
+    right: var(--gutter);
+  }
+
+  .wordmark {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    align-items: center;
+    margin: clamp(64px, 5vw, 72px) 0 0;
+    font-size: clamp(60px, 10.4vw, 150px);
+    font-weight: 750;
+    line-height: 0.92;
+    letter-spacing: -0.04em;
+    color: var(--sapwood);
+  }
+
+  .half-left {
+    text-align: right;
+  }
+
+  .half-right {
+    text-align: left;
+  }
+
+  .knot {
+    position: relative;
+    width: 0.95em;
+    height: 0.6em;
+    top: 0.1em;
+  }
+
+  .knot::after {
+    content: '';
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 0.34em;
+    height: 0.34em;
+    transform: translate(-50%, -50%);
+    border: 0.065em solid var(--sapwood);
+    border-radius: 50%;
+    background: var(--heartwood);
+  }
+
+  .knot :global(.hero-grain) {
+    --grain-w: max(100vw, 9.6em);
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    z-index: -1;
+    width: var(--grain-w);
+    height: calc(var(--grain-w) * 1500 / 1600);
+    margin-left: calc(var(--grain-w) / -2);
+    margin-top: calc(var(--grain-w) * -400 / 1600);
+    /* Sands the grain down behind the pitch so no line runs through the copy. */
+    --pitch-y: calc(var(--grain-w) * 400 / 1600 + 238px);
+    mask-image: radial-gradient(
+      ellipse 640px 205px at 50% var(--pitch-y),
+      rgba(0, 0, 0, 0.12) 0,
+      rgba(0, 0, 0, 0.12) 62%,
+      #000 100%
+    );
+  }
+
+  .line {
+    margin: clamp(40px, 4.2vw, 62px) auto 0;
+    padding: 0 var(--gutter);
+    font-size: clamp(24px, 2.4vw, 32px);
+    font-weight: 680;
+    line-height: 1.2;
+    letter-spacing: -0.015em;
+  }
+
+  .sub {
+    max-width: 46em;
+    margin: 14px auto 0;
+    padding: 0 var(--gutter);
+    font-size: clamp(17px, 1.4vw, 19px);
+  }
+
+  .cta {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 12px;
+    margin-top: 28px;
+    padding: 0 var(--gutter);
+  }
+
+  .meta {
+    margin-top: 14px;
+    padding: 0 var(--gutter);
+    font-size: 13px;
+  }
+
+  .inlay {
+    width: min(100% - 2 * var(--gutter), 1248px);
+    margin: clamp(40px, 4vw, 52px) auto 0;
+    border: var(--frame) solid var(--heartwood);
+    background: var(--heartwood);
+  }
+
+  .inlay img {
+    width: 100%;
+  }
+
+  .inlay picture {
+    display: block;
+  }
+
+  .leaf,
+  .veneer {
+    position: relative;
+    padding: clamp(80px, 10vw, 136px) var(--gutter);
+  }
+
+  .leaf + .leaf {
+    border-top: 1px solid rgba(243, 221, 184, 0.12);
+  }
+
+  .leaf-stamp {
+    position: absolute;
+    top: clamp(20px, 2.6vw, 32px);
+    right: var(--gutter);
+  }
+
+  .leaf-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
+    gap: clamp(32px, 4.5vw, 64px);
+    align-items: center;
+    max-width: 1248px;
+    margin: 0 auto;
+  }
+
+  .leaf-grid-top {
+    align-items: start;
+  }
+
+  .leaf-grid-top .leaf-copy {
+    padding-top: 10px;
+  }
+
+  .frame-native {
+    justify-self: end;
+    width: fit-content;
+    max-width: 100%;
+  }
+
+  .leaf .frame-wide {
+    justify-self: start;
+    max-width: min(100%, calc(893px + 2 * var(--frame)));
+    margin: clamp(40px, 5vw, 64px) 0 0 max(0px, (100% - 1248px) / 2);
+  }
+
+  .frame picture {
+    display: block;
+  }
+
+  .leaf-inner {
+    position: relative;
+    max-width: 1248px;
+    margin: 0 auto;
+  }
+
+  h2 {
+    font-size: clamp(42px, 5.4vw, 72px);
+    line-height: 1;
+    letter-spacing: -0.035em;
+  }
+
+  .leaf-copy h2 {
+    margin-bottom: 28px;
+  }
+
+  .leaf-copy p,
+  .leaf-intro {
+    max-width: var(--measure);
+    color: var(--sapwood-dim);
+  }
+
+  .leaf-copy p + p {
+    margin-top: 16px;
+  }
+
+  .leaf-intro {
+    margin: 18px 0 44px;
+  }
+
+  kbd {
+    font-family: var(--font-mono);
+    font-size: 0.85em;
+    padding: 1px 6px;
+    border: 1px solid rgba(243, 221, 184, 0.35);
+    border-radius: 4px;
+    color: var(--sapwood);
+  }
+
+  .frame {
+    margin: 0;
+    border: var(--frame) solid var(--heartwood-raised);
+    background: var(--heartwood-raised);
+  }
+
+  .cutting-list {
+    width: 100%;
+    border-collapse: collapse;
+    background: var(--sapwood);
+    color: var(--heartwood);
+    font-size: 17px;
+    line-height: 1.45;
+  }
+
+  .cutting-list thead th {
+    padding: 14px 24px;
+    border-bottom: 2px solid var(--heartwood);
+    font-size: 14px;
+    font-weight: 600;
+    text-align: left;
+  }
+
+  .cutting-list tbody th,
+  .cutting-list td {
+    padding: 15px 24px;
+    border-bottom: 1px solid rgba(42, 26, 16, 0.22);
+    text-align: left;
+    vertical-align: baseline;
+  }
+
+  .cutting-list tbody th {
+    width: 200px;
+    font-size: 19px;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+  }
+
+  .cutting-list tbody tr:last-child > * {
+    border-bottom: 0;
+  }
+
+  .cutting-list .not-yet > * {
+    border-top: 2px dashed rgba(42, 26, 16, 0.45);
+  }
+
+  .veneer {
+    isolation: isolate;
+    overflow: hidden;
+    background: linear-gradient(180deg, var(--amber) 0, var(--amber-low) 100%);
+    color: var(--heartwood);
+  }
+
+  .veneer :global(.install-grain) {
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    width: 100%;
+    height: 100%;
+    mask-image: linear-gradient(90deg, #000 0, rgba(0, 0, 0, 0.18) 22%, rgba(0, 0, 0, 0.18) 78%, #000 100%);
+  }
+
+  .veneer .leaf-intro {
+    color: var(--heartwood);
+  }
+
+  .platforms {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    border: 2px solid var(--heartwood);
+    background: var(--sapwood);
+  }
+
+  .platform {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    padding: clamp(22px, 2.4vw, 32px);
+    font-size: 17px;
+  }
+
+  .platform + .platform {
+    border-left: 2px solid var(--heartwood);
+  }
+
+  .platform h3 {
+    font-size: 30px;
+    letter-spacing: -0.02em;
+    line-height: 1.1;
+  }
+
+  .platform .button {
+    align-self: flex-start;
+    margin-top: auto;
+  }
+
+  .platform p:last-of-type {
+    margin-bottom: 10px;
+  }
+
+  .platform code {
+    font-size: 0.9em;
+  }
+
+  pre {
+    margin: 0;
+    padding: 14px 16px;
+    overflow-x: auto;
+    background: var(--heartwood);
+    color: var(--sapwood);
+    font-size: 13.5px;
+    line-height: 1.6;
+    border-radius: 4px;
+    scrollbar-color: var(--burl) var(--heartwood);
+  }
+
+  pre code {
+    font-size: inherit;
+  }
+
+  .comment {
+    color: var(--sapwood-dim);
+  }
+
+  .command {
+    position: relative;
+  }
+
+  .command pre {
+    padding-right: 96px;
+    white-space: pre-wrap;
+    word-break: break-all;
+  }
+
+  .copy {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    min-height: 32px;
+    padding: 0 10px;
+    border: 1px solid rgba(243, 221, 184, 0.35);
+    border-radius: 4px;
+    background: var(--heartwood-raised);
+    color: var(--sapwood);
+    font: 600 13px var(--font-display);
+    cursor: pointer;
+  }
+
+  .copy:hover {
+    border-color: var(--sapwood);
+  }
+
+  .copy svg {
+    width: 16px;
+    height: 16px;
+  }
+
+  .aside {
+    margin-top: 28px;
+    font-size: 17px;
+  }
+
+  .foot {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px 32px;
+    padding: 36px var(--gutter) 44px;
+    color: var(--sapwood-dim);
+    font-size: 15px;
+  }
+
+  .foot p {
+    flex: 1 1 320px;
+  }
+
+  .foot .brand {
+    color: var(--sapwood);
+  }
+
+  .foot-link {
+    display: inline-flex;
+    white-space: nowrap;
+    align-items: center;
+    gap: 8px;
+    text-decoration: none;
+    color: var(--sapwood);
+    font-weight: 600;
+  }
+
+  .foot-link:hover {
+    text-decoration: underline;
+  }
+
+  .foot-link svg {
+    width: 18px;
+    height: 18px;
+  }
+
+  @media (max-width: 959px) {
+    .leaf-grid {
+      grid-template-columns: minmax(0, 1fr);
+    }
+
+    .frame-native {
+      justify-self: start;
+    }
+
+    .platforms {
+      grid-template-columns: minmax(0, 1fr);
+    }
+
+    .platform + .platform {
+      border-left: 0;
+      border-top: 2px solid var(--heartwood);
+    }
+  }
+
+  @media (max-width: 719px) {
+    .hero-stamp-right {
+      display: none;
+    }
+
+    .hero-stamp {
+      top: 72px;
+    }
+
+    .top .brand {
+      font-size: 20px;
+    }
+
+    .knot :global(.hero-grain) {
+      mask-image: radial-gradient(
+        ellipse 300px 280px at 50% calc(var(--pitch-y) + 30px),
+        rgba(0, 0, 0, 0.12) 0,
+        rgba(0, 0, 0, 0.12) 62%,
+        #000 100%
+      );
+    }
+
+    .cutting-list thead {
+      display: none;
+    }
+
+    .cutting-list,
+    .cutting-list tbody,
+    .cutting-list tr,
+    .cutting-list th,
+    .cutting-list td {
+      display: block;
+      width: auto;
+    }
+
+    .cutting-list tbody th {
+      padding: 16px 18px 2px;
+      border-bottom: 0;
+    }
+
+    .cutting-list td {
+      padding: 0 18px 16px;
+    }
+
+    .cutting-list .not-yet > * {
+      border-top: 0;
+    }
+
+    .cutting-list .not-yet {
+      border-top: 2px dashed rgba(42, 26, 16, 0.45);
+    }
+
+    .cutting-list tbody tr:not(:last-child) {
+      border-bottom: 1px solid rgba(42, 26, 16, 0.22);
+    }
+  }
+</style>
+
+<script>
+  for (const button of document.querySelectorAll<HTMLButtonElement>('button[data-copy]')) {
+    const label = button.querySelector('span')!;
+    button.addEventListener('click', async () => {
+      try {
+        await navigator.clipboard.writeText(button.dataset.copy!);
+        label.textContent = 'Copied';
+      } catch {
+        label.textContent = 'Select and copy';
+      }
+      setTimeout(() => {
+        label.textContent = 'Copy';
+      }, 2000);
+    });
+  }
+</script>

@@ -1,0 +1,448 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-10-25T00:00:00Z",
+  "title": "Design System: Burlwood website",
+  "extensions": {
+    "colorMeta": {
+      "heartwood": {
+        "role": "primary",
+        "displayName": "Heartwood",
+        "canonical": "#2a1a10",
+        "oklch": "oklch(23.6% 0.031 52.7)",
+        "tonalRamp": [
+          "#150701",
+          "#312117",
+          "#503e33",
+          "#705d51",
+          "#927e71",
+          "#b6a093",
+          "#dac4b7",
+          "#feeade"
+        ]
+      },
+      "heartwood-raised": {
+        "role": "neutral",
+        "displayName": "Heartwood Raised",
+        "canonical": "#3a2618",
+        "oklch": "oklch(28.9% 0.038 55.6)",
+        "tonalRamp": [
+          "#170600",
+          "#332012",
+          "#523d2e",
+          "#735c4c",
+          "#957d6d",
+          "#b99f8e",
+          "#dec3b2",
+          "#feeadd"
+        ]
+      },
+      "sapwood": {
+        "role": "primary",
+        "displayName": "Sapwood",
+        "canonical": "#f3ddb8",
+        "oklch": "oklch(90.6% 0.054 80.7)",
+        "tonalRamp": [
+          "#120900",
+          "#322200",
+          "#513f1e",
+          "#715e3d",
+          "#937f5d",
+          "#b7a27f",
+          "#dcc6a2",
+          "#ffeccc"
+        ]
+      },
+      "sapwood-dim": {
+        "role": "neutral",
+        "displayName": "Sapwood Dim",
+        "canonical": "#d9bf98",
+        "oklch": "oklch(81.7% 0.060 77.8)",
+        "tonalRamp": [
+          "#120900",
+          "#332101",
+          "#543e1a",
+          "#745d39",
+          "#967e59",
+          "#baa17b",
+          "#dfc59e",
+          "#feecd0"
+        ]
+      },
+      "amber-crown": {
+        "role": "secondary",
+        "displayName": "Amber Crown",
+        "canonical": "#cf8d50",
+        "oklch": "oklch(69.7% 0.112 62.0)",
+        "tonalRamp": [
+          "#150700",
+          "#391d01",
+          "#613602",
+          "#8d5004",
+          "#b17233",
+          "#d79458",
+          "#feb97b",
+          "#ffead9"
+        ]
+      },
+      "amber": {
+        "role": "secondary",
+        "displayName": "Amber",
+        "canonical": "#cc8a4e",
+        "oklch": "oklch(68.8% 0.111 61.5)",
+        "tonalRamp": [
+          "#150700",
+          "#3a1d00",
+          "#623501",
+          "#8d5007",
+          "#b27134",
+          "#d79458",
+          "#feb87c",
+          "#ffeada"
+        ]
+      },
+      "amber-low": {
+        "role": "secondary",
+        "displayName": "Amber Low",
+        "canonical": "#b97a44",
+        "oklch": "oklch(63.4% 0.105 59.7)",
+        "tonalRamp": [
+          "#160700",
+          "#3a1c01",
+          "#633502",
+          "#8c5015",
+          "#b0723c",
+          "#d6955f",
+          "#fcb982",
+          "#feeadb"
+        ]
+      },
+      "burl": {
+        "role": "secondary",
+        "displayName": "Burl",
+        "canonical": "#8a5230",
+        "oklch": "oklch(49.6% 0.089 50.7)",
+        "tonalRamp": [
+          "#180600",
+          "#3e1900",
+          "#66310d",
+          "#89512f",
+          "#ad7250",
+          "#d39572",
+          "#f9b994",
+          "#feeadf"
+        ],
+        "figureSteps": [
+          "#a86a3c",
+          "#9d6237",
+          "#935a33",
+          "#8a5230"
+        ]
+      },
+      "burl-figure-1": {
+        "role": "tertiary",
+        "displayName": "Burl Figure, outer ring",
+        "canonical": "#a86a3c",
+        "oklch": "oklch(58.2% 0.100 55.8)",
+        "tonalRamp": [
+          "#160700",
+          "#3c1b00",
+          "#663201",
+          "#8c5021",
+          "#b07144",
+          "#d69466",
+          "#fcb889",
+          "#feeadd"
+        ],
+        "figureSteps": [
+          "#a86a3c",
+          "#9d6237",
+          "#935a33",
+          "#8a5230"
+        ]
+      },
+      "burl-figure-2": {
+        "role": "tertiary",
+        "displayName": "Burl Figure, second ring",
+        "canonical": "#9d6237",
+        "oklch": "oklch(55.2% 0.096 55.3)",
+        "tonalRamp": [
+          "#170600",
+          "#3c1b01",
+          "#663202",
+          "#8a5125",
+          "#af7247",
+          "#d49569",
+          "#fab98c",
+          "#feeadd"
+        ],
+        "figureSteps": [
+          "#a86a3c",
+          "#9d6237",
+          "#935a33",
+          "#8a5230"
+        ]
+      },
+      "burl-figure-3": {
+        "role": "tertiary",
+        "displayName": "Burl Figure, third ring",
+        "canonical": "#935a33",
+        "oklch": "oklch(52.3% 0.092 53.6)",
+        "tonalRamp": [
+          "#170600",
+          "#3d1a00",
+          "#673104",
+          "#89512a",
+          "#ae724b",
+          "#d3956d",
+          "#f9b990",
+          "#ffeadd"
+        ],
+        "figureSteps": [
+          "#a86a3c",
+          "#9d6237",
+          "#935a33",
+          "#8a5230"
+        ]
+      },
+      "grain-line": {
+        "role": "tertiary",
+        "displayName": "Grain Line",
+        "canonical": "#5a3420",
+        "oklch": "oklch(36.7% 0.063 47.8)",
+        "tonalRamp": [
+          "#180500",
+          "#3d1a05",
+          "#5d3723",
+          "#7f5641",
+          "#a27761",
+          "#c79a83",
+          "#edbda6",
+          "#ffeadf"
+        ]
+      }
+    },
+    "typographyMeta": {
+      "display": {
+        "displayName": "Display",
+        "purpose": "The split wordmark \"burl ● wood\" only."
+      },
+      "headline": {
+        "displayName": "Headline",
+        "purpose": "One short imperative sentence per leaf."
+      },
+      "title": {
+        "displayName": "Title",
+        "purpose": "The hero line under the wordmark."
+      },
+      "title-panel": {
+        "displayName": "Title Panel",
+        "purpose": "Platform names in the install panels."
+      },
+      "body": {
+        "displayName": "Body",
+        "purpose": "Leaf copy at the 34em measure."
+      },
+      "body-dense": {
+        "displayName": "Body Dense",
+        "purpose": "Cutting list and platform panels."
+      },
+      "label": {
+        "displayName": "Label",
+        "purpose": "Leaf stamps and the hero meta line; git and machine data only."
+      },
+      "code": {
+        "displayName": "Code",
+        "purpose": "Shell command blocks."
+      }
+    },
+    "shadows": [],
+    "motion": [
+      {
+        "name": "ease-out-expo",
+        "value": "cubic-bezier(0.16, 1, 0.3, 1)",
+        "purpose": "Button background and colour transitions, 0.2s."
+      },
+      {
+        "name": "grain-follow",
+        "value": "lerp 0.16 per frame",
+        "purpose": "Pointer knot position easing; loop stops when settled."
+      },
+      {
+        "name": "grain-strength",
+        "value": "lerp 0.08 per frame",
+        "purpose": "Pointer knot grows on pointermove and relaxes on pointerleave; knot size 120x78 at full strength, mirrored on the opposite leaf."
+      },
+      {
+        "name": "grain-gate",
+        "value": "(hover: hover) and (pointer: fine), not prefers-reduced-motion",
+        "purpose": "Grain is static on touch and under Reduce Motion; smooth scroll is also turned off under Reduce Motion."
+      }
+    ],
+    "breakpoints": [
+      {
+        "name": "stack",
+        "value": "959px",
+        "purpose": "Leaf grids and platform panels become one column."
+      },
+      {
+        "name": "narrow",
+        "value": "719px",
+        "purpose": "Right hero stamp hidden, narrow screenshot crops, hero mask reshaped, cutting list restacks."
+      }
+    ],
+    "masks": [
+      {
+        "name": "hero-pitch",
+        "value": "radial-gradient(ellipse 640px 205px at 50% var(--pitch-y), rgba(0,0,0,.12) 0, rgba(0,0,0,.12) 62%, #000 100%)",
+        "purpose": "Sands hero grain under the copy; 300px 280px ellipse, 30px lower, under 720px."
+      },
+      {
+        "name": "install-sides",
+        "value": "linear-gradient(90deg, #000 0, rgba(0,0,0,.18) 22%, rgba(0,0,0,.18) 78%, #000 100%)",
+        "purpose": "Full grain at the leaf edges, sanded across the content."
+      }
+    ],
+    "gradients": [
+      {
+        "name": "hero-veneer",
+        "value": "linear-gradient(180deg, #cf8d50 0, var(--amber-low) 640px, var(--burl) 100%)"
+      },
+      {
+        "name": "install-veneer",
+        "value": "linear-gradient(180deg, var(--amber) 0, var(--amber-low) 100%)"
+      }
+    ],
+    "grain": {
+      "rowGap": "60px (64px on install)",
+      "wave": "5px sine, mirrored about the centre",
+      "stroke": "grain-line, 2.4px, 50% opacity, non-scaling",
+      "knotRings": [
+        0.6,
+        1.05
+      ],
+      "figurePerturbation": "2.5% horizontal, 6% vertical sine"
+    },
+    "sharedBrand": "Icon, sapwood/heartwood and the Bricolage wordmark are shared with the desktop app; its own system is the repo-root DESIGN.md."
+  },
+  "components": [
+    {
+      "name": "Solid Button",
+      "kind": "button",
+      "refersTo": "button-solid",
+      "description": "Primary download action on amber or sapwood grounds.",
+      "html": "<div class=\"ds-veneer\"><a class=\"ds-btn ds-btn-solid\" href=\"#\"><svg viewBox=\"0 0 24 24\" width=\"20\" height=\"20\" aria-hidden=\"true\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.9\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M12 4v11m0 0-4.5-4.5M12 15l4.5-4.5M5 19.5h14\"/></svg>Download for macOS</a></div>",
+      "css": ":host{--heartwood:#2a1a10;--heartwood-raised:#3a2618;--burl:#8a5230;--amber:#cc8a4e;--amber-low:#b97a44;--sapwood:#f3ddb8;--sapwood-dim:#d9bf98;--grain-line:#5a3420;--font-display:'Bricolage Grotesque Variable','Bricolage Grotesque',-apple-system,system-ui,sans-serif;--font-mono:ui-monospace,'SF Mono',SFMono-Regular,Menlo,Consolas,monospace;--frame:8px;} .ds-btn{display:inline-flex;align-items:center;gap:10px;min-height:52px;padding:0 22px;border:2px solid var(--heartwood);border-radius:6px;font:650 18px/1 var(--font-display);text-decoration:none;white-space:nowrap;transition:background-color .2s cubic-bezier(0.16, 1, 0.3, 1),color .2s cubic-bezier(0.16, 1, 0.3, 1);} .ds-btn:focus-visible{outline:2px solid var(--heartwood);outline-offset:3px;} .ds-veneer{display:inline-flex;gap:12px;padding:24px;background:var(--amber);} .ds-btn-solid{background:var(--heartwood);color:var(--sapwood);} .ds-btn-solid:hover{background:var(--heartwood-raised);}"
+    },
+    {
+      "name": "Outline Button",
+      "kind": "button",
+      "refersTo": "button-outline",
+      "description": "Secondary route beside the primary download.",
+      "html": "<div class=\"ds-veneer\"><a class=\"ds-btn ds-btn-outline\" href=\"#\">Linux · Windows</a></div>",
+      "css": ":host{--heartwood:#2a1a10;--heartwood-raised:#3a2618;--burl:#8a5230;--amber:#cc8a4e;--amber-low:#b97a44;--sapwood:#f3ddb8;--sapwood-dim:#d9bf98;--grain-line:#5a3420;--font-display:'Bricolage Grotesque Variable','Bricolage Grotesque',-apple-system,system-ui,sans-serif;--font-mono:ui-monospace,'SF Mono',SFMono-Regular,Menlo,Consolas,monospace;--frame:8px;} .ds-btn{display:inline-flex;align-items:center;gap:10px;min-height:52px;padding:0 22px;border:2px solid var(--heartwood);border-radius:6px;font:650 18px/1 var(--font-display);text-decoration:none;white-space:nowrap;transition:background-color .2s cubic-bezier(0.16, 1, 0.3, 1),color .2s cubic-bezier(0.16, 1, 0.3, 1);} .ds-btn:focus-visible{outline:2px solid var(--heartwood);outline-offset:3px;} .ds-veneer{display:inline-flex;gap:12px;padding:24px;background:var(--amber);} .ds-btn-outline{background:transparent;color:var(--heartwood);} .ds-btn-outline:hover{background:rgba(42,26,16,.12);}"
+    },
+    {
+      "name": "Leaf Stamp",
+      "kind": "chip",
+      "refersTo": "stamp",
+      "description": "Corner-pinned leaf number; LEAF NN, plus the version on leaf 01 only.",
+      "html": "<div class=\"ds-ground\"><span class=\"ds-stamp\">LEAF 01 · v0.3.0</span></div>",
+      "css": ":host{--heartwood:#2a1a10;--heartwood-raised:#3a2618;--burl:#8a5230;--amber:#cc8a4e;--amber-low:#b97a44;--sapwood:#f3ddb8;--sapwood-dim:#d9bf98;--grain-line:#5a3420;--font-display:'Bricolage Grotesque Variable','Bricolage Grotesque',-apple-system,system-ui,sans-serif;--font-mono:ui-monospace,'SF Mono',SFMono-Regular,Menlo,Consolas,monospace;--frame:8px;} .ds-ground{padding:24px;background:var(--amber);} .ds-stamp{display:inline-block;padding:3px 9px;border:2px solid var(--heartwood);background:var(--sapwood);color:var(--heartwood);font:600 13px/1.4 var(--font-mono);white-space:nowrap;}"
+    },
+    {
+      "name": "Nav Strip",
+      "kind": "nav",
+      "refersTo": "nav",
+      "description": "Brand left, three links right, on the amber crown fading into the veneer.",
+      "html": "<nav class=\"ds-nav\"><a class=\"ds-brand\" href=\"#\">burlwood</a><ul><li><a href=\"#\">Features</a></li><li><a href=\"#\">Install</a></li><li><a href=\"#\">GitHub</a></li></ul></nav>",
+      "css": ":host{--heartwood:#2a1a10;--heartwood-raised:#3a2618;--burl:#8a5230;--amber:#cc8a4e;--amber-low:#b97a44;--sapwood:#f3ddb8;--sapwood-dim:#d9bf98;--grain-line:#5a3420;--font-display:'Bricolage Grotesque Variable','Bricolage Grotesque',-apple-system,system-ui,sans-serif;--font-mono:ui-monospace,'SF Mono',SFMono-Regular,Menlo,Consolas,monospace;--frame:8px;} .ds-nav{display:flex;align-items:center;justify-content:space-between;gap:24px;padding:22px 32px;background:linear-gradient(#cf8d50 72%,rgba(207,141,80,0));color:var(--heartwood);font-family:var(--font-display);} .ds-nav ul{display:flex;gap:32px;margin:0;padding:0;list-style:none;} .ds-nav a{color:inherit;font-weight:650;font-size:16px;text-decoration:none;text-underline-offset:.2em;text-decoration-thickness:1.5px;} .ds-nav a:hover{text-decoration:underline;} .ds-nav .ds-brand{font-size:22px;font-weight:700;letter-spacing:-.03em;} .ds-nav a:focus-visible{outline:2px solid currentColor;outline-offset:3px;border-radius:2px;}"
+    },
+    {
+      "name": "Screenshot Frame",
+      "kind": "card",
+      "refersTo": "frame",
+      "description": "Flush inlay for real app screenshots: solid frame-width border in the darker wood, no radius, no shadow.",
+      "html": "<div class=\"ds-leaf\"><figure class=\"ds-frame\"><div class=\"ds-shot\">app screenshot</div></figure></div>",
+      "css": ":host{--heartwood:#2a1a10;--heartwood-raised:#3a2618;--burl:#8a5230;--amber:#cc8a4e;--amber-low:#b97a44;--sapwood:#f3ddb8;--sapwood-dim:#d9bf98;--grain-line:#5a3420;--font-display:'Bricolage Grotesque Variable','Bricolage Grotesque',-apple-system,system-ui,sans-serif;--font-mono:ui-monospace,'SF Mono',SFMono-Regular,Menlo,Consolas,monospace;--frame:8px;} .ds-leaf{padding:32px;background:var(--heartwood);} .ds-frame{margin:0;width:fit-content;border:var(--frame) solid var(--heartwood-raised);background:var(--heartwood-raised);} .ds-shot{width:320px;height:180px;display:grid;place-items:center;background:#1a1816;color:var(--sapwood-dim);font:13px var(--font-mono);}"
+    },
+    {
+      "name": "Cutting List",
+      "kind": "custom",
+      "refersTo": "cutting-list",
+      "description": "Feature table on sapwood paper; the last row, Not yet, is set off by a dashed rule.",
+      "html": "<table class=\"ds-cut\"><thead><tr><th scope=\"col\">Part</th><th scope=\"col\">What it does</th></tr></thead><tbody><tr><th scope=\"row\">Stashes</th><td>Create, apply, pop, rename and drop</td></tr><tr><th scope=\"row\">Engine</th><td>Your system git, so your own config, hooks and SSH agent apply</td></tr><tr class=\"ds-not-yet\"><th scope=\"row\">Not yet</th><td>HTTPS sign-in for private repositories</td></tr></tbody></table>",
+      "css": ":host{--heartwood:#2a1a10;--heartwood-raised:#3a2618;--burl:#8a5230;--amber:#cc8a4e;--amber-low:#b97a44;--sapwood:#f3ddb8;--sapwood-dim:#d9bf98;--grain-line:#5a3420;--font-display:'Bricolage Grotesque Variable','Bricolage Grotesque',-apple-system,system-ui,sans-serif;--font-mono:ui-monospace,'SF Mono',SFMono-Regular,Menlo,Consolas,monospace;--frame:8px;} .ds-cut{width:100%;border-collapse:collapse;background:var(--sapwood);color:var(--heartwood);font:17px/1.45 var(--font-display);} .ds-cut thead th{padding:14px 24px;border-bottom:2px solid var(--heartwood);font-size:14px;font-weight:600;text-align:left;} .ds-cut tbody th,.ds-cut td{padding:15px 24px;border-bottom:1px solid rgba(42,26,16,.22);text-align:left;vertical-align:baseline;} .ds-cut tbody th{width:200px;font-size:19px;font-weight:700;letter-spacing:-.01em;} .ds-cut tbody tr:last-child>*{border-bottom:0;} .ds-cut .ds-not-yet>*{border-top:2px dashed rgba(42,26,16,.45);}"
+    },
+    {
+      "name": "Platform Panel",
+      "kind": "card",
+      "refersTo": "platform-panel",
+      "description": "One of three equal panels on a shared sapwood plate; button pinned to the bottom.",
+      "html": "<div class=\"ds-plates\"><article class=\"ds-platform\"><h3>Windows</h3><p>A zip. Unzip it and run <code>burlwood.exe</code>.</p><a class=\"ds-pbtn\" href=\"#\"><svg viewBox=\"0 0 24 24\" width=\"20\" height=\"20\" aria-hidden=\"true\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.9\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M12 4v11m0 0-4.5-4.5M12 15l4.5-4.5M5 19.5h14\"/></svg>Download .zip</a></article><article class=\"ds-platform\"><h3>Linux</h3><p>An AppImage. It needs WebKit2GTK 4.1.</p><a class=\"ds-pbtn\" href=\"#\"><svg viewBox=\"0 0 24 24\" width=\"20\" height=\"20\" aria-hidden=\"true\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.9\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M12 4v11m0 0-4.5-4.5M12 15l4.5-4.5M5 19.5h14\"/></svg>Download AppImage</a></article></div>",
+      "css": ":host{--heartwood:#2a1a10;--heartwood-raised:#3a2618;--burl:#8a5230;--amber:#cc8a4e;--amber-low:#b97a44;--sapwood:#f3ddb8;--sapwood-dim:#d9bf98;--grain-line:#5a3420;--font-display:'Bricolage Grotesque Variable','Bricolage Grotesque',-apple-system,system-ui,sans-serif;--font-mono:ui-monospace,'SF Mono',SFMono-Regular,Menlo,Consolas,monospace;--frame:8px;} .ds-plates{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));border:2px solid var(--heartwood);background:var(--sapwood);color:var(--heartwood);font-family:var(--font-display);} .ds-platform{display:flex;flex-direction:column;gap:14px;padding:28px;font-size:17px;} .ds-platform+.ds-platform{border-left:2px solid var(--heartwood);} .ds-platform h3{margin:0;font-size:30px;font-weight:700;letter-spacing:-.02em;line-height:1.1;} .ds-platform p{margin:0 0 10px;} .ds-platform code{font-family:var(--font-mono);font-size:.9em;} .ds-pbtn{align-self:flex-start;margin-top:auto;display:inline-flex;align-items:center;gap:10px;min-height:52px;padding:0 22px;border:2px solid var(--heartwood);border-radius:6px;background:var(--heartwood);color:var(--sapwood);font:650 18px/1 var(--font-display);text-decoration:none;transition:background-color .2s cubic-bezier(0.16, 1, 0.3, 1);} .ds-pbtn:hover{background:var(--heartwood-raised);} .ds-pbtn:focus-visible{outline:2px solid var(--heartwood);outline-offset:3px;}"
+    },
+    {
+      "name": "Command Block",
+      "kind": "custom",
+      "refersTo": "command-block",
+      "description": "Heartwood pre for shell commands; a single command gets a copy button.",
+      "html": "<div class=\"ds-cmd\"><pre><code>xattr -dr com.apple.quarantine /Applications/Burlwood.app</code></pre><button class=\"ds-copy\" type=\"button\"><svg viewBox=\"0 0 24 24\" width=\"16\" height=\"16\" aria-hidden=\"true\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.9\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"8.5\" y=\"8.5\" width=\"11\" height=\"11\" rx=\"2\"/><path d=\"M15.5 8.5V6a1.5 1.5 0 0 0-1.5-1.5H6A1.5 1.5 0 0 0 4.5 6v8A1.5 1.5 0 0 0 6 15.5h2.5\"/></svg><span>Copy</span></button></div>",
+      "css": ":host{--heartwood:#2a1a10;--heartwood-raised:#3a2618;--burl:#8a5230;--amber:#cc8a4e;--amber-low:#b97a44;--sapwood:#f3ddb8;--sapwood-dim:#d9bf98;--grain-line:#5a3420;--font-display:'Bricolage Grotesque Variable','Bricolage Grotesque',-apple-system,system-ui,sans-serif;--font-mono:ui-monospace,'SF Mono',SFMono-Regular,Menlo,Consolas,monospace;--frame:8px;} .ds-cmd{position:relative;max-width:420px;} .ds-cmd pre{margin:0;padding:14px 96px 14px 16px;background:var(--heartwood);color:var(--sapwood);font:13.5px/1.6 var(--font-mono);border-radius:4px;white-space:pre-wrap;word-break:break-all;} .ds-copy{position:absolute;top:8px;right:8px;display:inline-flex;align-items:center;gap:6px;min-height:32px;padding:0 10px;border:1px solid rgba(243,221,184,.35);border-radius:4px;background:var(--heartwood-raised);color:var(--sapwood);font:600 13px var(--font-display);cursor:pointer;} .ds-copy:hover{border-color:var(--sapwood);} .ds-copy:focus-visible{outline:2px solid currentColor;outline-offset:3px;}"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Flitch",
+    "overview": "A flitch is a log sawn into consecutive leaves that are kept in order and numbered, so their figure can be bookmatched. The page is one flitch. Amber veneer leaves, drawn with the icon's contour grain, open and close it (the hero, and the install leaf). Heartwood leaves sit between them and carry the product: real app screenshots set in as inlays, two short headed passages, and a cutting list. Each leaf has its number stamped in a corner, the way samples in a veneer book are marked.\n\nThe grain is the one decorative system, and it is drawn rather than photographed. Contour lines flow around elliptical knots. The whole field is mirrored across the centre gutter, wave as well as knots, so the two halves read as bookmatched leaves. In the hero a stepped burl figure sits behind the split wordmark \"burl ● wood\", with the HEAD knot from the app icon between the halves. On a fine pointer the grain bends around the cursor, and the bend is mirrored on the opposite leaf. Under Reduce Motion, and on touch, the grain stays still.\n\nDensity is low and the type is large: a 150px wordmark, 72px leaf headlines, 18px body. Depth comes from material and borders, never from shadow. Nothing floats. Screenshots are set into their leaf with a solid border.",
+    "keyCharacteristics": [
+      "Two materials alternate. Amber veneer leaves have heartwood text, and heartwood leaves have sapwood text.",
+      "Contour grain is bookmatched across the centre and sanded down to 12–18% wherever copy sits on it.",
+      "Every leaf carries a corner stamp with its number: sapwood fill, heartwood rule, system mono.",
+      "Screenshots are inlays: a flush 8px solid border, no radius, no shadow.",
+      "Bricolage Grotesque is used for everything except git data, which is set in system mono."
+    ],
+    "rules": [
+      {
+        "name": "The Burl Carries Sapwood Rule",
+        "body": "The burl and the burl figure are a ground for sapwood display type only. Heartwood text never sits on burl (2.66:1). It belongs on amber-crown, amber, amber-low (4.73:1 or better) and sapwood (12.64:1). In the hero, all heartwood copy ends above the 640px gradient stop.",
+        "section": "colors"
+      },
+      {
+        "name": "The One Log Rule",
+        "body": "Every colour on the page is a tone of the same wood. Git meaning appears only inside the screenshots.",
+        "section": "colors"
+      },
+      {
+        "name": "The Mono Means Machine Rule",
+        "body": "Mono is reserved for what git or the shell would print: version tags, leaf numbers, commands, key glyphs. Prose is never set in mono.",
+        "section": "typography"
+      },
+      {
+        "name": "The Sanded Pitch Rule",
+        "body": "Grain never runs at full strength under copy. In the hero, a radial mask (640×205px, 300×280px on mobile) holds the lines at 12% around the text. On the install leaf, a horizontal mask holds the middle 56% at 18% and leaves both outer edges full.",
+        "section": "elevation"
+      },
+      {
+        "name": "The Flush Inlay Rule",
+        "body": "Screenshots get a solid border in the leaf's darker wood (heartwood on veneer, heartwood-raised on heartwood) of exactly the frame width. They get no shadow, no radius, no tilt and no floating.",
+        "section": "elevation"
+      }
+    ],
+    "dos": [
+      "**Do** alternate the two materials: amber veneer with heartwood text, and heartwood leaves with sapwood text.",
+      "**Do** mirror every grain field across the centre, knots and wave alike, including the pointer knot.",
+      "**Do** mask the grain to 12–18% under any copy.",
+      "**Do** set screenshots as flush inlays with an 8px solid border in the darker wood, at native size.",
+      "**Do** number each leaf with a corner stamp (`LEAF NN`), in order.",
+      "**Do** keep sapwood display type on the darker burl-figure steps (3.3:1 or better at 60px and up), and heartwood copy on amber or sapwood only.",
+      "**Do** keep the grain static under Reduce Motion and on touch."
+    ],
+    "donts": [
+      "**Don't** add shadows, glows or floating cards. Depth here is material.",
+      "**Don't** put heartwood text on burl (2.66:1).",
+      "**Don't** introduce hues from outside the wood. Git colours stay inside the screenshots.",
+      "**Don't** use a stamp as a topic label or eyebrow above a headline. It carries the leaf number and nothing else.",
+      "**Don't** round inlays, stamps, tables or panels. Only pressable things get 4–6px.",
+      "**Don't** set prose in mono or git data in Bricolage."
+    ]
+  }
+}

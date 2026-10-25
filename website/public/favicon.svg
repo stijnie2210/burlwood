@@ -1,0 +1,46 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0.4" y2="1">
+      <stop offset="0" stop-color="#CC8A4E"/>
+      <stop offset="1" stop-color="#8A5230"/>
+    </linearGradient>
+    <clipPath id="body">
+      <rect x="100" y="100" width="824" height="824" rx="185"/>
+    </clipPath>
+    <filter id="shadow" x="-10%" y="-10%" width="120%" height="125%">
+      <feDropShadow dx="0" dy="10" stdDeviation="14" flood-color="#000" flood-opacity="0.3"/>
+    </filter>
+  </defs>
+  <rect x="100" y="100" width="824" height="824" rx="185" fill="url(#bg)" filter="url(#shadow)"/>
+  <g clip-path="url(#body)" fill="none">
+    <g transform="translate(-40 40) rotate(-30 512 512)">
+      <g stroke="#5A3420" stroke-opacity="0.6" stroke-width="16" stroke-linecap="round">
+        <path d="M-300 -130 H 1324"/>
+        <path d="M-300 -50 C 300 -50 390 -52 512 -52 C 634 -52 724 -50 1324 -50"/>
+        <path d="M-300 30 C 300 30 390 25 512 25 C 634 25 724 30 1324 30"/>
+        <path d="M-300 110 C 300 110 390 100 512 100 C 634 100 724 110 1324 110"/>
+        <path d="M-300 190 C 300 190 390 175 512 175 C 634 175 724 190 1324 190"/>
+        <path d="M-300 270 C 300 270 390 230 512 230 C 634 230 724 270 1324 270"/>
+        <path d="M-300 350 C 300 350 390 270 512 270 C 634 270 724 350 1324 350"/>
+        <path d="M-300 430 C 300 430 400 330 512 330 C 624 330 724 430 1324 430"/>
+        <path d="M-300 594 C 300 594 400 694 512 694 C 624 694 724 594 1324 594"/>
+        <path d="M-300 674 C 300 674 390 754 512 754 C 634 754 724 674 1324 674"/>
+        <path d="M-300 754 C 300 754 390 794 512 794 C 634 794 724 754 1324 754"/>
+        <path d="M-300 834 C 300 834 390 849 512 849 C 634 849 724 834 1324 834"/>
+        <path d="M-300 914 C 300 914 390 924 512 924 C 634 924 724 914 1324 914"/>
+        <path d="M-300 994 C 300 994 390 999 512 999 C 634 999 724 994 1324 994"/>
+        <path d="M-300 1074 H 1324"/>
+        <path d="M-300 1154 H 1324"/>
+        <ellipse cx="512" cy="512" rx="150" ry="112"/>
+        <ellipse cx="512" cy="512" rx="100" ry="74" stroke-opacity="0.48"/>
+      </g>
+      <g stroke="#F3DDB8" stroke-width="24" stroke-linecap="round">
+        <path d="M-300 512 H 512 C 640 512 700 430 1324 430"/>
+        <path d="M512 512 C 640 512 700 594 1324 594"/>
+      </g>
+      <circle cx="230" cy="512" r="32" fill="#F3DDB8" stroke="#2A1A10" stroke-width="12"/>
+      <circle cx="720" cy="553" r="32" fill="#F3DDB8" stroke="#2A1A10" stroke-width="12"/>
+      <circle cx="512" cy="512" r="54" fill="#2A1A10" stroke="#F3DDB8" stroke-width="20"/>
+    </g>
+  </g>
+</svg>
