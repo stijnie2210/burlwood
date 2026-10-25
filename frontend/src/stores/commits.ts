@@ -24,6 +24,7 @@ export const useCommitsStore = defineStore('commits', () => {
   const diffLoading = ref(false);
   const diffError = ref<string | null>(null);
   const currentRepoPath = ref<string | null>(null);
+  const searchQuery = ref('');
 
   const maxColumn = computed(() => rows.value.reduce((m, r) => Math.max(m, r.maxColumn), 0));
 
@@ -43,6 +44,7 @@ export const useCommitsStore = defineStore('commits', () => {
       selectedHash.value = null;
       selectedFileIndex.value = null;
       diff.value = [];
+      searchQuery.value = '';
     }
     error.value = null;
     currentRepoPath.value = repoPath;
@@ -121,6 +123,7 @@ export const useCommitsStore = defineStore('commits', () => {
     diff.value = [];
     hasMore.value = false;
     currentRepoPath.value = null;
+    searchQuery.value = '';
   }
 
   return {
@@ -134,6 +137,7 @@ export const useCommitsStore = defineStore('commits', () => {
     diff,
     diffLoading,
     diffError,
+    searchQuery,
     maxColumn,
     load,
     loadMore,

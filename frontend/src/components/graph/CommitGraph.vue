@@ -5,6 +5,9 @@ import { useCommitsStore } from '../../stores/commits';
 import type { GraphRow } from '../../stores/commits';
 import { useReposStore } from '../../stores/repos';
 import { useToastStore } from '../../stores/toast';
+import { useBranchesStore } from '../../stores/branches';
+import { usePrefsStore } from '../../stores/prefs';
+import { formatDate } from '../../utils/date';
 import { CELL_W } from './graphRenderer';
 import CommitRow from './CommitRow.vue';
 import CommitContextMenu from './CommitContextMenu.vue';
@@ -14,14 +17,14 @@ const ROW_H = 28;
 const repos = useReposStore();
 const commits = useCommitsStore();
 const toast = useToastStore();
+const branches = useBranchesStore();
+const prefsStore = usePrefsStore();
 
 const parentRef = ref<HTMLElement | null>(null);
-const searchQuery = ref('');
-const searchVisible = ref(false);
-const searchInputRef = ref<HTMLInputElement | null>(null);
+const searching = computed(() => commits.searchQuery.trim() !== '');
 
 const filteredRows = computed(() => {
-  const q = searchQuery.value.trim().toLowerCase();
+  const q = commits.searchQuery.trim().toLowerCase();
   if (!q) {
     return commits.rows;
   }
@@ -41,7 +44,7 @@ watch(
   () => commits.rows,
   (next, prev) => {
     const el = parentRef.value;
-    if (!el || !prev?.length || next === prev || searchQuery.value.trim()) {
+    if (!el || !prev?.length || next === prev || searching.value) {
       return;
     }
     const topIndex = Math.floor(el.scrollTop / ROW_H);
@@ -124,28 +127,37 @@ function toggleGraphWidth() {
   setGraphLimit(graphTruncated.value ? naturalGraphWidth.value : DEFAULT_GRAPH_WIDTH);
 }
 
-// Scroll to top when search results change so first match is visible
-watch(filteredRows, () => {
-  virtualizer.value.scrollToIndex(0);
+// Scroll to top when the search changes so the first match is visible
+watch(
+  () => commits.searchQuery,
+  () => virtualizer.value.scrollToIndex(0)
+);
+
+// A commit picked elsewhere (a tag in the sidebar, a parent link) may be off-screen.
+watch(selectedIndex, (idx) => {
+  if (idx >= 0) {
+    virtualizer.value.scrollToIndex(idx, { align: 'auto' });
+  }
 });
 
-function openSearch() {
-  searchVisible.value = true;
-  nextTick(() => searchInputRef.value?.focus());
-}
+const fetchStatus = computed(() => {
+  // The shared clock ticks once a minute, so a fetch can be newer than "now".
+  const at = branches.lastFetchedAt;
+  const when = at
+    ? `fetched ${formatDate(Math.floor(at / 1000), 'relative', Math.max(prefsStore.now, at))}`
+    : 'not fetched yet';
+  return prefsStore.prefs.autoFetchEnabled ? `Auto-fetch on · ${when}` : `Auto-fetch off · ${when}`;
+});
 
-function closeSearch() {
-  searchVisible.value = false;
-  searchQuery.value = '';
-}
+const countStatus = computed(() => {
+  const total = commits.rows.length.toLocaleString();
+  if (searching.value) {
+    return `${filteredRows.value.length.toLocaleString()} of ${total} commits`;
+  }
+  return `${total} commits${commits.hasMore ? ' loaded' : ''}`;
+});
 
 function onGlobalKeyDown(e: KeyboardEvent) {
-  if ((e.metaKey || e.ctrlKey) && e.key === 'f') {
-    e.preventDefault();
-    openSearch();
-    return;
-  }
-
   if (e.key === 'y' && !e.metaKey && !e.ctrlKey && !e.altKey) {
     if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) {
       return;
@@ -189,12 +201,6 @@ function onGlobalKeyDown(e: KeyboardEvent) {
   virtualizer.value.scrollToIndex(next, { align: 'auto' });
 }
 
-function onSearchKeyDown(e: KeyboardEvent) {
-  if (e.key === 'Escape') {
-    closeSearch();
-  }
-}
-
 function onScroll() {
   const el = parentRef.value;
   if (!el || commits.loadingMore || !commits.hasMore) {
@@ -205,14 +211,8 @@ function onScroll() {
   }
 }
 
-onMounted(() => {
-  window.addEventListener('keydown', onGlobalKeyDown);
-  window.addEventListener('burlwood:find', openSearch);
-});
-onUnmounted(() => {
-  window.removeEventListener('keydown', onGlobalKeyDown);
-  window.removeEventListener('burlwood:find', openSearch);
-});
+onMounted(() => window.addEventListener('keydown', onGlobalKeyDown));
+onUnmounted(() => window.removeEventListener('keydown', onGlobalKeyDown));
 
 function rowLabel(row: GraphRow | undefined): string | undefined {
   if (!row) {
@@ -277,26 +277,12 @@ async function onMenuRefresh() {
 
 <template>
   <div class="commit-graph-root">
-    <!-- Search bar -->
-    <div v-if="searchVisible" class="search-bar">
-      <input
-        ref="searchInputRef"
-        v-model="searchQuery"
-        class="search-input"
-        placeholder="Search commits…"
-        @keydown="onSearchKeyDown"
-      />
-      <span v-if="searchQuery.trim()" class="search-count">
-        {{ filteredRows.length }} result{{ filteredRows.length === 1 ? '' : 's' }}
-      </span>
-      <button
-        class="search-close"
-        aria-label="Close search"
-        title="Close search (Esc)"
-        @click="closeSearch"
-      >
-        ×
-      </button>
+    <div class="graph-columns" aria-hidden="true">
+      <span class="col-graph" :style="{ width: `${graphWidth}px` }" />
+      <span class="col-hash">Hash</span>
+      <span class="col-message">Message</span>
+      <span class="col-author">Author</span>
+      <span class="col-date">Date</span>
     </div>
 
     <div class="graph-viewport">
@@ -317,8 +303,8 @@ async function onMenuRefresh() {
           <code>{{ commits.error }}</code>
         </div>
 
-        <div v-else-if="searchQuery.trim() && filteredRows.length === 0" class="no-results">
-          No commits match "{{ searchQuery }}"
+        <div v-else-if="searching && filteredRows.length === 0" class="no-results">
+          No commits match "{{ commits.searchQuery.trim() }}"
         </div>
 
         <div v-else :style="{ height: `${totalSize}px`, position: 'relative' }">
@@ -363,12 +349,6 @@ async function onMenuRefresh() {
         />
 
         <div v-if="commits.loadingMore" class="loading-more">Loading more commits…</div>
-        <div
-          v-else-if="!commits.hasMore && commits.rows.length > 0 && !searchQuery.trim()"
-          class="load-end"
-        >
-          {{ commits.rows.length }} commits loaded
-        </div>
       </div>
       <div
         class="graph-resize"
@@ -389,11 +369,21 @@ async function onMenuRefresh() {
         @keydown.right.prevent="setGraphLimit(graphWidth + CELL_W)"
       />
     </div>
+    <footer class="graph-status">
+      <span
+        class="status-dot"
+        :class="{ on: prefsStore.prefs.autoFetchEnabled }"
+        aria-hidden="true"
+      />
+      <span class="status-text">{{ fetchStatus }}</span>
+      <span class="status-count">{{ countStatus }}</span>
+    </footer>
   </div>
 </template>
 
 <style scoped>
 .commit-graph-root {
+  container: graph / inline-size;
   flex: 1;
   min-width: 0;
   display: flex;
@@ -401,49 +391,84 @@ async function onMenuRefresh() {
   overflow: hidden;
 }
 
-.search-bar {
+.graph-columns {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 5px 10px;
-  background: var(--surface-raised);
-  border-bottom: 1px solid var(--border);
+  gap: var(--space-2);
+  height: var(--row-h);
+  padding-right: var(--space-4);
+  flex-shrink: 0;
+  border-bottom: 1px solid var(--border-subtle);
+  font-size: var(--text-meta);
+  font-weight: 600;
+  color: var(--text-tertiary);
+  white-space: nowrap;
+  user-select: none;
+  -webkit-user-select: none;
+}
+.col-graph {
   flex-shrink: 0;
 }
-
-.search-input {
+.col-hash {
+  flex-shrink: 0;
+  width: 52px;
+}
+.col-message {
   flex: 1;
-  background: var(--surface-field);
-  border: 1px solid var(--border);
-  border-radius: 4px;
-  color: var(--text-primary);
-  font-size: var(--text-body);
-  padding: 3px 8px;
-  outline: none;
+  min-width: 80px;
+}
+.col-author {
+  flex-shrink: 0;
+  width: 150px;
+}
+.col-date {
+  flex-shrink: 0;
+  width: 80px;
+  text-align: right;
+}
+@container graph (max-width: 720px) {
+  .col-author {
+    display: none;
+  }
+}
+@container graph (max-width: 520px) {
+  .col-date {
+    display: none;
+  }
 }
 
-.search-input:focus {
-  border-color: var(--focus-ring);
-}
-
-.search-count {
-  font-size: var(--text-row);
+.graph-status {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  height: 26px;
+  padding: 0 var(--inset-panel);
+  flex-shrink: 0;
+  background: var(--surface-raised);
+  border-top: 1px solid var(--border-subtle);
+  font-size: var(--text-meta);
   color: var(--text-tertiary);
   white-space: nowrap;
 }
-
-.search-close {
-  background: none;
-  border: none;
-  color: var(--text-tertiary);
-  cursor: default;
-  font-size: 16px;
-  line-height: 1;
-  padding: 0 2px;
+.status-dot {
+  width: 6px;
+  height: 6px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  background: var(--text-tertiary);
 }
-
-.search-close:hover {
-  color: var(--text-secondary);
+.status-dot.on {
+  background: var(--add);
+}
+.status-text {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.status-count {
+  flex-shrink: 0;
+  font-variant-numeric: tabular-nums;
 }
 
 .graph-viewport {
@@ -478,7 +503,6 @@ async function onMenuRefresh() {
 }
 
 .graph-scroller {
-  container: graph / inline-size;
   flex: 1;
   overflow-y: auto;
   overflow-x: auto;
@@ -520,12 +544,5 @@ async function onMenuRefresh() {
   color: var(--text-tertiary);
   text-align: center;
   font-size: var(--text-row);
-}
-
-.load-end {
-  padding: 12px;
-  color: var(--text-tertiary);
-  text-align: center;
-  font-size: var(--text-meta);
 }
 </style>

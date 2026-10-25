@@ -83,6 +83,7 @@ internal/repo/
     windowprefs.go                  open tabs + active tab, window frame — JSON files next to repos.json
   configdir.go                      configPath(): the settings folder; moves the pre-rename `gitgood` folder once
   branches.go                       ListBranches (for-each-ref), GetAheadBehind
+  tags.go                           ListTags: newest first, annotated tags peeled to their commit
   commits.go                        GetCommitGraph (git log --all --date-order + stashes + ref labels), GetCommitDiff
                                     buildHunks() — context lines from prefs.DiffContextLines
   diff.go                           GetStatus (git status --porcelain), GetWorkingDiff
@@ -108,18 +109,22 @@ frontend/src/
     useLineBudget.ts                renders the first 2000 diff lines until "Show more"; hunk actions keep the full hunk
     usePush.ts                      pushWithFeedback: names the destination; rejection → red "Force push (with lease)" toast
     useDetailWidth.ts               shared, localStorage-backed width of the detail / file-list panel
+    useDiffLayout.ts                shared Unified|Split layout and Wrap toggle for every diff view (localStorage)
   utils/
     gitErrors.ts                    describeGitError: raw git stderr → sentence + next step (toast.error uses it; raw text under Details)
     conflicts.ts                    parseConflicts (see Conflict resolution flow)
     highlight.ts                    Prism syntax highlighting for diff lines
     imageUtils.ts                   isImageFile, imageDataUrl
     date.ts                         formatDate (relative | absolute, from prefs)
+    diffRows.ts                     changedRanges (word-level change within a paired line), pairChanges, splitRows
+    initials.ts                     author initials for the avatar circles
   App.smoke.test.ts                 mounts the whole app on stubbed Wails bindings — catches setup-time crashes
-  assets/labels.css                 ref/tag/stash label pills (CommitRow, CommitDetail)
+  assets/labels.css                 ref/tag/stash label pills, rendered by graph/RefLabel.vue
+  assets/fonts/                     Bricolage Grotesque subset for the welcome wordmark only (SIL OFL)
   stores/
     repos.ts                        tabs[], activeRepo, openRepo, pickAndOpen, closeTab
-    branches.ts                     local[], remote[] — loaded on activeRepo change
-    commits.ts                      rows[], selectedHash, diff[] — GetCommitGraph(prefs.commitGraphLimit), loads more on demand
+    branches.ts                     local[], remote[], tags[], aheadBehind, lastFetchedAt — loaded on activeRepo change
+    commits.ts                      rows[], selectedHash, diff[], searchQuery — GetCommitGraph(prefs.commitGraphLimit), loads more on demand
     staging.ts                      files[], unstagedFiles, stagedFiles, diff[]
                                     buildHunkPatch() — constructs patch string for git apply
     stash.ts                        stash list for the sidebar
@@ -127,26 +132,33 @@ frontend/src/
     toast.ts                        toast queue (ToastStack)
     logModal.ts                     title/content for LogViewerModal (full git output)
   components/
-    layout/ToolBar.vue              Title-bar row (hidden-inset, --wails-draggable): repo button, Commits|Working Tree
-                                    segmented control, git actions, Settings
+    layout/ToolBar.vue              Title-bar row (hidden-inset, --wails-draggable): repo button, current-branch chip,
+                                    Commits|Working Tree segmented control, icon-only git actions (tooltips +
+                                    aria-labels), Find commit field (⌘F via the 'burlwood:find' event), Settings
     layout/TabBar.vue               Repo tabs (open/close/switch); only rendered with 2+ repos
     layout/RepoPicker.vue           Recent repos + Open…; shared by the toolbar repo button and the tab bar + (stores/repoPicker.ts)
-    layout/Sidebar.vue              Local/remote branches + stashes (collapsible sections) — width set by App.vue via :style
+    layout/Sidebar.vue              Branches, remotes grouped per remote, tags, stashes (collapsible sections); arrow keys move
+                                    between options with the same data-list — width set by App.vue via :style
     layout/PreferencesModal.vue     Edits AppPrefs (stores/prefs.ts)
     layout/LogViewerModal.vue       Full git output with Copy (stores/logModal.ts)
     layout/ToastStack.vue           Renders stores/toast.ts
     graph/CommitGraph.vue           @tanstack/vue-virtual virtualizer; canvas-per-row; resizable graph column
-                                    (width in localStorage `burlwood:graph-width`)
-    graph/CommitRow.vue             Single row: canvas + shortHash + labels + subject
-    graph/CommitDetail.vue          Commit metadata + CommitFileList / FileDiffView
-    graph/CommitFileList.vue        Changed files with A/M/D/R status
+                                    (width in localStorage `burlwood:graph-width`); column headers, filter from
+                                    commits.searchQuery, status bar (auto-fetch, last fetch, commit count)
+    graph/CommitRow.vue             Single row: canvas + shortHash + RefLabels + subject + author initials
+    graph/RefLabel.vue              One ref pill (HEAD check, branch, remote cloud, tag, stash)
+    graph/CommitDetail.vue          Commit metadata (copy hash, parent links) + CommitFileList / FileDiffView
+    graph/CommitFileList.vue        Changed files grouped by folder with A/M/D/R status and +/− totals
     graph/FileDiffView.vue          Diff of the selected file; resizable file list
     graph/CommitContextMenu.vue     Right-click menu for commits; self-clamps via clampMenuPosition in onMounted
-    graph/graphRenderer.ts          drawGraphCell() — CELL_W=14, bezier curves for diagonals
+    graph/graphRenderer.ts          drawGraphCell() — CELL_W=14, bezier curves for diagonals; the HEAD commit is
+                                    drawn as the icon's knot (--brand-sapwood ring, --brand-heartwood core)
     staging/StagingView.vue         File list (unstaged/staged/conflicts) + merge banner + ConflictView/HunkSelector
                                     Arrow key navigation across all three file sections
                                     Right-click context menu (teleported); image preview for image file types
-    staging/HunkSelector.vue        Per-hunk Stage/Unstage buttons; reuses same diff-line CSS
+    staging/HunkSelector.vue        Per-hunk Stage/Unstage buttons around diff/DiffLines
+    diff/DiffLines.vue              Shared diff renderer: unified or split, wrap, changed-word highlight
+    diff/DiffLayoutControls.vue     Unified|Split + Wrap controls (composables/useDiffLayout.ts)
     staging/ConflictView.vue        Conflict resolution: parse markers → per-conflict Accept Ours/Theirs
 ```
 
@@ -174,7 +186,7 @@ Frontend builds the patch (not backend) so the applied patch exactly matches wha
 ### Fonts
 macOS system fonts via tokens in `style.css`: `var(--font-ui)` (SF Pro, set on `body`) and `var(--font-mono)` (SF Mono → Menlo) for hashes, paths and diffs. Never use bare `monospace` — WKWebView maps it to Courier. Base text is left-aligned; centre explicitly where intended.
 
-Four text sizes, as tokens: `--text-meta` 11 (labels, hashes, line numbers), `--text-row` 12 (list rows, menus, code), `--text-body` 13 (buttons, inputs, messages), `--text-title` 15 (modal titles). Only exceptions: the welcome wordmark (32px) and glyph icons (16px).
+Four text sizes, as tokens: `--text-meta` 11 (labels, hashes, line numbers), `--text-row` 12 (list rows, menus, code), `--text-body` 13 (buttons, inputs, messages), `--text-title` 15 (modal titles). Only exceptions: the welcome wordmark (44px, Bricolage Grotesque subset in `assets/fonts/`, used nowhere else) and glyph icons (16px).
 
 ### Color theme
 All colours are semantic tokens in `style.css`; never hard-code hex in components. Neutral macOS-style greys, colour only where it means something:

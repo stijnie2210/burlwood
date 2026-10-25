@@ -2,8 +2,11 @@
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue';
 import { useDetailWidth } from '../../composables/useDetailWidth';
 import { isImageFile, imageDataUrl } from '../../utils/imageUtils';
-import { highlightLine, languageForPath } from '../../utils/highlight';
+import { languageForPath } from '../../utils/highlight';
 import { useLineBudget } from '../../composables/useLineBudget';
+import { useDiffLayout } from '../../composables/useDiffLayout';
+import DiffLines from '../diff/DiffLines.vue';
+import DiffLayoutControls from '../diff/DiffLayoutControls.vue';
 
 const fileListWidth = useDetailWidth();
 
@@ -27,6 +30,7 @@ import CommitFileList from './CommitFileList.vue';
 
 const commits = useCommitsStore();
 const repos = useReposStore();
+const { layout, wrap } = useDiffLayout();
 
 const file = computed(() =>
   commits.selectedFileIndex !== null ? commits.diff[commits.selectedFileIndex] : null
@@ -136,6 +140,7 @@ onUnmounted(() => document.removeEventListener('keydown', onKeyDown));
       <div v-if="file" class="fdv-title">
         <span class="fdv-filepath">{{ filePath(file) }}</span>
       </div>
+      <DiffLayoutControls v-if="file && !file.isBinary" />
       <div v-if="selectedRow" class="fdv-commit-chip">
         <span class="fdv-chip-hash">{{ selectedRow.shortHash }}</span>
         <span class="fdv-chip-subject">{{ selectedRow.subject }}</span>
@@ -160,19 +165,7 @@ onUnmounted(() => document.removeEventListener('keydown', onKeyDown));
           <div v-if="file.hunks.length === 0" class="fdv-notice">No changes</div>
           <div v-for="(entry, hi) in visible" :key="entry.hunk.header + hi" class="fdv-hunk">
             <div class="fdv-hunk-header">{{ entry.hunk.header }}</div>
-            <div
-              v-for="(line, li) in entry.lines"
-              :key="li"
-              class="diff-line"
-              :class="`diff-line--${line.type}`"
-            >
-              <span class="diff-gutter">{{
-                line.type === 'add' ? '+' : line.type === 'del' ? '−' : ' '
-              }}</span>
-              <span class="diff-lineno old">{{ line.oldLine || '' }}</span>
-              <span class="diff-lineno new">{{ line.newLine || '' }}</span>
-              <span class="diff-content" v-html="highlightLine(line.content, lang)"></span>
-            </div>
+            <DiffLines :lines="entry.lines" :lang="lang" :layout="layout" :wrap="wrap" />
           </div>
           <button v-if="hiddenLines" class="diff-show-all" @click="revealAll">
             Show {{ hiddenLines.toLocaleString() }} more lines
@@ -184,9 +177,6 @@ onUnmounted(() => document.removeEventListener('keydown', onKeyDown));
 
       <!-- File list sidebar -->
       <div class="fdv-files" :style="{ width: fileListWidth + 'px' }">
-        <div class="fdv-files-title">
-          {{ commits.diff.length }} changed file{{ commits.diff.length !== 1 ? 's' : '' }}
-        </div>
         <CommitFileList />
       </div>
     </div>
@@ -333,68 +323,6 @@ onUnmounted(() => document.removeEventListener('keydown', onKeyDown));
   border-bottom: 1px solid var(--border-subtle);
 }
 
-/* ── Diff line styles ── */
-.diff-line {
-  display: flex;
-  font-family: var(--font-mono);
-  font-size: var(--text-row);
-  line-height: 19px;
-  white-space: pre;
-  tab-size: 4;
-}
-.diff-line--add {
-  background: var(--add-line-bg);
-}
-.diff-line--del {
-  background: var(--del-line-bg);
-}
-.diff-line--context {
-  color: var(--text-secondary);
-}
-
-.diff-gutter {
-  width: 14px;
-  text-align: center;
-  flex-shrink: 0;
-  color: var(--text-tertiary);
-  user-select: none;
-}
-.diff-line--add .diff-gutter {
-  color: var(--add);
-}
-.diff-line--del .diff-gutter {
-  color: var(--del);
-}
-
-.diff-lineno {
-  width: 44px;
-  text-align: right;
-  padding-right: 8px;
-  color: var(--text-tertiary);
-  flex-shrink: 0;
-  user-select: none;
-  font-size: var(--text-meta);
-  line-height: 19px;
-}
-.diff-line--add .diff-lineno.old {
-  color: transparent;
-}
-.diff-line--del .diff-lineno.new {
-  color: transparent;
-}
-
-.diff-content {
-  padding-left: 6px;
-  color: var(--text-primary);
-  overflow: visible;
-}
-.diff-line--add .diff-content {
-  color: var(--add-fg);
-}
-.diff-line--del .diff-content {
-  color: var(--del-fg);
-}
-
 /* ── File list sidebar ── */
 .fdv-files {
   flex-shrink: 0;
@@ -416,13 +344,6 @@ onUnmounted(() => document.removeEventListener('keydown', onKeyDown));
   background: var(--accent-fill);
 }
 
-.fdv-files-title {
-  padding: 8px 12px;
-  font-size: var(--text-meta);
-  color: var(--text-tertiary);
-  border-bottom: 1px solid var(--border-subtle);
-  flex-shrink: 0;
-}
 .diff-show-all {
   display: block;
   width: 100%;

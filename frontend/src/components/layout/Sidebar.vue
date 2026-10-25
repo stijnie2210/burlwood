@@ -15,6 +15,7 @@ import { useToastStore } from '../../stores/toast';
 import { pushWithFeedback } from '../../composables/usePush';
 import { useStashStore } from '../../stores/stash';
 import type { StashEntry } from '../../stores/stash';
+import type { BranchInfo, TagInfo } from '../../stores/branches';
 import {
   StartRebase,
   DeleteBranch,
@@ -37,8 +38,11 @@ const stash = useStashStore();
 interface CollapsedState {
   local: boolean;
   remote: boolean;
+  tags: boolean;
   stashes: boolean;
 }
+
+const EXPANDED: CollapsedState = { local: false, remote: false, tags: false, stashes: false };
 
 const branchFilter = ref('');
 const filteredLocal = computed(() => {
@@ -52,7 +56,31 @@ const filteredRemote = computed(() => {
     : branches.remote;
 });
 
-const collapsed = ref<CollapsedState>({ local: false, remote: false, stashes: false });
+interface RemoteGroup {
+  remote: string;
+  items: { branch: BranchInfo; index: number }[];
+}
+
+// Index is the branch's position across all remotes, so one roving Tab stop covers every group.
+const remoteGroups = computed(() => {
+  const groups: RemoteGroup[] = [];
+  filteredRemote.value.forEach((branch, index) => {
+    let group = groups.find((g) => g.remote === branch.remote);
+    if (!group) {
+      group = { remote: branch.remote, items: [] };
+      groups.push(group);
+    }
+    group.items.push({ branch, index });
+  });
+  return groups;
+});
+
+const collapsedRemotes = ref<Record<string, boolean>>({});
+function remoteExpanded(remote: string): boolean {
+  return branchFilter.value.trim() !== '' || !collapsedRemotes.value[remote];
+}
+
+const collapsed = ref<CollapsedState>({ ...EXPANDED });
 const remoteHeight = ref(200);
 
 function prefsKey(repoPath: string) {
@@ -64,14 +92,19 @@ function loadPrefs(repoPath: string) {
     const raw = localStorage.getItem(prefsKey(repoPath));
     if (raw) {
       const p = JSON.parse(raw);
-      collapsed.value = { local: !!p.local, remote: !!p.remote, stashes: !!p.stashes };
+      collapsed.value = {
+        local: !!p.local,
+        remote: !!p.remote,
+        tags: !!p.tags,
+        stashes: !!p.stashes,
+      };
       remoteHeight.value = typeof p.remoteHeight === 'number' ? p.remoteHeight : 200;
       return;
     }
   } catch {
     // ignore malformed saved prefs
   }
-  collapsed.value = { local: false, remote: false, stashes: false };
+  collapsed.value = { ...EXPANDED };
   remoteHeight.value = 200;
 }
 
@@ -122,7 +155,7 @@ watch(
     } else {
       branches.clear();
       stash.clear();
-      collapsed.value = { local: false, remote: false, stashes: false };
+      collapsed.value = { ...EXPANDED };
       remoteHeight.value = 200;
     }
   },
@@ -223,8 +256,8 @@ function restoreMenuFocus() {
 }
 
 // One Tab stop per list; arrow keys move within it.
-const roving = ref({ local: 0, remote: 0, stash: 0 });
-function rovingTab(list: 'local' | 'remote' | 'stash', i: number, length: number) {
+const roving = ref({ local: 0, remote: 0, tag: 0, stash: 0 });
+function rovingTab(list: 'local' | 'remote' | 'tag' | 'stash', i: number, length: number) {
   return i === Math.min(roving.value[list], length - 1) ? 0 : -1;
 }
 
@@ -234,11 +267,12 @@ watch(
 );
 
 function focusSiblingItem(e: KeyboardEvent, dir: 1 | -1) {
-  const li = e.currentTarget as HTMLElement;
-  const next = (
-    dir === 1 ? li.nextElementSibling : li.previousElementSibling
-  ) as HTMLElement | null;
-  next?.focus();
+  const item = e.currentTarget as HTMLElement;
+  const list = item.closest('.sidebar-content');
+  const options = Array.from(
+    list?.querySelectorAll<HTMLElement>(`[data-list="${item.dataset.list}"]`) ?? []
+  );
+  options[options.indexOf(item) + dir]?.focus();
 }
 
 function onWindowMouseDown(e: MouseEvent) {
@@ -376,6 +410,14 @@ async function confirmDelete(force: boolean) {
 }
 
 // ── Stash ─────────────────────────────────────────────────────────────────
+
+async function selectTag(tag: TagInfo) {
+  const repoPath = repos.activeRepo?.path;
+  if (!repoPath) {
+    return;
+  }
+  await commits.selectCommit(repoPath, tag.hash);
+}
 
 async function selectStash(entry: StashEntry) {
   const repoPath = repos.activeRepo?.path;
@@ -557,10 +599,18 @@ async function confirmStashRename() {
             :aria-expanded="!collapsed.local"
             @click="toggleSection('local')"
           >
-            <span class="section-chevron" aria-hidden="true">{{
-              collapsed.local ? '▸' : '▾'
-            }}</span>
-            Local Branches
+            <svg
+              class="section-chevron"
+              :class="{ collapsed: collapsed.local }"
+              width="10"
+              height="10"
+              viewBox="0 0 10 10"
+              aria-hidden="true"
+            >
+              <path d="M2.5 3.75L5 6.25L7.5 3.75" />
+            </svg>
+            <span class="section-label">Branches</span>
+            <span class="section-count">{{ branches.local.length || '' }}</span>
           </button>
         </h3>
         <ul
@@ -575,6 +625,7 @@ async function confirmStashRename() {
             class="branch-item"
             :class="{ current: b.isCurrent }"
             role="option"
+            data-list="local"
             :aria-current="b.isCurrent ? 'true' : undefined"
             :title="
               b.isCurrent ? b.name + ' (current)' : 'Double-click or Enter to switch to ' + b.name
@@ -590,7 +641,31 @@ async function confirmStashRename() {
             "
             @contextmenu="openCtxMenu($event, b.name, b.name, true, b.isCurrent)"
           >
-            <span class="branch-icon" aria-hidden="true">{{ b.isCurrent ? '●' : '○' }}</span>
+            <svg
+              v-if="b.isCurrent"
+              class="branch-icon"
+              width="13"
+              height="13"
+              viewBox="0 0 24 24"
+              stroke-width="2.5"
+              aria-hidden="true"
+            >
+              <path d="M20 6L9 17l-5-5" />
+            </svg>
+            <svg
+              v-else
+              class="branch-icon"
+              width="13"
+              height="13"
+              viewBox="0 0 24 24"
+              stroke-width="2"
+              aria-hidden="true"
+            >
+              <path d="M6 3v12" />
+              <circle cx="18" cy="6" r="3" />
+              <circle cx="6" cy="18" r="3" />
+              <path d="M18 9a9 9 0 0 1-9 9" />
+            </svg>
             <span class="branch-name">{{ b.name }}</span>
             <template v-if="b.isCurrent">
               <span
@@ -620,53 +695,156 @@ async function confirmStashRename() {
             :aria-expanded="!collapsed.remote"
             @click="toggleSection('remote')"
           >
-            <span class="section-chevron" aria-hidden="true">{{
-              collapsed.remote ? '▸' : '▾'
-            }}</span>
-            Remote Branches
+            <svg
+              class="section-chevron"
+              :class="{ collapsed: collapsed.remote }"
+              width="10"
+              height="10"
+              viewBox="0 0 10 10"
+              aria-hidden="true"
+            >
+              <path d="M2.5 3.75L5 6.25L7.5 3.75" />
+            </svg>
+            <span class="section-label">Remotes</span>
+            <span class="section-count">{{ remoteGroups.length || '' }}</span>
           </button>
         </h3>
-        <ul
+        <div
           v-if="!collapsed.remote"
-          class="branch-list remote-list"
-          role="listbox"
-          aria-label="Remote branches"
+          class="remote-tree"
           :style="{ maxHeight: remoteHeight + 'px' }"
         >
-          <li
-            v-for="(b, i) in filteredRemote"
-            :key="`${b.remote}/${b.name}`"
-            class="branch-item remote"
-            role="option"
-            :title="'Double-click or Enter to check out ' + b.remote + '/' + b.name"
-            :tabindex="rovingTab('remote', i, filteredRemote.length)"
-            @focus="roving.remote = i"
-            @dblclick="switchTo(b.remote + '/' + b.name, true)"
-            @keydown.enter="switchTo(b.remote + '/' + b.name, true)"
-            @keydown.up.prevent.stop="focusSiblingItem($event, -1)"
-            @keydown.down.prevent.stop="focusSiblingItem($event, 1)"
-            @keydown.shift.f10.prevent="
-              openCtxMenu(
-                menuEventFor($event),
-                b.remote + '/' + b.name,
-                b.remote + '/' + b.name,
-                false,
-                false
-              )
-            "
-            @contextmenu="
-              openCtxMenu($event, b.remote + '/' + b.name, b.remote + '/' + b.name, false, false)
-            "
-          >
-            <span class="branch-icon" aria-hidden="true">○</span>
-            <span class="branch-name"
-              ><span class="remote-label">{{ b.remote }}/</span>{{ b.name }}</span
+          <p v-if="!remoteGroups.length" class="empty-stash">
+            {{ branchFilter.trim() ? 'No matching remote branches' : 'No remotes' }}
+          </p>
+          <div v-for="g in remoteGroups" :key="g.remote" class="remote-group">
+            <button
+              type="button"
+              class="remote-group-toggle"
+              :aria-expanded="remoteExpanded(g.remote)"
+              @click="collapsedRemotes[g.remote] = !collapsedRemotes[g.remote]"
             >
-          </li>
-        </ul>
+              <svg
+                class="section-chevron"
+                :class="{ collapsed: !remoteExpanded(g.remote) }"
+                width="10"
+                height="10"
+                viewBox="0 0 10 10"
+                aria-hidden="true"
+              >
+                <path d="M2.5 3.75L5 6.25L7.5 3.75" />
+              </svg>
+              <span class="remote-group-name">{{ g.remote }}</span>
+              <span class="section-count">{{ g.items.length }}</span>
+            </button>
+            <ul
+              v-if="remoteExpanded(g.remote)"
+              class="branch-list"
+              role="listbox"
+              :aria-label="`Branches on ${g.remote}`"
+            >
+              <li
+                v-for="{ branch: b, index: i } in g.items"
+                :key="`${b.remote}/${b.name}`"
+                class="branch-item remote"
+                role="option"
+                data-list="remote"
+                :title="'Double-click or Enter to check out ' + b.remote + '/' + b.name"
+                :tabindex="rovingTab('remote', i, filteredRemote.length)"
+                @focus="roving.remote = i"
+                @dblclick="switchTo(b.remote + '/' + b.name, true)"
+                @keydown.enter="switchTo(b.remote + '/' + b.name, true)"
+                @keydown.up.prevent.stop="focusSiblingItem($event, -1)"
+                @keydown.down.prevent.stop="focusSiblingItem($event, 1)"
+                @keydown.shift.f10.prevent="
+                  openCtxMenu(
+                    menuEventFor($event),
+                    b.remote + '/' + b.name,
+                    b.remote + '/' + b.name,
+                    false,
+                    false
+                  )
+                "
+                @contextmenu="
+                  openCtxMenu(
+                    $event,
+                    b.remote + '/' + b.name,
+                    b.remote + '/' + b.name,
+                    false,
+                    false
+                  )
+                "
+              >
+                <span class="remote-dot" aria-hidden="true" />
+                <span class="branch-name">{{ b.name }}</span>
+              </li>
+            </ul>
+          </div>
+        </div>
       </section>
 
       <div class="section-divider" @mousedown="onSectionDividerDown" />
+
+      <section class="branch-section tag-section">
+        <h3 class="section-title">
+          <button
+            type="button"
+            class="section-title--toggle"
+            :aria-expanded="!collapsed.tags"
+            @click="toggleSection('tags')"
+          >
+            <svg
+              class="section-chevron"
+              :class="{ collapsed: collapsed.tags }"
+              width="10"
+              height="10"
+              viewBox="0 0 10 10"
+              aria-hidden="true"
+            >
+              <path d="M2.5 3.75L5 6.25L7.5 3.75" />
+            </svg>
+            <span class="section-label">Tags</span>
+            <span class="section-count">{{ branches.tags.length || '' }}</span>
+          </button>
+        </h3>
+        <ul
+          v-if="!collapsed.tags && branches.tags.length > 0"
+          class="branch-list tag-list"
+          role="listbox"
+          aria-label="Tags"
+        >
+          <li
+            v-for="(t, i) in branches.tags"
+            :key="t.name"
+            class="branch-item tag-item"
+            :class="{ 'tag-selected': commits.selectedHash === t.hash }"
+            role="option"
+            data-list="tag"
+            :aria-selected="commits.selectedHash === t.hash"
+            :title="`Show the commit tagged ${t.name}`"
+            :tabindex="rovingTab('tag', i, branches.tags.length)"
+            @focus="roving.tag = i"
+            @click="selectTag(t)"
+            @keydown.enter="selectTag(t)"
+            @keydown.up.prevent.stop="focusSiblingItem($event, -1)"
+            @keydown.down.prevent.stop="focusSiblingItem($event, 1)"
+          >
+            <svg
+              class="branch-icon"
+              width="13"
+              height="13"
+              viewBox="0 0 24 24"
+              stroke-width="2"
+              aria-hidden="true"
+            >
+              <path d="M12 2H2v10l9.3 9.3a1 1 0 0 0 1.4 0l8.6-8.6a1 1 0 0 0 0-1.4z" />
+              <circle cx="7" cy="7" r="1.5" />
+            </svg>
+            <span class="branch-name">{{ t.name }}</span>
+          </li>
+        </ul>
+        <p v-else-if="!collapsed.tags" class="empty-stash">No tags yet</p>
+      </section>
 
       <section class="branch-section stash-section">
         <h3 class="section-title">
@@ -676,10 +854,18 @@ async function confirmStashRename() {
             :aria-expanded="!collapsed.stashes"
             @click="toggleSection('stashes')"
           >
-            <span class="section-chevron" aria-hidden="true">{{
-              collapsed.stashes ? '▸' : '▾'
-            }}</span>
-            Stashes
+            <svg
+              class="section-chevron"
+              :class="{ collapsed: collapsed.stashes }"
+              width="10"
+              height="10"
+              viewBox="0 0 10 10"
+              aria-hidden="true"
+            >
+              <path d="M2.5 3.75L5 6.25L7.5 3.75" />
+            </svg>
+            <span class="section-label">Stashes</span>
+            <span class="section-count">{{ stash.entries.length || '' }}</span>
           </button>
         </h3>
         <ul
@@ -694,6 +880,7 @@ async function confirmStashRename() {
             class="branch-item stash-item"
             :class="{ 'stash-selected': commits.selectedHash === entry.hash }"
             role="option"
+            data-list="stash"
             :aria-selected="commits.selectedHash === entry.hash"
             :title="entry.message"
             :tabindex="rovingTab('stash', i, stash.entries.length)"
@@ -935,8 +1122,27 @@ async function confirmStashRename() {
 }
 
 .section-chevron {
-  font-size: var(--text-meta);
   flex-shrink: 0;
+  transition: transform 0.12s;
+}
+.section-chevron path {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.4;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.section-chevron.collapsed {
+  transform: rotate(-90deg);
+}
+
+.section-label {
+  flex: 1;
+}
+
+.section-count {
+  font-weight: 400;
+  font-variant-numeric: tabular-nums;
 }
 
 .branch-list {
@@ -948,8 +1154,10 @@ async function confirmStashRename() {
 .branch-item {
   display: flex;
   align-items: center;
-  gap: 6px;
-  padding: 4px 12px;
+  gap: 8px;
+  margin: 0 var(--space-2);
+  padding: 4px var(--space-2);
+  border-radius: 6px;
   font-size: var(--text-body);
   color: var(--text-secondary);
   cursor: default;
@@ -963,18 +1171,21 @@ async function confirmStashRename() {
   color: var(--text-primary);
 }
 .branch-item.current {
-  color: var(--accent-text);
-  font-weight: 500;
-  cursor: default;
+  background: var(--accent-soft);
+  color: var(--text-primary);
+  font-weight: 600;
 }
 .branch-item.remote {
   color: var(--text-secondary);
 }
 
 .branch-icon {
-  font-size: var(--text-meta);
-  color: var(--text-tertiary);
   flex-shrink: 0;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  color: var(--text-tertiary);
 }
 .branch-item.current .branch-icon {
   color: var(--accent-text);
@@ -1007,9 +1218,68 @@ async function confirmStashRename() {
   border: 1px solid var(--warning-border);
 }
 
-.remote-label {
-  color: var(--text-tertiary);
+.remote-tree {
+  overflow-y: auto;
+}
+
+.remote-group-toggle {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: calc(100% - 2 * var(--space-2));
+  margin: 0 var(--space-2);
+  padding: 4px var(--space-2);
+  border: none;
+  border-radius: 6px;
+  background: none;
+  color: var(--text-secondary);
+  font: inherit;
+  font-size: var(--text-row);
+  text-align: left;
+  cursor: default;
+}
+.remote-group-toggle:hover {
+  background: var(--surface-hover);
+  color: var(--text-primary);
+}
+.remote-group-toggle .section-count {
   font-size: var(--text-meta);
+  color: var(--text-tertiary);
+}
+.remote-group-name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.branch-item.remote {
+  padding-left: 26px;
+}
+
+.remote-dot {
+  flex-shrink: 0;
+  width: 6px;
+  height: 6px;
+  border: 1.5px solid var(--text-tertiary);
+  border-radius: 50%;
+}
+
+.tag-item.tag-selected {
+  background: var(--tag-soft);
+  color: var(--text-primary);
+}
+.tag-item .branch-icon {
+  color: var(--tag);
+}
+
+.tag-section {
+  flex-shrink: 0;
+}
+
+.tag-list {
+  max-height: 140px;
+  overflow-y: auto;
 }
 
 .stash-item {
@@ -1042,10 +1312,6 @@ async function confirmStashRename() {
   font-size: var(--text-meta);
   color: var(--text-tertiary);
   flex-shrink: 0;
-}
-
-.remote-list {
-  overflow-y: auto;
 }
 
 .local-section {

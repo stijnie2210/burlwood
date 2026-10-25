@@ -11,6 +11,7 @@ function deferred<T>(): Deferred<T> {
 const pending: Record<string, Deferred<unknown>> = {};
 vi.mock('../../wailsjs/go/main/App', () => ({
   ListBranches: (repo: string) => (pending[`branches:${repo}`] = deferred()).promise,
+  ListTags: async () => [],
   GetAheadBehind: async () => ({ ahead: 0, behind: 0 }),
   ListStashes: (repo: string) => (pending[`stash:${repo}`] = deferred()).promise,
   SwitchBranch: async () => null,

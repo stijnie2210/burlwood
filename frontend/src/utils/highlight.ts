@@ -92,3 +92,21 @@ export function highlightLine(content: string, lang: string | null): string {
 function escapeHtml(text: string): string {
   return text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 }
+
+// Each part is highlighted on its own so the mark never splits a Prism token's HTML.
+export function highlightChange(
+  content: string,
+  lang: string | null,
+  change?: { start: number; end: number }
+): string {
+  if (!change || change.start === change.end) {
+    return highlightLine(content, lang);
+  }
+  return (
+    highlightLine(content.slice(0, change.start), lang) +
+    '<mark class="diff-change">' +
+    highlightLine(content.slice(change.start, change.end), lang) +
+    '</mark>' +
+    highlightLine(content.slice(change.end), lang)
+  );
+}

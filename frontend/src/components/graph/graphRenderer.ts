@@ -2,6 +2,7 @@ import type { GraphRow } from '../../stores/commits';
 
 const CELL_W = 14;
 const DOT_R = 4;
+const KNOT_R = 6;
 
 export { CELL_W };
 
@@ -38,19 +39,39 @@ export function drawGraphCell(
     // A hollow ring says "this commit is in a lane further right", so it isn't read as part of
     // the edge lane it's drawn on. The surface-coloured fill hides the edge lane behind it.
     ctx.arc(dotX, midY, DOT_R - 0.5, 0, Math.PI * 2);
-    ctx.fillStyle = dotOutlineColor();
+    ctx.fillStyle = cssVar('--surface-base');
     ctx.fill();
     ctx.strokeStyle = row.color;
     ctx.lineWidth = 1.5;
     ctx.stroke();
     return;
   }
+  if (row.labels?.some((l) => l.type === 'head')) {
+    drawKnot(ctx, dotX, midY);
+    return;
+  }
   ctx.arc(dotX, midY, DOT_R, 0, Math.PI * 2);
   ctx.fillStyle = row.color;
   ctx.fill();
-  ctx.strokeStyle = dotOutlineColor();
+  ctx.strokeStyle = cssVar('--surface-base');
   ctx.lineWidth = 1.5;
   ctx.stroke();
+}
+
+// The checked-out commit is drawn as the knot from the app icon: a dark core in a sapwood ring.
+function drawKnot(ctx: CanvasRenderingContext2D, x: number, y: number): void {
+  ctx.beginPath();
+  ctx.arc(x, y, KNOT_R + 1.5, 0, Math.PI * 2);
+  ctx.fillStyle = cssVar('--surface-base');
+  ctx.fill();
+  ctx.beginPath();
+  ctx.arc(x, y, KNOT_R, 0, Math.PI * 2);
+  ctx.fillStyle = cssVar('--brand-sapwood');
+  ctx.fill();
+  ctx.beginPath();
+  ctx.arc(x, y, KNOT_R - 2.25, 0, Math.PI * 2);
+  ctx.fillStyle = cssVar('--brand-heartwood');
+  ctx.fill();
 }
 
 function drawSegment(
@@ -80,14 +101,17 @@ function drawSegment(
   ctx.stroke();
 }
 
-let cachedDotOutline = '';
+const cssVarCache = new Map<string, string>();
 
-// Canvas can't read CSS variables, so the dot outline resolves the graph's surface token once.
-function dotOutlineColor(): string {
-  if (!cachedDotOutline) {
-    cachedDotOutline =
-      getComputedStyle(document.documentElement).getPropertyValue('--surface-base').trim() ||
-      '#1b1b1d';
+// Canvas can't read CSS variables, so each token is resolved once from the root.
+function cssVar(name: string): string {
+  const cached = cssVarCache.get(name);
+  if (cached) {
+    return cached;
   }
-  return cachedDotOutline;
+  const value = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+  if (value) {
+    cssVarCache.set(name, value);
+  }
+  return value || '#000';
 }

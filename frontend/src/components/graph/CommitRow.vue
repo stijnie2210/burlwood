@@ -4,6 +4,8 @@ import type { GraphRow } from '../../stores/commits';
 import { drawGraphCell } from './graphRenderer';
 import { usePrefsStore } from '../../stores/prefs';
 import { formatDate } from '../../utils/date';
+import { initials } from '../../utils/initials';
+import RefLabel from './RefLabel.vue';
 
 const props = defineProps<{
   row: GraphRow;
@@ -59,14 +61,11 @@ watchEffect(() => {
     />
     <span class="row-hash">{{ row.shortHash }}</span>
     <span class="row-labels">
-      <span
+      <RefLabel
         v-for="l in visibleLabels"
         :key="`${l.type}:${l.remote ?? ''}:${l.name}`"
-        class="label"
-        :class="`label--${l.type}`"
-        :title="labelText(l)"
-        >{{ labelText(l) }}</span
-      >
+        :label="l"
+      />
       <span
         v-if="hiddenLabels.length"
         class="label label--more"
@@ -75,12 +74,13 @@ watchEffect(() => {
       >
     </span>
     <span class="row-subject">{{ row.subject }}</span>
-    <span class="row-author">{{ row.author }}</span>
+    <span class="row-author">
+      <span class="avatar" aria-hidden="true">{{ initials(row.author) }}</span>
+      <span class="row-author-name">{{ row.author }}</span>
+    </span>
     <span class="row-date">{{ displayDate }}</span>
   </div>
 </template>
-
-<style src="../../assets/labels.css" />
 
 <style scoped>
 .row-inner {
@@ -131,8 +131,6 @@ watchEffect(() => {
 .row-labels .label {
   min-width: 0;
   max-width: 180px;
-  overflow: hidden;
-  text-overflow: ellipsis;
 }
 .row-labels .label--more {
   flex-shrink: 0;
@@ -149,12 +147,33 @@ watchEffect(() => {
   font-size: var(--text-body);
 }
 .row-author {
-  width: 120px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 150px;
+  flex-shrink: 0;
+  min-width: 0;
+  color: var(--text-secondary);
+  font-size: var(--text-row);
+}
+.row-author-name {
+  min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
-  color: var(--text-tertiary);
+}
+.avatar {
   flex-shrink: 0;
-  font-size: var(--text-row);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--avatar);
+  color: var(--text-primary);
+  font-size: var(--text-meta);
+  font-weight: 600;
+  letter-spacing: -0.3px;
 }
 .row-date {
   width: 80px;

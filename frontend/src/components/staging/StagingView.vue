@@ -61,13 +61,13 @@ function makeResizer(width: Ref<number>, min: number, max: number) {
 
 const startResize = makeResizer(fileListWidth, 180, 520);
 
-// Keep the top-level directory: in a monorepo it tells you which package the file is in.
-function shortPath(p: string) {
-  const parts = p.split('/');
-  if (parts.length > 3) {
-    return `${parts[0]}/…/${parts.slice(-2).join('/')}`;
-  }
-  return p;
+function baseName(p: string) {
+  return p.split('/').pop() ?? p;
+}
+
+function parentDir(p: string) {
+  const slash = p.lastIndexOf('/');
+  return slash === -1 ? '' : p.slice(0, slash);
 }
 
 const repoPath = () => repos.activeRepo?.path ?? '';
@@ -794,7 +794,12 @@ async function doAbortRebase() {
                 "
               >
                 <span class="status-code sc-conflict">!</span>
-                <span class="file-name" :title="file.path">{{ shortPath(file.path) }}</span>
+                <span class="file-name" :title="file.path"
+                  ><span class="file-base">{{ baseName(file.path) }}</span
+                  ><span v-if="parentDir(file.path)" class="file-dir">{{
+                    parentDir(file.path)
+                  }}</span></span
+                >
               </div>
             </template>
 
@@ -850,7 +855,12 @@ async function doAbortRebase() {
               >
                 {{ STATUS_LABELS[file.unstaged] ?? file.unstaged }}
               </span>
-              <span class="file-name" :title="file.path">{{ shortPath(file.path) }}</span>
+              <span class="file-name" :title="file.path"
+                ><span class="file-base">{{ baseName(file.path) }}</span
+                ><span v-if="parentDir(file.path)" class="file-dir">{{
+                  parentDir(file.path)
+                }}</span></span
+              >
               <button
                 class="inline-btn stage-inline"
                 tabindex="-1"
@@ -858,7 +868,9 @@ async function doAbortRebase() {
                 :aria-label="`Stage ${file.path}`"
                 @click.stop="onStageFile(file.path)"
               >
-                +
+                <svg width="12" height="12" viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M12 5v14M5 12h14" />
+                </svg>
               </button>
             </div>
 
@@ -895,7 +907,12 @@ async function doAbortRebase() {
               >
                 {{ STATUS_LABELS[file.staged] ?? file.staged }}
               </span>
-              <span class="file-name" :title="file.path">{{ shortPath(file.path) }}</span>
+              <span class="file-name" :title="file.path"
+                ><span class="file-base">{{ baseName(file.path) }}</span
+                ><span v-if="parentDir(file.path)" class="file-dir">{{
+                  parentDir(file.path)
+                }}</span></span
+              >
               <button
                 class="inline-btn unstage-inline"
                 tabindex="-1"
@@ -903,7 +920,9 @@ async function doAbortRebase() {
                 :aria-label="`Unstage ${file.path}`"
                 @click.stop="onUnstageFile(file.path)"
               >
-                −
+                <svg width="12" height="12" viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M5 12h14" />
+                </svg>
               </button>
             </div>
           </template>
@@ -1386,12 +1405,11 @@ async function doAbortRebase() {
   display: flex;
   align-items: center;
   gap: var(--space-2);
-  padding: 0 var(--inset-panel);
+  padding: 0 6px 0 var(--inset-panel);
   font-size: var(--text-row);
   cursor: default;
   min-width: 0;
-  position: relative;
-  min-height: var(--row-h);
+  min-height: 28px;
 }
 .file-item:hover {
   background: var(--surface-hover);
@@ -1443,12 +1461,20 @@ async function doAbortRebase() {
 
 .file-name {
   flex: 1;
-  font-size: var(--text-meta);
-  font-family: var(--font-mono);
-  color: var(--text-primary);
+  min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+.file-base {
+  font-family: var(--font-mono);
+  font-size: var(--text-row);
+  color: var(--text-primary);
+}
+.file-dir {
+  margin-left: 6px;
+  font-size: var(--text-meta);
+  color: var(--text-tertiary);
 }
 .file-item.selected .file-name {
   color: var(--text-primary);
@@ -1456,32 +1482,20 @@ async function doAbortRebase() {
 
 .inline-btn {
   flex-shrink: 0;
-  width: 18px;
-  height: 18px;
-  border-radius: 3px;
+  width: 22px;
+  height: 22px;
+  border-radius: 5px;
   border: none;
-  font-size: var(--text-body);
-  line-height: 1;
   cursor: default;
   display: flex;
   align-items: center;
   justify-content: center;
-  opacity: 0;
-  transition: opacity 0.1s;
-  position: absolute;
-  right: var(--space-2);
-  top: 50%;
-  margin-top: -9px;
 }
-.file-item:hover .inline-btn,
-.file-item:focus-within .inline-btn,
-.file-item.selected .inline-btn {
-  opacity: 1;
-}
-.file-item:hover .file-name,
-.file-item:focus-within .file-name,
-.file-item.selected .file-name {
-  padding-right: 22px;
+.inline-btn svg {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2.5;
+  stroke-linecap: round;
 }
 .stage-inline {
   background: var(--add-soft);

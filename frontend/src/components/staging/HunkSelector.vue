@@ -1,8 +1,11 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 import type { FileDiff, Hunk } from '../../stores/staging';
-import { highlightLine, languageForPath } from '../../utils/highlight';
+import { languageForPath } from '../../utils/highlight';
 import { useLineBudget } from '../../composables/useLineBudget';
+import { useDiffLayout } from '../../composables/useDiffLayout';
+import DiffLines from '../diff/DiffLines.vue';
+import DiffLayoutControls from '../diff/DiffLayoutControls.vue';
 
 const props = defineProps<{
   diffs: FileDiff[];
@@ -13,6 +16,7 @@ const props = defineProps<{
 }>();
 
 const lang = computed(() => languageForPath(props.path));
+const { layout, wrap } = useDiffLayout();
 
 const emit = defineEmits<{
   'stage-file': [];
@@ -35,6 +39,21 @@ const flatHunks = computed(() => {
 
 const isBinary = computed(() => props.diffs.some((d) => d.isBinary));
 
+const stats = computed(() => {
+  let add = 0;
+  let del = 0;
+  for (const h of flatHunks.value) {
+    for (const l of h.lines) {
+      if (l.type === 'add') {
+        add++;
+      } else if (l.type === 'del') {
+        del++;
+      }
+    }
+  }
+  return { add, del };
+});
+
 const { visible, hiddenLines, revealAll } = useLineBudget(
   () => flatHunks.value,
   () => `${props.path}:${props.mode}`
@@ -43,19 +62,26 @@ const { visible, hiddenLines, revealAll } = useLineBudget(
 
 <template>
   <div class="hunk-selector">
-    <!-- File action bar -->
     <div class="file-action-bar">
       <span class="file-action-path" :title="path">{{ path }}</span>
+      <span class="file-action-meta">
+        {{ mode === 'stage' ? 'Unstaged' : 'Staged' }}
+        <template v-if="!diffLoading && !isBinary && flatHunks.length">
+          · <span class="stat-add">+{{ stats.add }}</span>
+          <span class="stat-del">−{{ stats.del }}</span>
+        </template>
+      </span>
       <div class="file-action-btns">
-        <button v-if="mode === 'stage'" class="action-btn stage-btn" @click="emit('stage-file')">
-          Stage File
-        </button>
+        <DiffLayoutControls />
         <button
           v-if="mode === 'stage'"
           class="action-btn discard-btn"
           @click="emit('discard-file')"
         >
           Discard
+        </button>
+        <button v-if="mode === 'stage'" class="action-btn stage-btn" @click="emit('stage-file')">
+          Stage File
         </button>
         <button
           v-if="mode === 'unstage'"
@@ -67,20 +93,16 @@ const { visible, hiddenLines, revealAll } = useLineBudget(
       </div>
     </div>
 
-    <!-- Loading state -->
     <div v-if="diffLoading" class="hunk-loading">Loading diff…</div>
 
     <div v-else-if="diffError" class="hunk-empty hunk-error" role="alert">
       Couldn't load this diff. {{ diffError }}
     </div>
 
-    <!-- Binary file notice -->
     <div v-else-if="isBinary" class="hunk-empty">Binary file — no diff available</div>
 
-    <!-- No hunks -->
     <div v-else-if="flatHunks.length === 0" class="hunk-empty">No diff to show</div>
 
-    <!-- Hunks -->
     <div v-else class="hunks-scroll">
       <div v-for="(entry, hi) in visible" :key="entry.hunk.header + hi" class="hunk-block">
         <div class="hunk-header-row">
@@ -98,19 +120,7 @@ const { visible, hiddenLines, revealAll } = useLineBudget(
             </button>
           </template>
         </div>
-        <div
-          v-for="(line, li) in entry.lines"
-          :key="li"
-          class="diff-line"
-          :class="`diff-line--${line.type}`"
-        >
-          <span class="diff-gutter">{{
-            line.type === 'add' ? '+' : line.type === 'del' ? '−' : ' '
-          }}</span>
-          <span class="diff-lineno old">{{ line.oldLine || '' }}</span>
-          <span class="diff-lineno new">{{ line.newLine || '' }}</span>
-          <span class="diff-content" v-html="highlightLine(line.content, lang)"></span>
-        </div>
+        <DiffLines :lines="entry.lines" :lang="lang" :layout="layout" :wrap="wrap" />
       </div>
       <button v-if="hiddenLines" class="diff-show-all" @click="revealAll">
         Show {{ hiddenLines.toLocaleString() }} more lines
@@ -143,7 +153,8 @@ const { visible, hiddenLines, revealAll } = useLineBudget(
 }
 
 .file-action-path {
-  flex: 1;
+  flex: 0 1 auto;
+  min-width: 0;
   font-family: var(--font-mono);
   font-size: var(--text-row);
   color: var(--text-primary);
@@ -152,8 +163,23 @@ const { visible, hiddenLines, revealAll } = useLineBudget(
   white-space: nowrap;
 }
 
+.file-action-meta {
+  flex: 1;
+  min-width: 0;
+  font-size: var(--text-meta);
+  color: var(--text-tertiary);
+  white-space: nowrap;
+}
+.stat-add {
+  color: var(--add);
+}
+.stat-del {
+  color: var(--del);
+}
+
 .file-action-btns {
   display: flex;
+  align-items: center;
   gap: 6px;
   flex-shrink: 0;
 }
@@ -256,65 +282,6 @@ const { visible, hiddenLines, revealAll } = useLineBudget(
   background: var(--accent-soft-strong);
 }
 
-.diff-line {
-  display: flex;
-  font-family: var(--font-mono);
-  font-size: var(--text-row);
-  line-height: 19px;
-  white-space: pre;
-  tab-size: 4;
-}
-.diff-line--add {
-  background: var(--add-line-bg);
-}
-.diff-line--del {
-  background: var(--del-line-bg);
-}
-.diff-line--context {
-  color: var(--text-secondary);
-}
-
-.diff-gutter {
-  width: 14px;
-  text-align: center;
-  flex-shrink: 0;
-  color: var(--text-tertiary);
-  user-select: none;
-}
-.diff-line--add .diff-gutter {
-  color: var(--add);
-}
-.diff-line--del .diff-gutter {
-  color: var(--del);
-}
-
-.diff-lineno {
-  width: 44px;
-  text-align: right;
-  padding-right: var(--space-2);
-  color: var(--text-tertiary);
-  flex-shrink: 0;
-  user-select: none;
-  font-size: var(--text-meta);
-  line-height: 19px;
-}
-.diff-line--add .diff-lineno.old {
-  color: transparent;
-}
-.diff-line--del .diff-lineno.new {
-  color: transparent;
-}
-
-.diff-content {
-  padding-left: 6px;
-  color: var(--text-primary);
-}
-.diff-line--add .diff-content {
-  color: var(--add-fg);
-}
-.diff-line--del .diff-content {
-  color: var(--del-fg);
-}
 .diff-show-all {
   display: block;
   width: 100%;
