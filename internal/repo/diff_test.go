@@ -269,6 +269,31 @@ Binary files a/image.png and b/image.png differ
 	}
 }
 
+func TestParseUnifiedDiff_BinaryPaths(t *testing.T) {
+	input := `diff --git a/fonts/word mark.woff b/fonts/word mark.woff
+new file mode 100644
+index 0000000..abc
+Binary files /dev/null and b/fonts/word mark.woff differ
+diff --git a/old.png b/old.png
+deleted file mode 100644
+index abc..0000000
+Binary files a/old.png and /dev/null differ
+diff --git a/icon.png b/icon.png
+index abc..def 100644
+Binary files a/icon.png and b/icon.png differ
+`
+	diffs := parseUnifiedDiff(input)
+	if len(diffs) != 3 {
+		t.Fatalf("expected 3 FileDiffs, got %d", len(diffs))
+	}
+	want := [][2]string{{"", "fonts/word mark.woff"}, {"old.png", ""}, {"icon.png", "icon.png"}}
+	for i, w := range want {
+		if diffs[i].OldPath != w[0] || diffs[i].NewPath != w[1] {
+			t.Errorf("diff %d paths = (%q, %q), want (%q, %q)", i, diffs[i].OldPath, diffs[i].NewPath, w[0], w[1])
+		}
+	}
+}
+
 func TestParseUnifiedDiff_MultipleFiles(t *testing.T) {
 	input := `diff --git a/a.go b/a.go
 --- a/a.go

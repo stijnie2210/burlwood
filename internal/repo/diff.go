@@ -143,6 +143,9 @@ func parseUnifiedDiff(output string) []FileDiff {
 
 		case strings.HasPrefix(line, "Binary files"):
 			cur.IsBinary = true
+			if cur.OldPath == "" && cur.NewPath == "" {
+				cur.OldPath, cur.NewPath = binaryPaths(line)
+			}
 
 		case strings.HasPrefix(line, "@@ "):
 			if curHunk != nil {
@@ -181,6 +184,21 @@ func parseUnifiedDiff(output string) []FileDiff {
 		diffs = append(diffs, *cur)
 	}
 	return diffs
+}
+
+// Binary diffs have no ---/+++ lines; the paths only appear in "Binary files a/x and b/x differ".
+func binaryPaths(line string) (oldPath, newPath string) {
+	body := strings.TrimSuffix(strings.TrimPrefix(line, "Binary files "), " differ")
+	switch {
+	case strings.HasPrefix(body, "/dev/null and "):
+		return "", strings.TrimPrefix(strings.TrimPrefix(body, "/dev/null and "), "b/")
+	case strings.HasSuffix(body, " and /dev/null"):
+		return strings.TrimPrefix(strings.TrimSuffix(body, " and /dev/null"), "a/"), ""
+	}
+	if before, after, ok := strings.Cut(body, " and b/"); ok {
+		return strings.TrimPrefix(before, "a/"), after
+	}
+	return "", ""
 }
 
 func parseHunkHeader(header string) (oldStart, newStart int) {
