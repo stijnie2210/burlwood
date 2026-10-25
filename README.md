@@ -12,9 +12,9 @@ Burlwood (formerly gitgood) is a hobby project and still early (v0.1.x). Expect 
 
 ## Features
 
-- **Commit graph:** branch lanes for every ref and stash, scrolls smoothly through thousands of commits, find a commit with ⌘F
-- **Commit actions:** checkout, create a branch or tag at any commit, move or push tags, revert, and soft, mixed or hard reset (a hard reset can be undone)
-- **Working tree:** stage and unstage whole files or single hunks, discard with undo, image preview, syntax-highlighted diffs
+- **Commit graph:** branch lanes for every ref and stash, scrolls smoothly through thousands of commits, find a commit with ⌘F; a commit's changed files are grouped by folder
+- **Commit actions:** checkout, create a branch or tag at any commit, move or push tags (the sidebar lists them all), revert, and soft, mixed or hard reset (a hard reset can be undone)
+- **Working tree:** stage and unstage whole files or single hunks, discard with undo, image preview, syntax-highlighted diffs, unified or side by side, with the changed words highlighted
 - **Committing:** commit or amend, with a warning before you rewrite commits that are already pushed
 - **Branches:** switch, rename, delete, push and rebase from the sidebar; switching carries your uncommitted changes along and stashes them only when git refuses
 - **Stashes:** create, apply, pop, rename and drop
@@ -71,9 +71,9 @@ Unzip `burlwood-windows-amd64.zip` and run `burlwood.exe`.
 
 Requirements:
 
-- Go 1.25+
-- Node.js 20.19+ or 22.12+
-- [Wails CLI](https://wails.io/docs/gettingstarted/installation) v2
+- Go 1.27.3+ (the October 2026 security release)
+- Node.js 22.23.4+ or 24.22.1+ (the October 2026 security releases)
+- [Wails CLI](https://wails.io/docs/gettingstarted/installation) v2.17, the version `go.mod` pins: `go install github.com/wailsapp/wails/v2/cmd/wails@v2.17.0`
 
 ```bash
 wails dev        # development build with hot reload

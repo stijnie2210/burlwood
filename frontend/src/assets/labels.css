@@ -1,31 +1,55 @@
 .label {
-  padding: 1px 5px;
-  border-radius: 3px;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  height: 18px;
+  padding: 0 6px;
+  border: 1px solid transparent;
+  border-radius: 4px;
   font-size: var(--text-meta);
   font-weight: 500;
   white-space: nowrap;
+  box-sizing: border-box;
+}
+.label-text {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.label-icon {
+  width: 10px;
+  height: 10px;
+  flex-shrink: 0;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
 }
 .label--head {
   background: var(--accent-fill);
   color: var(--text-on-accent);
+  font-weight: 600;
+}
+.label--head .label-icon {
+  stroke-width: 3;
 }
 .label--branch {
-  background: var(--accent-soft);
+  border-color: var(--accent-border);
   color: var(--accent-text);
-  border: 1px solid var(--accent-border);
 }
 .label--remote {
-  background: var(--surface-control);
-  color: var(--text-secondary);
-  border: 1px solid var(--border-strong);
+  border-color: var(--border-strong);
+  color: var(--text-tertiary);
+  font-weight: 400;
 }
 .label--tag {
   background: var(--tag-soft);
+  border-color: var(--tag-border);
   color: var(--tag);
-  border: 1px solid var(--tag-border);
 }
 .label--stash {
   background: var(--stash-soft);
+  border-color: var(--stash-border);
   color: var(--stash);
-  border: 1px solid var(--stash-border);
 }

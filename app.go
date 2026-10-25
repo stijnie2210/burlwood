@@ -83,6 +83,10 @@ func (a *App) ListBranches(repoPath string) ([]repo.BranchInfo, error) {
 	return a.manager.ListBranches(repoPath)
 }
 
+func (a *App) ListTags(repoPath string) ([]repo.TagInfo, error) {
+	return a.manager.ListTags(repoPath)
+}
+
 func (a *App) GetAheadBehind(repoPath string) (repo.AheadBehind, error) {
 	return a.manager.GetAheadBehind(repoPath)
 }

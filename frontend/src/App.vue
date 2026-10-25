@@ -175,6 +175,7 @@ function runAction(action: string) {
     const path = repoPath.value;
     if (path) {
       staging.fetchAll(path).then(() => {
+        branches.markFetched(path);
         commits.load(path);
         staging.load(path);
         branches.load(path);
@@ -255,21 +256,35 @@ onUnmounted(() => {
       </template>
       <main class="main-panel">
         <div v-if="!repos.activeRepo" class="welcome">
-          <img :src="logoUrl" class="welcome-logo" alt="" />
-          <h1 class="welcome-brand">burl<span>wood</span></h1>
-          <p>Open a repository to get started.</p>
-          <button @click="repos.pickAndOpen()">Open Repository</button>
+          <div class="welcome-inner">
+            <img :src="logoUrl" class="welcome-logo" alt="" />
+            <h1 class="welcome-wordmark">burlwood</h1>
+            <p class="welcome-lede">Open a repository to get started.</p>
+            <button class="welcome-open" @click="repos.pickAndOpen()">
+              Open Repository…
+              <kbd aria-hidden="true">⌘O</kbd>
+            </button>
 
-          <div v-if="repos.recentRepos.length" class="recents">
-            <h3>Recent</h3>
-            <ul>
-              <li v-for="r in repos.recentRepos" :key="r.path">
-                <button class="recent-btn" @click="repos.openRepo(r.path)">
-                  <strong>{{ r.name }}</strong>
-                  <span>{{ r.path }}</span>
-                </button>
-              </li>
-            </ul>
+            <section
+              v-if="repos.recentRepos.length"
+              class="recents"
+              aria-labelledby="recents-title"
+            >
+              <h2 id="recents-title">Recent</h2>
+              <ul>
+                <li v-for="r in repos.recentRepos" :key="r.path">
+                  <button class="recent-btn" :title="r.path" @click="repos.openRepo(r.path)">
+                    <svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true">
+                      <path
+                        d="M3 6a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"
+                      />
+                    </svg>
+                    <strong>{{ r.name }}</strong>
+                    <span>{{ r.path }}</span>
+                  </button>
+                </li>
+              </ul>
+            </section>
           </div>
         </div>
 
@@ -347,79 +362,145 @@ body {
   background: var(--accent-fill);
 }
 
+@font-face {
+  font-family: 'Burlwood Wordmark';
+  src: url('./assets/fonts/bricolage-wordmark.woff') format('woff');
+  font-weight: 600;
+  font-display: block;
+}
+
 .welcome {
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-6);
+  overflow-y: auto;
+}
+
+.welcome-inner {
+  width: min(440px, 100%);
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
-  height: 100%;
-  gap: 12px;
   text-align: center;
-  color: var(--text-secondary);
+  animation: welcome-rise 520ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes welcome-rise {
+  from {
+    opacity: 0.4;
+    transform: translateY(8px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .welcome-inner {
+    animation: none;
+  }
 }
 
 .welcome-logo {
-  width: 160px;
-}
-.welcome-brand {
-  font-size: 32px;
-  font-weight: 700;
-  color: var(--accent-text);
-  margin-top: -4px;
-}
-.welcome-brand span {
-  color: var(--text-primary);
-  font-weight: 400;
-}
-.welcome p {
-  font-size: var(--text-title);
+  width: 128px;
+  height: 128px;
 }
 
-.welcome button {
-  padding: 8px 20px;
-  background: var(--accent-fill);
+/* The wordmark is the only place the brand typeface appears. */
+.welcome-wordmark {
+  margin-top: var(--space-1);
+  font-family: 'Burlwood Wordmark', var(--font-ui);
+  font-size: 44px;
+  font-weight: 600;
+  line-height: 1;
+  letter-spacing: -0.02em;
+  color: var(--brand-sapwood);
+}
+
+.welcome-lede {
+  margin-top: var(--space-3);
+  font-size: var(--text-title);
+  color: var(--text-secondary);
+}
+
+.welcome-open {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  height: 32px;
+  margin-top: var(--space-5);
+  padding: 0 var(--space-4);
   border: none;
-  border-radius: 5px;
+  border-radius: 6px;
+  background: var(--accent-fill);
   color: var(--text-on-accent);
-  cursor: default;
   font-size: var(--text-body);
+  font-weight: 500;
+  cursor: default;
+}
+.welcome-open:hover {
+  background: var(--accent-fill-hover);
+}
+.welcome-open kbd {
+  font-family: var(--font-ui);
+  font-size: var(--text-meta);
+  opacity: 0.8;
 }
 
 .recents {
-  margin-top: 24px;
+  width: 100%;
+  margin-top: 40px;
   text-align: left;
-  width: 400px;
 }
-.recents h3 {
-  font-size: var(--text-row);
+.recents h2 {
+  padding: 0 10px var(--space-2);
+  font-size: var(--text-meta);
+  font-weight: 600;
   color: var(--text-tertiary);
-  margin-bottom: 8px;
 }
 .recents ul {
   list-style: none;
+  border-top: 1px solid var(--border-subtle);
+  padding-top: var(--space-1);
 }
+
 .recent-btn {
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-columns: 14px minmax(0, 1fr);
+  column-gap: 10px;
+  row-gap: 2px;
+  align-items: center;
   width: 100%;
-  padding: 8px 10px;
+  padding: var(--space-2) 10px;
   border: none;
-  border-radius: 4px;
+  border-radius: 6px;
   background: none;
   text-align: left;
   font: inherit;
   cursor: default;
-  gap: 2px;
 }
 .recent-btn:hover {
   background: var(--surface-hover);
 }
+.recent-btn svg {
+  fill: none;
+  stroke: var(--text-tertiary);
+  stroke-width: 2;
+  stroke-linejoin: round;
+}
 .recent-btn strong {
   font-size: var(--text-body);
+  font-weight: 500;
   color: var(--text-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 .recent-btn span {
+  grid-column: 2;
   font-size: var(--text-meta);
   color: var(--text-tertiary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 </style>

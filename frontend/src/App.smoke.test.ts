@@ -8,6 +8,7 @@ vi.mock('../wailsjs/go/main/App', async (importOriginal) => {
     'GetCommitGraph',
     'GetStatus',
     'ListBranches',
+    'ListTags',
     'ListStashes',
     'GetWorkingDiff',
     'GetCommitDiff',

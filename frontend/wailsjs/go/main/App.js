@@ -146,6 +146,10 @@ export function ListStashes(arg1) {
   return window['go']['main']['App']['ListStashes'](arg1);
 }
 
+export function ListTags(arg1) {
+  return window['go']['main']['App']['ListTags'](arg1);
+}
+
 export function LoadSession() {
   return window['go']['main']['App']['LoadSession']();
 }

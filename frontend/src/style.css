@@ -17,31 +17,31 @@
 
   --toolbar-h: 56px;
   --tabbar-h: 28px;
-  --file-header-h: 32px;
+  --file-header-h: 40px;
   --row-h: 24px;
   /* Room for the macOS traffic lights in the hidden-inset title bar. */
   --traffic-light-inset: 84px;
 
-  --surface-sunken: #141416;
-  --surface-base: #1b1b1d;
-  --surface-raised: #222225;
-  --surface-chrome: #28282b;
-  --surface-overlay: #2e2e31;
-  --surface-field: #19191b;
-  --surface-control: #38383c;
+  --surface-sunken: #141210;
+  --surface-base: #1a1816;
+  --surface-raised: #211f1c;
+  --surface-chrome: #282522;
+  --surface-overlay: #2f2c28;
+  --surface-field: #171513;
+  --surface-control: #3a3632;
   /* Tint over the window's vibrancy: keeps the sidebar dark and its text readable on any wallpaper. */
-  --surface-sidebar: rgba(30, 30, 33, 0.45);
-  --surface-control-hover: #424246;
-  --surface-hover: rgba(255, 255, 255, 0.06);
+  --surface-sidebar: rgba(33, 29, 26, 0.45);
+  --surface-control-hover: #44403b;
+  --surface-hover: rgba(255, 240, 220, 0.06);
   --surface-selected: #22355a;
 
-  --border-subtle: #303033;
-  --border: #3c3c40;
-  --border-strong: #4c4c51;
+  --border-subtle: #312e2a;
+  --border: #3e3a35;
+  --border-strong: #4e4943;
 
-  --text-primary: #e8e8ea;
-  --text-secondary: #c0c0c5;
-  --text-tertiary: #a1a1a6;
+  --text-primary: #ede9e4;
+  --text-secondary: #c6c0b8;
+  --text-tertiary: #b3aca2;
   --text-on-accent: #fff;
 
   --accent-fill: #2f6fdc;
@@ -66,6 +66,7 @@
   --add: #4fc977;
   --add-fg: #b6ecc6;
   --add-line-bg: rgba(79, 201, 119, 0.09);
+  --add-change-bg: rgba(79, 201, 119, 0.3);
   --add-soft: rgba(79, 201, 119, 0.13);
   --add-soft-strong: rgba(79, 201, 119, 0.22);
   --add-border: rgba(79, 201, 119, 0.4);
@@ -73,6 +74,7 @@
   --del: #ff7b72;
   --del-fg: #ffbdb7;
   --del-line-bg: rgba(255, 123, 114, 0.09);
+  --del-change-bg: rgba(255, 123, 114, 0.3);
 
   --modified: #f0a43c;
   --untracked: #5ac8e0;
@@ -97,6 +99,12 @@
   --stash-soft: rgba(190, 150, 239, 0.14);
   --stash-border: rgba(190, 150, 239, 0.35);
 
+  --avatar: #5a4a3d;
+
+  /* Brand veneer: only the HEAD knot in the graph and the welcome screen use these. */
+  --brand-sapwood: #f3ddb8;
+  --brand-heartwood: #2a1a10;
+
   --shadow-popover: 0 8px 24px rgba(0, 0, 0, 0.5);
   --shadow-modal: 0 12px 40px rgba(0, 0, 0, 0.6);
 }
@@ -114,13 +122,13 @@
     --accent-soft-strong: color-mix(in srgb, var(--accent-system) 24%, transparent);
     --accent-border: color-mix(in srgb, var(--accent-system) 45%, transparent);
     --focus-ring: var(--accent-text);
-    --surface-selected: color-mix(in srgb, var(--accent-system) 30%, #1b1b1d);
+    --surface-selected: color-mix(in srgb, var(--accent-system) 30%, #1a1816);
   }
 }
 
 /* macOS greys out the selection while the window isn't key; App.vue toggles this class. */
 :root.window-inactive {
-  --surface-selected: #3a3a3d;
+  --surface-selected: #383430;
 }
 
 html {

@@ -23,6 +23,7 @@ const toast = useToastStore();
 const stash = useStashStore();
 
 const repoPath = computed(() => repos.activeRepo?.path ?? '');
+const currentBranch = computed(() => branches.local.find((b) => b.isCurrent)?.name ?? null);
 const disabled = computed(() => !repos.activeRepo);
 const pullDisabled = computed(() => disabled.value || staging.isInMerge || staging.isInRebase);
 
@@ -48,6 +49,7 @@ async function run(op: string, fn: () => Promise<void>, successMsg?: string) {
 async function onFetch() {
   await run('fetch', async () => {
     await staging.fetchAll(repoPath.value);
+    branches.markFetched(repoPath.value);
     await commits.load(repoPath.value);
     branches.load(repoPath.value);
   });
@@ -61,6 +63,9 @@ const PULL_MODES: { value: string; label: string }[] = [
 ];
 
 const pullMode = computed(() => prefsStore.prefs.pullMode || 'ff');
+const pullTitle = computed(
+  () => PULL_MODES.find((m) => m.value === pullMode.value)?.label ?? 'Pull'
+);
 const showPullMenu = ref(false);
 const pullMenuEl = ref<HTMLElement | null>(null);
 
@@ -82,8 +87,30 @@ function onPullMenuMouseDown(e: MouseEvent) {
   }
 }
 
-onMounted(() => window.addEventListener('mousedown', onPullMenuMouseDown));
-onUnmounted(() => window.removeEventListener('mousedown', onPullMenuMouseDown));
+const searchInputEl = ref<HTMLInputElement | null>(null);
+
+function focusSearch() {
+  viewMode.value = 'commits';
+  nextTick(() => searchInputEl.value?.select());
+}
+
+function onSearchInput() {
+  viewMode.value = 'commits';
+}
+
+function onSearchEscape() {
+  commits.searchQuery = '';
+  searchInputEl.value?.blur();
+}
+
+onMounted(() => {
+  window.addEventListener('mousedown', onPullMenuMouseDown);
+  window.addEventListener('burlwood:find', focusSearch);
+});
+onUnmounted(() => {
+  window.removeEventListener('mousedown', onPullMenuMouseDown);
+  window.removeEventListener('burlwood:find', focusSearch);
+});
 
 async function onPull() {
   const mode = pullMode.value;
@@ -95,6 +122,7 @@ async function onPull() {
       } else {
         await staging.pullBranch(repoPath.value, mode);
       }
+      branches.markFetched(repoPath.value);
       await commits.load(repoPath.value);
       await staging.load(repoPath.value);
       await branches.load(repoPath.value);
@@ -197,6 +225,42 @@ async function confirmBranch() {
             <path d="M0.5 0.5L4 4L7.5 0.5" fill="none" stroke="currentColor" stroke-width="1.3" />
           </svg>
         </button>
+        <div
+          v-if="repos.activeRepo && branches.local.length"
+          class="branch-chip"
+          role="status"
+          :title="currentBranch ? `On ${currentBranch}` : 'HEAD is detached'"
+        >
+          <svg
+            width="13"
+            height="13"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            aria-hidden="true"
+          >
+            <path d="M6 3v12" />
+            <circle cx="18" cy="6" r="3" />
+            <circle cx="6" cy="18" r="3" />
+            <path d="M18 9a9 9 0 0 1-9 9" />
+          </svg>
+          <span class="branch-chip-name">{{ currentBranch ?? 'detached HEAD' }}</span>
+          <span
+            v-if="branches.aheadBehind.ahead > 0"
+            class="branch-chip-sync"
+            :aria-label="`${branches.aheadBehind.ahead} to push`"
+            >↑{{ branches.aheadBehind.ahead }}</span
+          >
+          <span
+            v-if="branches.aheadBehind.behind > 0"
+            class="branch-chip-sync"
+            :aria-label="`${branches.aheadBehind.behind} to pull`"
+            >↓{{ branches.aheadBehind.behind }}</span
+          >
+        </div>
         <div v-if="repos.activeRepo" class="view-switch" role="tablist" aria-label="View">
           <button
             class="view-switch-btn"
@@ -227,6 +291,8 @@ async function confirmBranch() {
       <div class="btn-group">
         <button
           class="tbtn"
+          title="Fetch (⌘R)"
+          aria-label="Fetch"
           :disabled="disabled"
           :class="{ loading: busy === 'fetch' }"
           @click="onFetch"
@@ -247,11 +313,12 @@ async function confirmBranch() {
               <polyline points="5,10 9,14 13,10" />
             </svg>
           </span>
-          <span class="tbtn-label">Fetch</span>
         </button>
         <div ref="pullMenuEl" class="pull-btn-wrap">
           <button
             class="tbtn"
+            :title="pullTitle"
+            :aria-label="pullMode === 'fetch' ? 'Fetch' : 'Pull'"
             :disabled="pullDisabled"
             :class="{ loading: busy === 'pull' }"
             @click="onPull"
@@ -287,7 +354,6 @@ async function confirmBranch() {
                 <polyline points="5,9 9,14 13,9" />
               </svg>
             </span>
-            <span class="tbtn-label">{{ pullMode === 'fetch' ? 'Fetch' : 'Pull' }}</span>
           </button>
           <button
             class="pull-mode-toggle"
@@ -317,6 +383,8 @@ async function confirmBranch() {
         </div>
         <button
           class="tbtn"
+          title="Push"
+          aria-label="Push"
           :disabled="disabled"
           :class="{ loading: busy === 'push' }"
           @click="onPush"
@@ -336,16 +404,15 @@ async function confirmBranch() {
               <polyline points="5,9 9,4 13,9" />
             </svg>
           </span>
-          <span class="tbtn-label">Push</span>
         </button>
       </div>
-
-      <div class="separator" />
 
       <!-- Branch group -->
       <div class="btn-group branch-group">
         <button
           class="tbtn"
+          title="New branch"
+          aria-label="New branch"
           :disabled="disabled"
           :class="{ loading: busy === 'branch', active: showBranchInput }"
           @click="openBranchInput"
@@ -367,7 +434,6 @@ async function confirmBranch() {
               <path d="M13 6 C13 10 5 10 5 12" />
             </svg>
           </span>
-          <span class="tbtn-label">Branch</span>
         </button>
 
         <!-- Branch name popover -->
@@ -385,12 +451,12 @@ async function confirmBranch() {
         </div>
       </div>
 
-      <div class="separator" />
-
       <!-- Stash group -->
       <div class="btn-group">
         <button
           class="tbtn"
+          title="Stash changes"
+          aria-label="Stash changes"
           :disabled="disabled"
           :class="{ loading: busy === 'stash' }"
           @click="onStash"
@@ -411,10 +477,11 @@ async function confirmBranch() {
               <polyline points="6,7 9,10 12,7" />
             </svg>
           </span>
-          <span class="tbtn-label">Stash</span>
         </button>
         <button
           class="tbtn"
+          title="Pop latest stash"
+          aria-label="Pop latest stash"
           :disabled="disabled"
           :class="{ loading: busy === 'pop' }"
           @click="onPop"
@@ -435,15 +502,18 @@ async function confirmBranch() {
               <polyline points="6,5 9,2 12,5" />
             </svg>
           </span>
-          <span class="tbtn-label">Pop</span>
         </button>
       </div>
 
-      <div class="separator" />
-
       <!-- Terminal -->
       <div class="btn-group">
-        <button class="tbtn" :disabled="disabled" @click="onTerminal">
+        <button
+          class="tbtn"
+          title="Open in Terminal"
+          aria-label="Open in Terminal"
+          :disabled="disabled"
+          @click="onTerminal"
+        >
           <span class="tbtn-icon">
             <svg
               width="18"
@@ -459,33 +529,59 @@ async function confirmBranch() {
               <line x1="10" y1="12" x2="15" y2="12" />
             </svg>
           </span>
-          <span class="tbtn-label">Terminal</span>
         </button>
       </div>
 
       <div class="toolbar-side toolbar-side--right">
-        <div class="btn-group">
-          <button class="tbtn" @click="prefsStore.openModal()">
-            <span class="tbtn-icon">
-              <svg
-                width="18"
-                height="18"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="1.8"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-              >
-                <path
-                  d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"
-                />
-                <circle cx="12" cy="12" r="3" />
-              </svg>
-            </span>
-            <span class="tbtn-label">Settings</span>
-          </button>
-        </div>
+        <label v-if="repos.activeRepo" class="find-field">
+          <svg
+            width="13"
+            height="13"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            aria-hidden="true"
+          >
+            <circle cx="11" cy="11" r="7" />
+            <path d="M21 21l-4.5-4.5" />
+          </svg>
+          <input
+            ref="searchInputEl"
+            v-model="commits.searchQuery"
+            type="search"
+            placeholder="Find commit"
+            aria-label="Find commit by message, author or hash"
+            @input="onSearchInput"
+            @keydown.esc.prevent="onSearchEscape"
+          />
+          <kbd aria-hidden="true">⌘F</kbd>
+        </label>
+        <button
+          class="icon-btn"
+          title="Settings (⌘,)"
+          aria-label="Settings"
+          @click="prefsStore.openModal()"
+        >
+          <span class="tbtn-icon">
+            <svg
+              width="18"
+              height="18"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.8"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <path
+                d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"
+              />
+              <circle cx="12" cy="12" r="3" />
+            </svg>
+          </span>
+        </button>
       </div>
     </div>
   </div>
@@ -518,8 +614,7 @@ async function confirmBranch() {
 }
 
 /* Without a repo there is nothing to act on; show only the repo button and Settings. */
-.toolbar-inner.no-repo > .btn-group,
-.toolbar-inner.no-repo > .separator {
+.toolbar-inner.no-repo > .btn-group {
   display: none;
 }
 
@@ -538,6 +633,7 @@ async function confirmBranch() {
   display: flex;
   align-items: center;
   gap: 6px;
+  flex-shrink: 0;
   min-width: 0;
   max-width: 200px;
   height: 28px;
@@ -617,36 +713,130 @@ async function confirmBranch() {
 
 .toolbar-side--right {
   display: flex;
+  align-items: center;
   justify-content: flex-end;
+  gap: var(--space-2);
 }
 
 .btn-group {
   display: flex;
   align-items: center;
   position: relative;
+  flex-shrink: 0;
+  gap: 2px;
+  padding: 2px;
+  margin: 0 3px;
+  border-radius: 8px;
+  background: var(--surface-raised);
 }
 
-.separator {
-  width: 1px;
-  height: 24px;
-  background: var(--border);
-  margin: 0 6px;
+.branch-chip {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  max-width: 240px;
+  height: 26px;
+  padding: 0 10px;
+  border: 1px solid var(--border);
+  border-radius: 13px;
+  background: var(--surface-raised);
+  color: var(--text-tertiary);
+}
+.branch-chip svg {
   flex-shrink: 0;
+}
+.branch-chip-name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-family: var(--font-mono);
+  font-size: var(--text-row);
+  color: var(--text-primary);
+}
+.branch-chip-sync {
+  flex-shrink: 0;
+  font-size: var(--text-meta);
+  font-variant-numeric: tabular-nums;
+  color: var(--accent-text);
+}
+
+.find-field {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex: 0 1 200px;
+  min-width: 120px;
+  height: 28px;
+  padding: 0 var(--space-2);
+  border: 1px solid var(--border-subtle);
+  border-radius: 7px;
+  background: var(--surface-field);
+  color: var(--text-tertiary);
+  --wails-draggable: no-drag;
+}
+.find-field:focus-within {
+  border-color: var(--focus-ring);
+}
+.find-field svg {
+  flex-shrink: 0;
+}
+.find-field input {
+  flex: 1;
+  min-width: 0;
+  border: none;
+  background: transparent;
+  color: var(--text-primary);
+  font-size: var(--text-row);
+  outline: none;
+}
+.find-field input::placeholder {
+  color: var(--text-tertiary);
+}
+.find-field input::-webkit-search-cancel-button {
+  display: none;
+}
+.find-field kbd {
+  flex-shrink: 0;
+  font-family: var(--font-ui);
+  font-size: var(--text-meta);
+  color: var(--text-tertiary);
+}
+.find-field:focus-within kbd {
+  display: none;
+}
+
+.icon-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  flex-shrink: 0;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text-secondary);
+  cursor: default;
+}
+.icon-btn:hover {
+  background: var(--surface-hover);
+  color: var(--text-primary);
 }
 
 .tbtn {
   display: flex;
-  flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 3px;
-  padding: 5px 10px;
+  width: 34px;
+  height: 28px;
+  padding: 0;
   border: none;
   background: transparent;
-  border-radius: 5px;
+  border-radius: 6px;
   color: var(--text-secondary);
   cursor: default;
-  min-width: 52px;
   transition:
     background 0.1s,
     color 0.1s;
@@ -672,11 +862,6 @@ async function confirmBranch() {
   align-items: center;
   justify-content: center;
   line-height: 0;
-}
-
-.tbtn-label {
-  font-size: var(--text-meta);
-  font-weight: 500;
 }
 
 /* Spin animation for loading state */

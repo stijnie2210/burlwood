@@ -476,6 +476,20 @@ export namespace repo {
 	        this.message = source["message"];
 	    }
 	}
+	export class TagInfo {
+	    name: string;
+	    hash: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new TagInfo(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.name = source["name"];
+	        this.hash = source["hash"];
+	    }
+	}
 
 }
 

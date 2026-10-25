@@ -77,6 +77,8 @@ export function ListRecentRepositories():Promise<Array<main.RecentRepo>>;
 
 export function ListStashes(arg1:string):Promise<Array<gitcli.StashEntry>>;
 
+export function ListTags(arg1:string):Promise<Array<repo.TagInfo>>;
+
 export function LoadSession():Promise<repo.Session>;
 
 export function MoveTag(arg1:string,arg2:string,arg3:string):Promise<void>;
