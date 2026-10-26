@@ -28,7 +28,7 @@ const branches = useBranchesStore();
 const prefsStore = usePrefsStore();
 const toast = useToastStore();
 onMounted(async () => {
-  await prefsStore.load();
+  await prefsStore.load().catch((e) => toast.error(e));
   await repos.restoreSession();
   repos.loadRecents();
 });
@@ -255,7 +255,17 @@ onUnmounted(() => {
         <div class="resize-handle" @mousedown.prevent="startSidebarResize" />
       </template>
       <main class="main-panel">
-        <div v-if="!repos.activeRepo" class="welcome">
+        <div v-if="!repos.activeRepo && repos.restoring" class="welcome" aria-busy="true">
+          <div v-if="repos.restoringNames.length" class="welcome-inner restoring">
+            <img :src="logoUrl" class="welcome-logo" alt="" />
+            <p class="welcome-lede" role="status">
+              <span class="restoring-spinner" aria-hidden="true" />
+              Opening {{ repos.restoringNames.join(', ') }}…
+            </p>
+          </div>
+        </div>
+
+        <div v-else-if="!repos.activeRepo" class="welcome">
           <div class="welcome-inner">
             <img :src="logoUrl" class="welcome-logo" alt="" />
             <h1 class="welcome-wordmark">burlwood</h1>
@@ -397,6 +407,28 @@ body {
 @media (prefers-reduced-motion: reduce) {
   .welcome-inner {
     animation: none;
+  }
+}
+
+.restoring .welcome-lede {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.restoring-spinner {
+  width: 14px;
+  height: 14px;
+  flex: none;
+  border: 2px solid var(--text-tertiary);
+  border-top-color: transparent;
+  border-radius: 50%;
+  animation: restoring-spin 0.8s linear infinite;
+}
+
+@keyframes restoring-spin {
+  to {
+    transform: rotate(360deg);
   }
 }
 

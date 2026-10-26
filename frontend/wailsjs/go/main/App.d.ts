@@ -105,6 +105,8 @@ export function RenameBranch(arg1:string,arg2:string,arg3:string):Promise<void>;
 
 export function RenameStash(arg1:string,arg2:string,arg3:string):Promise<void>;
 
+export function RepositoryGone(arg1:string):Promise<boolean>;
+
 export function ResetBranch(arg1:string,arg2:string,arg3:string):Promise<void>;
 
 export function ResolveConflict(arg1:string,arg2:string,arg3:string):Promise<void>;

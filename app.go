@@ -68,7 +68,7 @@ type RecentRepo struct {
 }
 
 func (a *App) ListRecentRepositories() ([]RecentRepo, error) {
-	entries, err := repo.LoadRecentRepos()
+	entries, err := repo.ListRecentRepos()
 	if err != nil {
 		return nil, err
 	}
@@ -375,6 +375,10 @@ func (a *App) LoadSession() (repo.Session, error) {
 		return repo.Session{}, err
 	}
 	return *s, nil
+}
+
+func (a *App) RepositoryGone(path string) bool {
+	return repo.RepoGone(path)
 }
 
 func (a *App) SaveSession(tabs []repo.SessionTab, activeIndex int) error {

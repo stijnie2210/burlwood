@@ -202,6 +202,10 @@ export function RenameStash(arg1, arg2, arg3) {
   return window['go']['main']['App']['RenameStash'](arg1, arg2, arg3);
 }
 
+export function RepositoryGone(arg1) {
+  return window['go']['main']['App']['RepositoryGone'](arg1);
+}
+
 export function ResetBranch(arg1, arg2, arg3) {
   return window['go']['main']['App']['ResetBranch'](arg1, arg2, arg3);
 }
