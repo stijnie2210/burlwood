@@ -1,10 +1,13 @@
 package gitcli
 
 import (
+	"context"
+	"errors"
 	"os"
 	"os/exec"
 	"strings"
 	"sync"
+	"time"
 )
 
 const pathMarker = "__BURLWOOD_PATH__"
@@ -27,8 +30,14 @@ func shellPath() string {
 		}
 
 		script := "printf '%s%s%s' '" + pathMarker + "' \"$PATH\" '" + pathMarker + "'"
-		out, err := exec.Command(shell, "-ilc", script).Output()
-		if err != nil {
+		// Every git call waits on this probe, so a hanging shell rc file would freeze the app.
+		// WaitDelay covers daemons the rc file starts that keep our stdout pipe open.
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+		cmd := exec.CommandContext(ctx, shell, "-ilc", script)
+		cmd.WaitDelay = time.Second
+		out, err := cmd.Output()
+		if err != nil && !errors.Is(err, exec.ErrWaitDelay) {
 			return
 		}
 

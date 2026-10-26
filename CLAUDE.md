@@ -78,7 +78,7 @@ internal/gitcli/
                                     HardResetWithUndo/UndoHardReset (stash create + previous HEAD)
 internal/repo/
   manager.go                        Manager{map[string]*git.Repository}; Open/Close/Get
-                                    RecentEntry → ~/Library/Application Support/burlwood/repos.json
+                                    RecentEntry → ~/Library/Application Support/burlwood/repos.json; ListRecentRepos drops repos that are gone
   prefs.go / session.go /           AppPrefs (editor, auto-fetch, graph limit, diff context, date format, pull mode),
     windowprefs.go                  open tabs + active tab, window frame — JSON files next to repos.json
   configdir.go                      configPath(): the settings folder; moves the pre-rename `gitgood` folder once
@@ -123,7 +123,8 @@ frontend/src/
   assets/labels.css                 ref/tag/stash label pills, rendered by graph/RefLabel.vue
   assets/fonts/                     Bricolage Grotesque subset for the welcome wordmark only (SIL OFL)
   stores/
-    repos.ts                        tabs[], activeRepo, openRepo, pickAndOpen, closeTab
+    repos.ts                        tabs[], activeRepo, openRepo, pickAndOpen, closeTab; restoreSession (App shows a loading
+                                    screen while `restoring`; drops only tabs whose repo is gone, see RepoGone in session.go)
     branches.ts                     local[], remote[], tags[], aheadBehind, lastFetchedAt — loaded on activeRepo change
     commits.ts                      rows[], selectedHash, diff[], searchQuery — GetCommitGraph(prefs.commitGraphLimit), loads more on demand
     staging.ts                      files[], unstagedFiles, stagedFiles, diff[]

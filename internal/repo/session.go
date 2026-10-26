@@ -54,3 +54,14 @@ func SaveSession(tabs []SessionTab, activeIndex int) error {
 	}
 	return os.WriteFile(p, data, 0644)
 }
+
+// Only a gone repo may lose its tab: other open failures (a slow shell, git off PATH) can be transient.
+// A missing parent folder usually means an unmounted drive or share, so that repo is kept.
+func RepoGone(root string) bool {
+	if _, err := os.Stat(root); os.IsNotExist(err) {
+		_, err := os.Stat(filepath.Dir(root))
+		return err == nil
+	}
+	_, err := os.Stat(filepath.Join(root, ".git"))
+	return os.IsNotExist(err)
+}

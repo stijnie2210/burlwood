@@ -8,6 +8,7 @@ import {
   PickDirectory,
   LoadSession,
   SaveSession,
+  RepositoryGone,
 } from '../../wailsjs/go/main/App';
 
 export interface RepoTab {
@@ -24,6 +25,9 @@ export const useReposStore = defineStore('repos', () => {
   const tabs = ref<RepoTab[]>([]);
   const activeIndex = ref(0);
   const recentRepos = ref<{ path: string; name: string }[]>([]);
+  // Starts true so the welcome screen never flashes before the last session is known.
+  const restoring = ref(true);
+  const restoringNames = ref<string[]>([]);
 
   const activeRepo = computed(() => tabs.value[activeIndex.value] ?? null);
 
@@ -39,24 +43,47 @@ export const useReposStore = defineStore('repos', () => {
   }
 
   async function restoreSession() {
-    let session: { tabs: { path: string; name: string }[]; activeIndex: number };
     try {
-      session = await LoadSession();
-    } catch {
-      return;
-    }
-    for (const tab of session.tabs) {
-      try {
-        const root = await OpenRepository(tab.path);
-        if (!tabs.value.find((t) => t.path === root)) {
-          tabs.value.push({ path: root, name: tab.name });
+      const session = await LoadSession();
+      restoringNames.value = session.tabs.map((t) => t.name);
+      const results = await Promise.allSettled(session.tabs.map((t) => OpenRepository(t.path)));
+      const gone = new Set<string>();
+      for (const [i, result] of results.entries()) {
+        const tab = session.tabs[i];
+        if (result.status === 'fulfilled') {
+          if (!tabs.value.find((t) => t.path === result.value)) {
+            tabs.value.push({ path: result.value, name: tab.name });
+          }
+        } else if (await RepositoryGone(tab.path)) {
+          gone.add(tab.path);
+        } else {
+          useToastStore().push(
+            `Couldn't reopen ${tab.name}`,
+            'error',
+            undefined,
+            undefined,
+            String(result.reason)
+          );
         }
-      } catch {
-        // repo no longer accessible, skip
       }
-    }
-    if (tabs.value.length > 0) {
-      activeIndex.value = Math.max(0, Math.min(session.activeIndex, tabs.value.length - 1));
+      const active = results[session.activeIndex];
+      const activePath = active?.status === 'fulfilled' ? active.value : null;
+      activeIndex.value = Math.max(
+        0,
+        tabs.value.findIndex((t) => t.path === activePath)
+      );
+      if (gone.size) {
+        // Saving the open tabs would also drop a repo that only failed this time.
+        const kept = session.tabs.filter((t) => !gone.has(t.path));
+        const activeTab = session.tabs[session.activeIndex];
+        SaveSession(kept, Math.max(0, kept.indexOf(activeTab)));
+        const names = session.tabs.filter((t) => gone.has(t.path)).map((t) => t.name);
+        useToastStore().push(`Closed ${names.join(', ')}: the repository no longer exists`);
+      }
+    } catch (e) {
+      useToastStore().error(e);
+    } finally {
+      restoring.value = false;
     }
   }
 
@@ -110,6 +137,8 @@ export const useReposStore = defineStore('repos', () => {
     activeIndex,
     activeRepo,
     recentRepos,
+    restoring,
+    restoringNames,
     loadRecents,
     restoreSession,
     openRepo,

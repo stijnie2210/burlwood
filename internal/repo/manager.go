@@ -120,7 +120,27 @@ func SaveRecentRepo(path string) error {
 	if len(filtered) > 20 {
 		filtered = filtered[:20]
 	}
+	return writeRecentRepos(filtered)
+}
 
+func ListRecentRepos() ([]recentEntry, error) {
+	entries, err := LoadRecentRepos()
+	if err != nil {
+		return nil, err
+	}
+	kept := make([]recentEntry, 0, len(entries))
+	for _, e := range entries {
+		if !RepoGone(e.Path) {
+			kept = append(kept, e)
+		}
+	}
+	if len(kept) < len(entries) {
+		_ = writeRecentRepos(kept)
+	}
+	return kept, nil
+}
+
+func writeRecentRepos(entries []recentEntry) error {
 	p, err := recentReposPath()
 	if err != nil {
 		return err
@@ -128,7 +148,7 @@ func SaveRecentRepo(path string) error {
 	if err := os.MkdirAll(filepath.Dir(p), 0755); err != nil {
 		return err
 	}
-	data, err := json.MarshalIndent(filtered, "", "  ")
+	data, err := json.MarshalIndent(entries, "", "  ")
 	if err != nil {
 		return err
 	}
