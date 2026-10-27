@@ -1,6 +1,6 @@
 export const repo = 'https://github.com/stijnie2210/burlwood';
 
-const fallbackVersion = 'v0.3.2';
+const fallbackVersion = 'v0.3.3';
 
 export const downloads = {
   mac: `${repo}/releases/latest/download/burlwood-mac-universal.dmg`,
