@@ -313,10 +313,15 @@ sudo pacman -S webkit2gtk-4.1</code></pre>
   }
 
   .wordmark {
+    /* "wood" is ~0.73em wider than "burl", so a centred knot pushes the word right; this centres the letters' ink. */
+    --optical-shift: 0.38em;
     display: grid;
     grid-template-columns: 1fr auto 1fr;
     align-items: center;
     margin: clamp(64px, 5vw, 72px) 0 0;
+    /* Not translate: a transform makes a stacking context, and the grain's z-index: -1 would paint over the hero. */
+    position: relative;
+    left: calc(-1 * var(--optical-shift));
     font-size: clamp(60px, 10.4vw, 150px);
     font-weight: 750;
     line-height: 0.92;
@@ -353,7 +358,7 @@ sudo pacman -S webkit2gtk-4.1</code></pre>
   }
 
   .knot :global(.hero-grain) {
-    --grain-w: max(100vw, 9.6em);
+    --grain-w: max(100vw + 2 * var(--optical-shift), 9.6em);
     position: absolute;
     left: 50%;
     top: 50%;

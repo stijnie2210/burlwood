@@ -196,7 +196,7 @@ The palette is one piece of wood, from the dark core through the light rim, with
 
 The page is one centred column of full-bleed leaves. Content inside a leaf sits on a sheet of at most 1248px, inset by the fluid gutter. Leaves have the leaf-block padding top and bottom. Consecutive heartwood leaves are split by a sapwood hairline at 12%.
 
-- **Hero:** centred. The nav strip (brand on the left, three links on the right, 22px block padding) is followed by mirrored stamps at both top corners (82px from the top), then the wordmark grid (1fr auto 1fr, so the knot holds the exact centre), then the line, the sub, the CTA pair (12px gap, wraps), the mono meta line, and the commit-graph inlay rising into the bottom third.
+- **Hero:** centred. The nav strip (brand on the left, three links on the right, 22px block padding) is followed by mirrored stamps at both top corners (82px from the top), then the wordmark grid (1fr auto 1fr around the knot, shifted 0.38em left so the letters' ink is centred; the wider "wood" would otherwise pull the word right, so the knot sits 0.38em left of the page centre), then the line, the sub, the CTA pair (12px gap, wraps), the mono meta line, and the commit-graph inlay rising into the bottom third.
 - **Content leaves:** a 5fr/7fr grid (gap clamp(32px, 4.5vw, 64px)). Copy is on the left and the native-size framed screenshot is pushed to the right edge. A leaf can also put the headline and copy side by side at the top, with a wide frame below aligned to the sheet's left edge.
 - **Cutting list and install:** the headline, then an intro (18px above, 44px below), then a full-width table or panel row.
 - Screenshots are shown at their native pixel size (`fit-content`, max 100%), never scaled up to fill.
