@@ -64,3 +64,30 @@ func TestListRecentReposDropsGoneRepos(t *testing.T) {
 		t.Fatalf("repos.json still lists %v", saved)
 	}
 }
+
+func TestLoadSessionTabsNeverNil(t *testing.T) {
+	configDirOnce.Do(func() {})
+	configDir = t.TempDir()
+	sessionFile := filepath.Join(configDir, "session.json")
+
+	for name, content := range map[string]string{
+		"no file":   "",
+		"null tabs": `{"tabs": null, "activeIndex": 0}`,
+		"no tabs":   `{"activeIndex": 0}`,
+		"corrupt":   `{not json`,
+	} {
+		os.Remove(sessionFile)
+		if content != "" {
+			if err := os.WriteFile(sessionFile, []byte(content), 0o644); err != nil {
+				t.Fatal(err)
+			}
+		}
+		s, err := LoadSession()
+		if err != nil {
+			t.Fatalf("%s: %v", name, err)
+		}
+		if s.Tabs == nil {
+			t.Errorf("%s: Tabs is nil", name)
+		}
+	}
+}

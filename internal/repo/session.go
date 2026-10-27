@@ -25,16 +25,20 @@ func LoadSession() (*Session, error) {
 	if err != nil {
 		return nil, err
 	}
+	// Tabs must never be nil: it reaches the frontend as null, and restoreSession maps over it.
+	s := Session{Tabs: []SessionTab{}}
 	data, err := os.ReadFile(p)
 	if os.IsNotExist(err) {
-		return &Session{}, nil
+		return &s, nil
 	}
 	if err != nil {
 		return nil, err
 	}
-	var s Session
 	if err := json.Unmarshal(data, &s); err != nil {
-		return &Session{}, nil
+		return &Session{Tabs: []SessionTab{}}, nil
+	}
+	if s.Tabs == nil {
+		s.Tabs = []SessionTab{}
 	}
 	return &s, nil
 }
