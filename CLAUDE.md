@@ -49,7 +49,7 @@ frontend/src/components/ ← Vue components, grouped by feature
 ```
 
 ### Store rules
-- Every Pinia store ends with the `acceptHMRUpdate` block; without it `wails dev` keeps running the old store logic after an edit.
+- Every Pinia store ends with the `acceptHMRUpdate` block; without it `wails3 dev` keeps running the old store logic after an edit.
 - Loads that depend on the repo check `isActive(repoPath)` (from `stores/repos.ts`) before starting and after every await, so late results (auto-fetch, slow git calls) never touch another repo's view.
 
 ### Wails binding rules
