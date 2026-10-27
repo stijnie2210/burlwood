@@ -5,7 +5,6 @@ import (
 	"encoding/base64"
 	"fmt"
 	"os"
-	"os/exec"
 	"path/filepath"
 
 	"github.com/wailsapp/wails/v2/pkg/runtime"
@@ -174,7 +173,7 @@ func (a *App) CreateBranch(repoPath, name string) error {
 }
 
 func (a *App) OpenTerminal(repoPath string) error {
-	return exec.Command("open", "-a", "Terminal", repoPath).Start()
+	return gitcli.OpenTerminal(repoPath)
 }
 
 func (a *App) Commit(repoPath, message string, amend bool) error {

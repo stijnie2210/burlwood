@@ -32,7 +32,8 @@ After adding Go methods to `App` or new structs crossing the boundary, `wails de
 ### Git access
 - **System `git`** for nearly everything, reads included: log, refs, diffs, status, staging, rebase, fetch/pull/push. Plain wrappers live in `internal/gitcli/`; parsing and multi-step logic in `internal/repo/`
 - **go-git** only for `PlainOpen` in the `Manager` and the `FilePatch` types `buildHunks()` consumes
-- `gitcli.Run` passes the user's login-shell `PATH` (`env.go`): macOS launches GUI apps with a bare `PATH`, so repo hooks wouldn't find Homebrew/nvm tools
+- `gitcli.Run` passes the user's login-shell `PATH` (`env.go`): macOS launches GUI apps with a bare `PATH`, so repo hooks wouldn't find Homebrew/nvm tools (skipped on Windows)
+- Start git only through `gitcli.Run`/`RunWithInput`: they hide the console window on Windows
 
 ### Layers
 ```
@@ -72,8 +73,11 @@ internal/gitcli/
                                     non-fast-forward → Rejected result (not an error); force = --force-with-lease --force-if-includes
                                     (the bare lease is defeated by background auto-fetch)
   amend.go                          GetAmendInfo: full message (%B) + whether HEAD is already on its upstream
-  fileops.go                        OpenInDefaultApp, ShowInFinder, OpenInEditor,
+  fileops.go                        OpenInDefaultApp, ShowInFinder, OpenTerminal, OpenInEditor,
                                     StashFile, AppendToGitignore, GetFilePatch, DeleteWorkingFile
+  open_darwin.go / _windows.go /    per-OS commands behind fileops: open, reveal, terminal
+    _other.go                       (open / explorer.exe, wt or PowerShell / xdg-open, $TERMINAL)
+  hidewindow_windows.go             git runs with CREATE_NO_WINDOW; without it every call opens a console window
   undo.go                           SnapshotWorkingFile/RestoreWorkingFile (discard undo via hash-object),
                                     HardResetWithUndo/UndoHardReset (stash create + previous HEAD)
 internal/repo/

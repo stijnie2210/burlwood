@@ -9,26 +9,32 @@ import (
 )
 
 func OpenInDefaultApp(repoPath, filePath string) error {
-	return exec.Command("open", filepath.Join(repoPath, filePath)).Start()
+	return openCommand(filepath.Join(repoPath, filePath)).Start()
 }
 
 func ShowInFinder(repoPath, filePath string) error {
-	return exec.Command("open", "-R", filepath.Join(repoPath, filePath)).Start()
+	return revealCommand(filepath.Join(repoPath, filePath)).Start()
+}
+
+func OpenTerminal(dir string) error {
+	return terminalCommand(dir).Start()
 }
 
 func OpenInEditor(repoPath, filePath, preferredEditor string) error {
 	full := filepath.Join(repoPath, filePath)
-	if preferredEditor != "" {
-		parts := strings.Fields(preferredEditor)
-		return exec.Command(parts[0], append(parts[1:], full)...).Start()
-	}
+	editor := preferredEditor
 	for _, env := range []string{"VISUAL", "EDITOR"} {
-		if e := os.Getenv(env); e != "" {
-			parts := strings.Fields(e)
-			return exec.Command(parts[0], append(parts[1:], full)...).Start()
+		if editor == "" {
+			editor = os.Getenv(env)
 		}
 	}
-	return exec.Command("open", full).Start()
+	if editor == "" {
+		return openCommand(full).Start()
+	}
+	parts := strings.Fields(editor)
+	cmd := exec.Command(parts[0], append(parts[1:], full)...)
+	noConsole(cmd)
+	return cmd.Start()
 }
 
 func StashFile(repoPath, filePath string) error {

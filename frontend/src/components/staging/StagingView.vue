@@ -3,6 +3,7 @@ import { parentDir } from '../../utils/folders';
 import { ref, watch, computed, onMounted, onUnmounted, nextTick } from 'vue';
 import type { Ref } from 'vue';
 import { isImageFile, imageDataUrl } from '../../utils/imageUtils';
+import { platform } from '../../utils/platform';
 import { useReposStore } from '../../stores/repos';
 import { useBranchesStore } from '../../stores/branches';
 import { useCommitsStore } from '../../stores/commits';
@@ -67,6 +68,8 @@ function baseName(p: string) {
 }
 
 const repoPath = () => repos.activeRepo?.path ?? '';
+
+const fileManagerName = { mac: 'Finder', windows: 'Explorer', linux: 'file manager' }[platform];
 
 function onSelectFile(path: string, mode: 'staged' | 'unstaged') {
   staging.selectFile(repoPath(), path, mode);
@@ -1094,7 +1097,7 @@ async function doAbortRebase() {
           Open in default app
         </button>
         <button role="menuitem" class="ctx-menu-item" @click="ctxShowInFinder">
-          Show in Finder
+          Show in {{ fileManagerName }}
         </button>
         <button role="menuitem" class="ctx-menu-item" @click="ctxOpenInEditor">
           Open in editor
