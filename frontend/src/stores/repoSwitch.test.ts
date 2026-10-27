@@ -9,7 +9,7 @@ function deferred<T>(): Deferred<T> {
 }
 
 const pending: Record<string, Deferred<unknown>> = {};
-vi.mock('../../wailsjs/go/main/App', () => ({
+vi.mock('../../bindings/burlwood/app', () => ({
   ListBranches: (repo: string) => (pending[`branches:${repo}`] = deferred()).promise,
   ListTags: async () => [],
   GetAheadBehind: async () => ({ ahead: 0, behind: 0 }),

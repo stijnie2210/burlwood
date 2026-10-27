@@ -2,7 +2,7 @@
 import { ref, computed, onMounted, watch } from 'vue';
 import { useToastStore } from '../../stores/toast';
 import { useStagingStore } from '../../stores/staging';
-import { GetConflictContent, ResolveConflict } from '../../../wailsjs/go/main/App';
+import { GetConflictContent, ResolveConflict } from '../../../bindings/burlwood/app';
 import { parseConflicts, hasConflictMarkers } from '../../utils/conflicts';
 import type { ContextChunk, ParsedConflict } from '../../utils/conflicts';
 

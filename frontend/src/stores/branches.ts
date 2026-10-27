@@ -7,7 +7,7 @@ import {
   GetAheadBehind,
   SwitchBranch,
   FetchAll,
-} from '../../wailsjs/go/main/App';
+} from '../../bindings/burlwood/app';
 
 export interface BranchInfo {
   name: string;
@@ -61,7 +61,7 @@ export const useBranchesStore = defineStore('branches', () => {
     }
     loading.value = true;
     try {
-      const [all, tagList, ab] = await Promise.all([
+      const [branchList, tagList, ab] = await Promise.all([
         ListBranches(repoPath),
         ListTags(repoPath),
         GetAheadBehind(repoPath),
@@ -69,14 +69,15 @@ export const useBranchesStore = defineStore('branches', () => {
       if (!isActive(repoPath)) {
         return;
       }
+      const all = branchList ?? [];
       local.value = all.filter((b) => !b.isRemote);
       remote.value = all.filter((b) => b.isRemote);
-      tags.value = tagList;
+      tags.value = tagList ?? [];
       aheadBehind.value = ab;
       cache.set(repoPath, {
         local: local.value,
         remote: remote.value,
-        tags: tagList,
+        tags: tags.value,
         aheadBehind: ab,
       });
     } finally {
@@ -135,7 +136,7 @@ export const useBranchesStore = defineStore('branches', () => {
   };
 });
 
-// Without this, editing a store during `wails dev` keeps the old instance (and its old logic)
+// Without this, editing a store during `wails3 dev` keeps the old instance (and its old logic)
 // running until a full reload.
 if (import.meta.hot) {
   import.meta.hot.accept(acceptHMRUpdate(useBranchesStore, import.meta.hot));

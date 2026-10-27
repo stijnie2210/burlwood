@@ -1,4 +1,4 @@
-import { PushBranch } from '../../wailsjs/go/main/App';
+import { PushBranch } from '../../bindings/burlwood/app';
 import { useToastStore } from '../stores/toast';
 import { useBranchesStore } from '../stores/branches';
 import { useCommitsStore } from '../stores/commits';

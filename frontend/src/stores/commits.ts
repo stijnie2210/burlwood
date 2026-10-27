@@ -1,7 +1,8 @@
 import { acceptHMRUpdate, defineStore } from 'pinia';
 import { ref, computed } from 'vue';
-import { GetCommitGraph, GetCommitDiff } from '../../wailsjs/go/main/App';
-import type { graph, repo } from '../../wailsjs/go/models';
+import { GetCommitGraph, GetCommitDiff } from '../../bindings/burlwood/app';
+import type * as graph from '../../bindings/burlwood/internal/graph';
+import type * as repo from '../../bindings/burlwood/internal/repo';
 import { usePrefsStore } from './prefs';
 import { isActive } from './repos';
 import { describeGitError } from '../utils/gitErrors';
@@ -50,7 +51,7 @@ export const useCommitsStore = defineStore('commits', () => {
     error.value = null;
     currentRepoPath.value = repoPath;
     try {
-      const result = await GetCommitGraph(repoPath, limit);
+      const result = (await GetCommitGraph(repoPath, limit)) ?? [];
       if (currentRepoPath.value !== repoPath) {
         return;
       }
@@ -79,7 +80,7 @@ export const useCommitsStore = defineStore('commits', () => {
     loadingMore.value = true;
     const nextLimit = loadedLimit.value + BATCH_SIZE;
     try {
-      const result = await GetCommitGraph(currentRepoPath.value, nextLimit);
+      const result = (await GetCommitGraph(currentRepoPath.value, nextLimit)) ?? [];
       rows.value = result;
       loadedLimit.value = nextLimit;
       hasMore.value = result.length === nextLimit;
@@ -103,7 +104,7 @@ export const useCommitsStore = defineStore('commits', () => {
     diff.value = [];
     diffError.value = null;
     try {
-      const result = await GetCommitDiff(repoPath, hash);
+      const result = (await GetCommitDiff(repoPath, hash)) ?? [];
       if (currentRepoPath.value === repoPath && selectedHash.value === hash) {
         diff.value = orderByFolder(result, (f) => f.newPath || f.oldPath || '');
       }
@@ -149,7 +150,7 @@ export const useCommitsStore = defineStore('commits', () => {
   };
 });
 
-// Without this, editing a store during `wails dev` keeps the old instance (and its old logic)
+// Without this, editing a store during `wails3 dev` keeps the old instance (and its old logic)
 // running until a full reload.
 if (import.meta.hot) {
   import.meta.hot.accept(acceptHMRUpdate(useCommitsStore, import.meta.hot));

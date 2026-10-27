@@ -1,4 +1,4 @@
-import type { repo } from '../../wailsjs/go/models';
+import type * as repo from '../../bindings/burlwood/internal/repo';
 
 export type HunkLine = repo.HunkLine;
 

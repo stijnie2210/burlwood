@@ -9,6 +9,7 @@
   "scripts": {
     "dev": "vite",
     "build": "vue-tsc --noEmit && vite build",
+    "build:dev": "vue-tsc --noEmit && vite build --minify false --mode development",
     "preview": "vite preview",
     "lint": "eslint src",
     "lint-fix": "eslint src --fix",
@@ -19,6 +20,7 @@
   },
   "dependencies": {
     "@tanstack/vue-virtual": "^3.13.28",
+    "@wailsio/runtime": "3.0.0",
     "pinia": "^3.0.4",
     "prismjs": "^1.30.0",
     "vue": "^3.5.38"

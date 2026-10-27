@@ -20,8 +20,9 @@ import {
   IsInRebase,
   GetRebaseState,
   SyncAutostash,
-} from '../../wailsjs/go/main/App';
-import type { gitcli, repo } from '../../wailsjs/go/models';
+} from '../../bindings/burlwood/app';
+import type * as gitcli from '../../bindings/burlwood/internal/gitcli';
+import type * as repo from '../../bindings/burlwood/internal/repo';
 import { describeGitError } from '../utils/gitErrors';
 import { useToastStore } from './toast';
 import { isActive } from './repos';
@@ -36,7 +37,7 @@ export function buildHunkPatch(path: string, hunk: Hunk): string {
     `--- a/${path}`,
     `+++ b/${path}`,
     hunk.header,
-    ...hunk.lines.map((l) => {
+    ...(hunk.lines ?? []).map((l) => {
       if (l.type === 'add') {
         return `+${l.content}`;
       }
@@ -113,7 +114,7 @@ export const useStagingStore = defineStore('staging', () => {
       if (!isActive(repoPath)) {
         return;
       }
-      files.value = statusResult;
+      files.value = statusResult ?? [];
       isInMerge.value = mergeState;
       mergeMessage.value = mergeMsg;
       isInRebase.value = rebaseActive;
@@ -155,7 +156,7 @@ export const useStagingStore = defineStore('staging', () => {
     try {
       const result = await GetWorkingDiff(repoPath, path, mode === 'staged');
       if (isActive(repoPath) && selectedPath.value === path) {
-        diff.value = result;
+        diff.value = result ?? [];
       }
     } catch (e) {
       if (isActive(repoPath)) {
@@ -177,7 +178,7 @@ export const useStagingStore = defineStore('staging', () => {
       if (!isActive(repoPath) || selectedPath.value !== path) {
         return;
       }
-      diff.value = result;
+      diff.value = result ?? [];
       diffError.value = null;
     } catch (e) {
       diffError.value = describeGitError(e).message;
@@ -319,7 +320,7 @@ export const useStagingStore = defineStore('staging', () => {
   };
 });
 
-// Without this, editing a store during `wails dev` keeps the old instance (and its old logic)
+// Without this, editing a store during `wails3 dev` keeps the old instance (and its old logic)
 // running until a full reload.
 if (import.meta.hot) {
   import.meta.hot.accept(acceptHMRUpdate(useStagingStore, import.meta.hot));

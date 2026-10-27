@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue';
-import type { graph } from '../../../wailsjs/go/models';
+import type * as graph from '../../../bindings/burlwood/internal/graph';
 
 const props = defineProps<{ label: graph.Label }>();
 

@@ -2,17 +2,14 @@ package main
 
 import (
 	"embed"
+	"log"
+	"runtime"
 
-	"github.com/wailsapp/wails/v2"
-	"github.com/wailsapp/wails/v2/pkg/menu"
-	"github.com/wailsapp/wails/v2/pkg/menu/keys"
-	"github.com/wailsapp/wails/v2/pkg/options"
-	"github.com/wailsapp/wails/v2/pkg/options/assetserver"
-	"github.com/wailsapp/wails/v2/pkg/options/linux"
-	"github.com/wailsapp/wails/v2/pkg/options/mac"
-	"github.com/wailsapp/wails/v2/pkg/runtime"
+	"github.com/wailsapp/wails/v3/pkg/application"
+	"github.com/wailsapp/wails/v3/pkg/events"
 
 	"burlwood/internal/desktop"
+	"burlwood/internal/repo"
 )
 
 //go:embed all:frontend/dist
@@ -23,81 +20,101 @@ var appIcon []byte
 
 func main() {
 	go desktop.IntegrateAppImage(appIcon)
-	app := NewApp()
+	svc := NewApp()
 
-	appMenu := menu.NewMenu()
+	app := application.New(application.Options{
+		Name: "Burlwood",
+		Services: []application.Service{
+			application.NewService(svc),
+		},
+		Assets: application.AssetOptions{
+			Handler: application.AssetFileServerFS(assets),
+		},
+		Mac: application.MacOptions{
+			ApplicationShouldTerminateAfterLastWindowClosed: true,
+		},
+		Linux: application.LinuxOptions{
+			ApplicationID: desktop.AppID,
+		},
+	})
+
+	app.Menu.Set(buildMenu(app))
+
+	opts := application.WebviewWindowOptions{
+		Title:            "Burlwood",
+		Width:            1440,
+		Height:           900,
+		MinWidth:         960,
+		MinHeight:        600,
+		BackgroundColour: application.NewRGB(27, 27, 29),
+		// The toolbar row doubles as the title bar; the frontend marks it draggable and insets it for the traffic lights.
+		// The webview only turns transparent above the backdrop with -tags private_mac_apis (see build/darwin/Taskfile.yml).
+		Mac: application.MacWindow{
+			TitleBar: application.MacTitleBarHiddenInset,
+			Backdrop: application.MacBackdropTranslucent,
+			// The UI is dark-only, so the vibrancy material must be the dark one regardless of system appearance.
+			Appearance: application.NSAppearanceNameDarkAqua,
+		},
+		UseApplicationMenu: true,
+		URL:                "/",
+	}
+	if runtime.GOOS == "darwin" {
+		// Transparent so the sidebar can show the window's vibrancy; every other area paints its own background.
+		opts.BackgroundColour = application.NewRGBA(27, 27, 29, 0)
+	}
+	if prefs, err := repo.LoadWindowPrefs(); err == nil && prefs != nil {
+		opts.Width, opts.Height = prefs.Width, prefs.Height
+		opts.InitialPosition = application.WindowXY
+		opts.X, opts.Y = prefs.X, prefs.Y
+	}
+	window := app.Window.NewWithOptions(opts)
+	// Close() emits WindowClosing too, so this also runs when the app quits with the window open.
+	window.RegisterHook(events.Common.WindowClosing, func(_ *application.WindowEvent) {
+		w, h := window.Size()
+		x, y := window.Position()
+		_ = repo.SaveWindowPrefs(w, h, x, y)
+	})
+	svc.attach(app, window)
+
+	if err := app.Run(); err != nil {
+		log.Fatal(err)
+	}
+}
+
+func buildMenu(app *application.App) *application.Menu {
+	appMenu := app.NewMenu()
 	appNameMenu := appMenu.AddSubmenu("Burlwood")
-	appNameMenu.AddText("Settings…", keys.CmdOrCtrl(","), func(_ *menu.CallbackData) {
-		if app.ctx != nil {
-			runtime.EventsEmit(app.ctx, "open-preferences")
-		}
+	appNameMenu.Add("Settings…").SetAccelerator("CmdOrCtrl+,").OnClick(func(_ *application.Context) {
+		app.Event.Emit("open-preferences")
 	})
 	appNameMenu.AddSeparator()
-	appNameMenu.AddText("Quit Burlwood", keys.CmdOrCtrl("q"), func(_ *menu.CallbackData) {
-		if app.ctx != nil {
-			runtime.Quit(app.ctx)
-		}
+	appNameMenu.Add("Quit Burlwood").SetAccelerator("CmdOrCtrl+q").OnClick(func(_ *application.Context) {
+		app.Quit()
 	})
 
 	// The frontend handles these too; listing them here makes every shortcut discoverable in the menu bar.
-	emit := func(action string) menu.Callback {
-		return func(_ *menu.CallbackData) {
-			if app.ctx != nil {
-				runtime.EventsEmit(app.ctx, "menu", action)
-			}
+	emit := func(action string) func(*application.Context) {
+		return func(_ *application.Context) {
+			app.Event.Emit("menu", action)
 		}
 	}
 
 	repoMenu := appMenu.AddSubmenu("Repository")
-	repoMenu.AddText("Open Repository…", keys.CmdOrCtrl("o"), emit("open-repo"))
-	repoMenu.AddText("Close Tab", keys.CmdOrCtrl("w"), emit("close-tab"))
+	repoMenu.Add("Open Repository…").SetAccelerator("CmdOrCtrl+o").OnClick(emit("open-repo"))
+	repoMenu.Add("Close Tab").SetAccelerator("CmdOrCtrl+w").OnClick(emit("close-tab"))
 	repoMenu.AddSeparator()
-	repoMenu.AddText("Fetch All", keys.CmdOrCtrl("r"), emit("fetch"))
+	repoMenu.Add("Fetch All").SetAccelerator("CmdOrCtrl+r").OnClick(emit("fetch"))
 	repoMenu.AddSeparator()
-	repoMenu.AddText("Previous Tab", keys.CmdOrCtrl("["), emit("prev-tab"))
-	repoMenu.AddText("Next Tab", keys.CmdOrCtrl("]"), emit("next-tab"))
+	repoMenu.Add("Previous Tab").SetAccelerator("CmdOrCtrl+[").OnClick(emit("prev-tab"))
+	repoMenu.Add("Next Tab").SetAccelerator("CmdOrCtrl+]").OnClick(emit("next-tab"))
 
-	appMenu.Append(menu.EditMenu())
+	appMenu.AddRole(application.EditMenu)
 
 	viewMenu := appMenu.AddSubmenu("View")
-	viewMenu.AddText("Commits", keys.CmdOrCtrl("1"), emit("view-commits"))
-	viewMenu.AddText("Working Tree", keys.CmdOrCtrl("2"), emit("view-staging"))
+	viewMenu.Add("Commits").SetAccelerator("CmdOrCtrl+1").OnClick(emit("view-commits"))
+	viewMenu.Add("Working Tree").SetAccelerator("CmdOrCtrl+2").OnClick(emit("view-staging"))
 	viewMenu.AddSeparator()
-	viewMenu.AddText("Find Commit…", keys.CmdOrCtrl("f"), emit("find"))
+	viewMenu.Add("Find Commit…").SetAccelerator("CmdOrCtrl+f").OnClick(emit("find"))
 
-	err := wails.Run(&options.App{
-		Title:     "Burlwood",
-		Width:     1440,
-		Height:    900,
-		MinWidth:  960,
-		MinHeight: 600,
-		AssetServer: &assetserver.Options{
-			Assets: assets,
-		},
-		// Transparent so the sidebar can show the window's vibrancy; every other area paints its own background.
-		BackgroundColour: &options.RGBA{R: 27, G: 27, B: 29, A: 0},
-		// The toolbar row doubles as the title bar; the frontend marks it draggable and insets it for the traffic lights.
-		Mac: &mac.Options{
-			TitleBar:             mac.TitleBarHiddenInset(),
-			WebviewIsTransparent: true,
-			WindowIsTranslucent:  true,
-			// The UI is dark-only, so the vibrancy material must be the dark one regardless of system appearance.
-			Appearance: mac.NSAppearanceNameDarkAqua,
-		},
-		// ProgramName sets the window's app id / WM_CLASS, which docks match against StartupWMClass in burlwood.desktop.
-		Linux: &linux.Options{
-			Icon:        appIcon,
-			ProgramName: "burlwood",
-		},
-		Menu:          appMenu,
-		OnStartup:     app.startup,
-		OnBeforeClose: app.beforeClose,
-		Bind: []interface{}{
-			app,
-		},
-	})
-
-	if err != nil {
-		println("Error:", err.Error())
-	}
+	return appMenu
 }

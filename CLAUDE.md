@@ -1,6 +1,6 @@
 # Burlwood — Development Reference
 
-GitKraken replacement. Single-binary desktop app: **Wails v2** (Go backend + Vue 3 frontend, no HTTP server, direct Go↔Vue bindings via auto-generated TypeScript).
+GitKraken replacement. Single-binary desktop app: **Wails v3** (Go backend + Vue 3 frontend, no HTTP server, direct Go↔Vue bindings via auto-generated TypeScript).
 
 ## Code style
 
@@ -11,9 +11,10 @@ Always use braces for if statements — never single-line `if (x) return` or `if
 ## Commands
 
 ```bash
-wails dev        # hot-reload dev build (regenerates TS bindings automatically)
-wails build      # production .app bundle → build/bin/Burlwood.app
-go build ./...   # Go-only compile check
+wails3 dev                     # hot-reload dev build (regenerates TS bindings automatically)
+wails3 task darwin:package     # production .app bundle → bin/Burlwood.app (wails3 build: just the binary)
+wails3 generate bindings -clean=true -ts -i   # regenerate frontend/bindings only
+go build ./...                 # Go-only compile check
 go test ./internal/... && go vet ./internal/...
 
 # in frontend/
@@ -25,7 +26,9 @@ npx prettier --check src
 
 CI (`.github/workflows/ci.yml`) runs all of the above on PRs to `main`; lint and format are non-blocking there.
 
-After adding Go methods to `App` or new structs crossing the boundary, `wails dev` / `wails build` regenerates `frontend/wailsjs/go/main/App.d.ts` and `frontend/wailsjs/go/models.ts`. Never edit those files by hand.
+After adding Go methods to `App` or new structs crossing the boundary, `wails3 dev` / `wails3 build` regenerates `frontend/bindings/` (commit it: CI's frontend checks use it). Never edit those files by hand.
+
+Builds run through Taskfiles: `Taskfile.yml` and `build/{darwin,windows,linux}/Taskfile.yml`, trimmed from the `wails3 init` template. `build/config.yml` holds the product info that `wails3 task common:update:build-assets` renders into `build/darwin/Info*.plist` and `build/windows/`. macOS builds always add `-tags private_mac_apis`: without it the webview stays opaque and the sidebar loses its vibrancy. Linux builds use GTK 4 / WebKitGTK 6.0 (Wails' default; the `gtk3` tag goes away in v3.1).
 
 ## Architecture
 
@@ -46,13 +49,15 @@ frontend/src/components/ ← Vue components, grouped by feature
 ```
 
 ### Store rules
-- Every Pinia store ends with the `acceptHMRUpdate` block; without it `wails dev` keeps running the old store logic after an edit.
+- Every Pinia store ends with the `acceptHMRUpdate` block; without it `wails3 dev` keeps running the old store logic after an edit.
 - Loads that depend on the repo check `isActive(repoPath)` (from `stores/repos.ts`) before starting and after every await, so late results (auto-fetch, slow git calls) never touch another repo's view.
 
 ### Wails binding rules
 - Every Go struct that crosses the boundary needs `json:"camelCase"` tags on every field
-- Methods on `*App` in `app.go` are auto-bound; keep `app.go` thin — real logic lives in `internal/repo/`
-- TypeScript imports: methods from `wailsjs/go/main/App`, types from `wailsjs/go/models`
+- Exported methods on `*App` in `app.go` are bound (it's the one registered service); keep `app.go` thin — real logic lives in `internal/repo/`. `main.go` builds the window and menu and hands them to `App.attach` for dialogs
+- TypeScript imports: methods from `bindings/burlwood/app`, types as namespaces: `import type * as repo from '.../bindings/burlwood/internal/repo'`
+- Go slices arrive as `T[] | null` (a nil slice encodes as `null`): default them with `?? []` where results come in
+- Events: `Events.On(name, (ev) => …ev.data)` from `@wailsio/runtime`; Go emits with `app.Event.Emit`
 
 ## File Map
 
@@ -103,7 +108,9 @@ internal/repo/
                                     FetchAll, Commit, GetAmendInfo; BuildHunkPatch (test reference for the TS version)
 internal/desktop/
   appimage.go                       Run as an AppImage on Linux ($APPIMAGE): writes ~/.local/share/applications/burlwood.desktop
-                                    + icon, so GNOME on Wayland shows the icon; skipped when another entry already launches it
+                                    + icon, so GNOME on Wayland shows the icon; skipped when another entry already launches it.
+                                    AppID is the GTK application id, which GTK 4 uses as the Wayland app id: keep
+                                    StartupWMClass in both .desktop files equal to it, or the dock shows a generic icon
 internal/graph/
   layout.go                         BuildGraph() — greedy lane assignment
                                     GraphRow{hash, column, color, edgesIn, edges, maxColumn}

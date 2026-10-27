@@ -2,15 +2,19 @@ import { computed, ref, watch } from 'vue';
 
 export const LINE_BUDGET = 2000;
 
-export interface VisibleHunk<H extends { lines: unknown[] }> {
+export interface VisibleHunk<H extends { lines: unknown[] | null }> {
   hunk: H;
-  lines: H['lines'];
+  lines: NonNullable<H['lines']>;
   truncated: boolean;
+}
+
+function linesOf<H extends { lines: unknown[] | null }>(hunk: H): NonNullable<H['lines']> {
+  return (hunk.lines ?? []) as NonNullable<H['lines']>;
 }
 
 // Rendering every line of a huge diff (lockfiles, generated code) freezes the view, so only a prefix
 // renders until the user asks for the rest. `hunk` stays the original object so hunk actions see all lines.
-export function useLineBudget<H extends { lines: unknown[] }>(
+export function useLineBudget<H extends { lines: unknown[] | null }>(
   hunks: () => H[],
   resetKey: () => unknown,
   budget = LINE_BUDGET
@@ -20,12 +24,12 @@ export function useLineBudget<H extends { lines: unknown[] }>(
     showAll.value = false;
   });
 
-  const totalLines = computed(() => hunks().reduce((n, h) => n + h.lines.length, 0));
+  const totalLines = computed(() => hunks().reduce((n, h) => n + (h.lines?.length ?? 0), 0));
 
   const visible = computed<VisibleHunk<H>[]>(() => {
     const all = hunks();
     if (showAll.value || totalLines.value <= budget) {
-      return all.map((hunk) => ({ hunk, lines: hunk.lines, truncated: false }));
+      return all.map((hunk) => ({ hunk, lines: linesOf(hunk), truncated: false }));
     }
     const out: VisibleHunk<H>[] = [];
     let left = budget;
@@ -33,8 +37,9 @@ export function useLineBudget<H extends { lines: unknown[] }>(
       if (left <= 0) {
         break;
       }
-      const lines = hunk.lines.slice(0, left) as H['lines'];
-      out.push({ hunk, lines, truncated: lines.length < hunk.lines.length });
+      const hunkLines = linesOf(hunk);
+      const lines = hunkLines.slice(0, left) as NonNullable<H['lines']>;
+      out.push({ hunk, lines, truncated: lines.length < hunkLines.length });
       left -= lines.length;
     }
     return out;

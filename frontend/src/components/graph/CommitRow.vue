@@ -25,10 +25,10 @@ const displayDate = computed(() => {
 });
 
 const MAX_LABELS = 2;
-const visibleLabels = computed(() => props.row.labels.slice(0, MAX_LABELS));
-const hiddenLabels = computed(() => props.row.labels.slice(MAX_LABELS));
+const visibleLabels = computed(() => (props.row.labels ?? []).slice(0, MAX_LABELS));
+const hiddenLabels = computed(() => (props.row.labels ?? []).slice(MAX_LABELS));
 
-function labelText(l: GraphRow['labels'][number]): string {
+function labelText(l: NonNullable<GraphRow['labels']>[number]): string {
   return l.type === 'remote' ? `${l.remote}/${l.name}` : l.name;
 }
 

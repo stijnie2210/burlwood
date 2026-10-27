@@ -9,7 +9,7 @@ import {
   LoadSession,
   SaveSession,
   RepositoryGone,
-} from '../../wailsjs/go/main/App';
+} from '../../bindings/burlwood/app';
 
 export interface RepoTab {
   path: string;
@@ -32,7 +32,7 @@ export const useReposStore = defineStore('repos', () => {
   const activeRepo = computed(() => tabs.value[activeIndex.value] ?? null);
 
   async function loadRecents() {
-    recentRepos.value = await ListRecentRepositories();
+    recentRepos.value = (await ListRecentRepositories()) ?? [];
   }
 
   function persistSession() {
@@ -45,11 +45,12 @@ export const useReposStore = defineStore('repos', () => {
   async function restoreSession() {
     try {
       const session = await LoadSession();
-      restoringNames.value = session.tabs.map((t) => t.name);
-      const results = await Promise.allSettled(session.tabs.map((t) => OpenRepository(t.path)));
+      const sessionTabs = session.tabs ?? [];
+      restoringNames.value = sessionTabs.map((t) => t.name);
+      const results = await Promise.allSettled(sessionTabs.map((t) => OpenRepository(t.path)));
       const gone = new Set<string>();
       for (const [i, result] of results.entries()) {
-        const tab = session.tabs[i];
+        const tab = sessionTabs[i];
         if (result.status === 'fulfilled') {
           if (!tabs.value.find((t) => t.path === result.value)) {
             tabs.value.push({ path: result.value, name: tab.name });
@@ -74,10 +75,10 @@ export const useReposStore = defineStore('repos', () => {
       );
       if (gone.size) {
         // Saving the open tabs would also drop a repo that only failed this time.
-        const kept = session.tabs.filter((t) => !gone.has(t.path));
-        const activeTab = session.tabs[session.activeIndex];
+        const kept = sessionTabs.filter((t) => !gone.has(t.path));
+        const activeTab = sessionTabs[session.activeIndex];
         SaveSession(kept, Math.max(0, kept.indexOf(activeTab)));
-        const names = session.tabs.filter((t) => gone.has(t.path)).map((t) => t.name);
+        const names = sessionTabs.filter((t) => gone.has(t.path)).map((t) => t.name);
         useToastStore().push(`Closed ${names.join(', ')}: the repository no longer exists`);
       }
     } catch (e) {
@@ -148,7 +149,7 @@ export const useReposStore = defineStore('repos', () => {
   };
 });
 
-// Without this, editing a store during `wails dev` keeps the old instance (and its old logic)
+// Without this, editing a store during `wails3 dev` keeps the old instance (and its old logic)
 // running until a full reload.
 if (import.meta.hot) {
   import.meta.hot.accept(acceptHMRUpdate(useReposStore, import.meta.hot));

@@ -19,7 +19,7 @@ export const useLogModalStore = defineStore('logModal', () => {
   return { open, title, content, show, close };
 });
 
-// Without this, editing a store during `wails dev` keeps the old instance (and its old logic)
+// Without this, editing a store during `wails3 dev` keeps the old instance (and its old logic)
 // running until a full reload.
 if (import.meta.hot) {
   import.meta.hot.accept(acceptHMRUpdate(useLogModalStore, import.meta.hot));

@@ -1,7 +1,8 @@
-# Build output
+# Build output (build/bin is where Wails v2 put it)
+bin
 build/bin
-build/darwin
-build/windows
+.task
+*.syso
 
 # Frontend
 node_modules

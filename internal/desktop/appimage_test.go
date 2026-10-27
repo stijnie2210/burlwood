@@ -28,7 +28,7 @@ func TestIntegrateAppImage(t *testing.T) {
 		`Exec="/home/u/Apps/Burlwood \$1.AppImage"`,
 		"TryExec=" + appImage,
 		"Icon=" + iconPath,
-		"StartupWMClass=burlwood",
+		"StartupWMClass=" + AppID,
 	} {
 		if !strings.Contains(string(entry), want) {
 			t.Errorf("entry lacks %q:\n%s", want, entry)

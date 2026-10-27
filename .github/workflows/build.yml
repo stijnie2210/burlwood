@@ -31,11 +31,11 @@ jobs:
       - name: Install system dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y libgtk-3-dev libwebkit2gtk-4.1-dev
+          sudo apt-get install -y libgtk-4-dev libwebkitgtk-6.0-dev
       - name: Install Wails
-        run: go install github.com/wailsapp/wails/v2/cmd/wails@v2.17.0
+        run: go install github.com/wailsapp/wails/v3/cmd/wails3@v3.0.0
       - name: Build
-        run: wails build -platform linux/${{ matrix.arch }} -tags webkit2_41
+        run: wails3 task linux:build ARCH=${{ matrix.arch }}
       - name: Download appimagetool
         run: |
           wget -q -O appimagetool "https://github.com/AppImage/appimagetool/releases/download/continuous/appimagetool-${{ matrix.appimage-arch }}.AppImage"
@@ -48,7 +48,7 @@ jobs:
           ARCH: ${{ matrix.appimage-arch }}
         run: |
           mkdir -p AppDir/usr/bin
-          cp build/bin/burlwood AppDir/usr/bin/burlwood
+          cp bin/burlwood AppDir/usr/bin/burlwood
           cp build/linux/burlwood.desktop AppDir/burlwood.desktop
           cp build/appicon.png AppDir/burlwood.png
           ln -s burlwood.png AppDir/.DirIcon
@@ -77,11 +77,11 @@ jobs:
           cache: npm
           cache-dependency-path: frontend/package-lock.json
       - name: Install Wails
-        run: go install github.com/wailsapp/wails/v2/cmd/wails@v2.17.0
+        run: go install github.com/wailsapp/wails/v3/cmd/wails3@v3.0.0
       - name: Build
-        run: wails build -platform darwin/universal
+        run: wails3 task darwin:package:universal
       - name: Create DMG
-        run: hdiutil create -volname "Burlwood" -srcfolder build/bin/Burlwood.app -ov -format UDZO burlwood-mac-universal.dmg
+        run: hdiutil create -volname "Burlwood" -srcfolder bin/Burlwood.app -ov -format UDZO burlwood-mac-universal.dmg
       - uses: actions/upload-artifact@v7
         with:
           name: burlwood-mac-universal
@@ -105,11 +105,11 @@ jobs:
           cache: npm
           cache-dependency-path: frontend/package-lock.json
       - name: Install Wails
-        run: go install github.com/wailsapp/wails/v2/cmd/wails@v2.17.0
+        run: go install github.com/wailsapp/wails/v3/cmd/wails3@v3.0.0
       - name: Build
-        run: wails build -platform windows/amd64
+        run: wails3 task windows:build ARCH=amd64
       - name: Zip binary
-        run: Compress-Archive -Path build/bin/burlwood.exe -DestinationPath burlwood-windows-amd64.zip
+        run: Compress-Archive -Path bin/burlwood.exe -DestinationPath burlwood-windows-amd64.zip
       - uses: actions/upload-artifact@v7
         with:
           name: burlwood-windows-amd64

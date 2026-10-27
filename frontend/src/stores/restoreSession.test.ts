@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { createPinia, setActivePinia } from 'pinia';
 
-vi.mock('../../wailsjs/go/main/App', () => ({
+vi.mock('../../bindings/burlwood/app', () => ({
   LoadSession: vi.fn(async () => ({
     tabs: [
       { path: '/a', name: 'a' },
@@ -22,7 +22,7 @@ vi.mock('../../wailsjs/go/main/App', () => ({
 
 const { useReposStore } = await import('./repos');
 const { useToastStore } = await import('./toast');
-const { LoadSession, SaveSession } = await import('../../wailsjs/go/main/App');
+const { LoadSession, SaveSession } = await import('../../bindings/burlwood/app');
 
 describe('restoring the last session', () => {
   beforeEach(() => {

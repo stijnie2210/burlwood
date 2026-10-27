@@ -7,7 +7,7 @@ import { useStagingStore } from '../../stores/staging';
 import { useBranchesStore } from '../../stores/branches';
 import { useToastStore } from '../../stores/toast';
 import { useStashStore } from '../../stores/stash';
-import { Stash, StashPop, CreateBranch, OpenTerminal } from '../../../wailsjs/go/main/App';
+import { Stash, StashPop, CreateBranch, OpenTerminal } from '../../../bindings/burlwood/app';
 import { usePrefsStore } from '../../stores/prefs';
 import { pushWithFeedback } from '../../composables/usePush';
 import { useRepoPickerStore } from '../../stores/repoPicker';

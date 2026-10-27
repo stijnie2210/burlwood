@@ -218,13 +218,13 @@ const installKnots = [
 
           <article class="platform">
             <h3>Linux</h3>
-            <p>An AppImage. It needs WebKit2GTK 4.1:</p>
+            <p>An AppImage. It needs GTK 4 and WebKitGTK 6.0:</p>
             <pre><code><span class="comment"># Fedora / RHEL</span>
-sudo dnf install webkit2gtk4.1
+sudo dnf install webkitgtk6.0
 <span class="comment"># Ubuntu / Debian</span>
-sudo apt install libwebkit2gtk-4.1-0
+sudo apt install libwebkitgtk-6.0-4
 <span class="comment"># Arch Linux</span>
-sudo pacman -S webkit2gtk-4.1</code></pre>
+sudo pacman -S webkitgtk-6.0</code></pre>
             <p>
               Then make it executable and run it. On an ARM64 machine, take the
               <a href={downloads.linuxArm}>ARM64 AppImage</a>.

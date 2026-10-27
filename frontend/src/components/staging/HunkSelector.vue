@@ -30,7 +30,7 @@ const emit = defineEmits<{
 const flatHunks = computed(() => {
   const result: Hunk[] = [];
   for (const fd of props.diffs) {
-    for (const h of fd.hunks) {
+    for (const h of fd.hunks ?? []) {
       result.push(h);
     }
   }
@@ -43,7 +43,7 @@ const stats = computed(() => {
   let add = 0;
   let del = 0;
   for (const h of flatHunks.value) {
-    for (const l of h.lines) {
+    for (const l of h.lines ?? []) {
       if (l.type === 'add') {
         add++;
       } else if (l.type === 'del') {
