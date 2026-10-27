@@ -8,14 +8,21 @@ import (
 	"github.com/wailsapp/wails/v2/pkg/menu/keys"
 	"github.com/wailsapp/wails/v2/pkg/options"
 	"github.com/wailsapp/wails/v2/pkg/options/assetserver"
+	"github.com/wailsapp/wails/v2/pkg/options/linux"
 	"github.com/wailsapp/wails/v2/pkg/options/mac"
 	"github.com/wailsapp/wails/v2/pkg/runtime"
+
+	"burlwood/internal/desktop"
 )
 
 //go:embed all:frontend/dist
 var assets embed.FS
 
+//go:embed build/appicon.png
+var appIcon []byte
+
 func main() {
+	go desktop.IntegrateAppImage(appIcon)
 	app := NewApp()
 
 	appMenu := menu.NewMenu()
@@ -76,6 +83,11 @@ func main() {
 			WindowIsTranslucent:  true,
 			// The UI is dark-only, so the vibrancy material must be the dark one regardless of system appearance.
 			Appearance: mac.NSAppearanceNameDarkAqua,
+		},
+		// ProgramName sets the window's app id / WM_CLASS, which docks match against StartupWMClass in burlwood.desktop.
+		Linux: &linux.Options{
+			Icon:        appIcon,
+			ProgramName: "burlwood",
 		},
 		Menu:          appMenu,
 		OnStartup:     app.startup,
