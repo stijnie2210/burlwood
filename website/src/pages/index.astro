@@ -53,7 +53,7 @@ const installKnots = [
 
 <Layout
   title="Burlwood: a fast, free git client for the Mac"
-  description="Burlwood is a free, open-source git client for macOS. Read history as a graph, stage single hunks, settle conflicts. One native app, no account, no telemetry."
+  description="Burlwood is a free, open-source git client for macOS, Linux and Windows. Read history as a graph, stage single hunks, settle conflicts. One native app, no account, no telemetry."
 >
   <header class="hero" data-grain-area>
     <nav class="top" aria-label="Main">
@@ -225,13 +225,20 @@ sudo dnf install webkit2gtk4.1
 sudo apt install libwebkit2gtk-4.1-0
 <span class="comment"># Arch Linux</span>
 sudo pacman -S webkit2gtk-4.1</code></pre>
-            <p>Then make it executable and run it.</p>
+            <p>
+              Then make it executable and run it. On an ARM64 machine, take the
+              <a href={downloads.linuxArm}>ARM64 AppImage</a>.
+            </p>
             <a class="button button-solid" href={downloads.linux}><Icon name="download" />Download AppImage</a>
           </article>
 
           <article class="platform">
             <h3>Windows</h3>
             <p>A zip. Unzip it and run <code>burlwood.exe</code>.</p>
+            <p>
+              The app isn’t signed, so SmartScreen may stop the first launch with “Windows protected your PC”. Choose
+              More info, then Run anyway.
+            </p>
             <a class="button button-solid" href={downloads.windows}><Icon name="download" />Download .zip</a>
           </article>
         </div>

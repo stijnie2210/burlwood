@@ -63,9 +63,11 @@ chmod +x burlwood-linux-amd64.AppImage
 ./burlwood-linux-amd64.AppImage
 ```
 
+On an ARM64 machine, use `burlwood-linux-arm64.AppImage` instead.
+
 ### Windows
 
-Unzip `burlwood-windows-amd64.zip` and run `burlwood.exe`.
+Unzip `burlwood-windows-amd64.zip` and run `burlwood.exe`. The app isn't signed, so SmartScreen may stop the first launch with "Windows protected your PC". Choose **More info**, then **Run anyway**.
 
 ## Building from source
 

@@ -5,6 +5,7 @@ const fallbackVersion = 'v0.3.2';
 export const downloads = {
   mac: `${repo}/releases/latest/download/burlwood-mac-universal.dmg`,
   linux: `${repo}/releases/latest/download/burlwood-linux-amd64.AppImage`,
+  linuxArm: `${repo}/releases/latest/download/burlwood-linux-arm64.AppImage`,
   windows: `${repo}/releases/latest/download/burlwood-windows-amd64.zip`,
   all: `${repo}/releases/latest`,
 };
