@@ -40,6 +40,7 @@ func shellPath() string {
 		defer cancel()
 		cmd := exec.CommandContext(ctx, shell, "-ilc", script)
 		cmd.WaitDelay = time.Second
+		detachFromTerminal(cmd)
 		out, err := cmd.Output()
 		if err != nil && !errors.Is(err, exec.ErrWaitDelay) {
 			return
