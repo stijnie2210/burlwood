@@ -133,6 +133,13 @@
   --surface-selected: #383430;
 }
 
+/* Without macOS' vibrancy behind the transparent webview, a translucent sidebar shows GTK's or Windows' light
+   window background; elsewhere the title bar is the OS's own, so there are no traffic lights to clear. */
+:root:not(.platform-mac) {
+  --surface-sidebar: #211d1a;
+  --traffic-light-inset: var(--inset-panel);
+}
+
 /* WebView2 draws Windows' classic grey scrollbars with arrow buttons. WebKit honours these rules too,
    so macOS keeps its native overlay scrollbars only because this is scoped to Windows. */
 :root.platform-windows ::-webkit-scrollbar {

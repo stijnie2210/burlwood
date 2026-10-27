@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { shortcut } from '../../utils/platform';
 import { useToastStore, isLongMessage } from '../../stores/toast';
 import type { Toast } from '../../stores/toast';
 import { useLogModalStore } from '../../stores/logModal';
@@ -80,7 +81,7 @@ async function runAction(t: Toast, e: MouseEvent) {
             v-if="t.action"
             class="toast-action"
             :class="{ 'toast-action--danger': t.action.danger }"
-            :title="t.action.label === 'Undo' ? 'Undo (⌘Z)' : undefined"
+            :title="t.action.label === 'Undo' ? `Undo (${shortcut('Z')})` : undefined"
             @click="runAction(t, $event)"
           >
             {{ t.action.label }}

@@ -5,3 +5,7 @@ export const platform: Platform = /Windows/.test(navigator.userAgent)
   : /Macintosh/.test(navigator.userAgent)
     ? 'mac'
     : 'linux';
+
+export function shortcut(key: string): string {
+  return platform === 'mac' ? `⌘${key}` : `Ctrl+${key}`;
+}

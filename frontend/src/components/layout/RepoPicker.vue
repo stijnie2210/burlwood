@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { shortcut } from '../../utils/platform';
 import { nextTick, onMounted, onUnmounted, ref, watch } from 'vue';
 import { useReposStore } from '../../stores/repos';
 import { useRepoPickerStore } from '../../stores/repoPicker';
@@ -85,7 +86,7 @@ onUnmounted(() => window.removeEventListener('mousedown', onWindowMouseDown));
       <div class="picker-divider" />
       <button class="picker-item picker-browse" @click="browseFolder()">
         Open Repository…
-        <kbd class="picker-shortcut">⌘O</kbd>
+        <kbd class="picker-shortcut">{{ shortcut('O') }}</kbd>
       </button>
     </div>
   </Teleport>

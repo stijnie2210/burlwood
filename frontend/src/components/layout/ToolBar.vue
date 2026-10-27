@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { shortcut } from '../../utils/platform';
 import { ref, computed, nextTick, onMounted, onUnmounted } from 'vue';
 import { useReposStore } from '../../stores/repos';
 import { useCommitsStore } from '../../stores/commits';
@@ -267,7 +268,7 @@ async function confirmBranch() {
             role="tab"
             :class="{ active: viewMode === 'commits' }"
             :aria-selected="viewMode === 'commits'"
-            title="Commits (⌘1)"
+            :title="`Commits (${shortcut('1')})`"
             @click="viewMode = 'commits'"
           >
             Commits
@@ -277,7 +278,7 @@ async function confirmBranch() {
             role="tab"
             :class="{ active: viewMode === 'staging' }"
             :aria-selected="viewMode === 'staging'"
-            title="Working Tree (⌘2)"
+            :title="`Working Tree (${shortcut('2')})`"
             @click="viewMode = 'staging'"
           >
             Working Tree
@@ -291,7 +292,7 @@ async function confirmBranch() {
       <div class="btn-group">
         <button
           class="tbtn"
-          title="Fetch (⌘R)"
+          :title="`Fetch (${shortcut('R')})`"
           aria-label="Fetch"
           :disabled="disabled"
           :class="{ loading: busy === 'fetch' }"
@@ -556,11 +557,11 @@ async function confirmBranch() {
             @input="onSearchInput"
             @keydown.esc.prevent="onSearchEscape"
           />
-          <kbd aria-hidden="true">⌘F</kbd>
+          <kbd aria-hidden="true">{{ shortcut('F') }}</kbd>
         </label>
         <button
           class="icon-btn"
-          title="Settings (⌘,)"
+          :title="`Settings (${shortcut(',')})`"
           aria-label="Settings"
           @click="prefsStore.openModal()"
         >

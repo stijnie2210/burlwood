@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { shortcut } from '../../utils/platform';
 import { useReposStore } from '../../stores/repos';
 import { useRepoPickerStore } from '../../stores/repoPicker';
 
@@ -27,7 +28,7 @@ const picker = useRepoPickerStore();
         <button
           class="tab-close"
           :aria-label="`Close ${tab.name}`"
-          title="Close tab (⌘W)"
+          :title="`Close tab (${shortcut('W')})`"
           @click="repos.closeTab(i)"
         >
           <svg width="8" height="8" viewBox="0 0 8 8" aria-hidden="true">
@@ -39,7 +40,7 @@ const picker = useRepoPickerStore();
     <button
       class="tab-add"
       data-repo-picker-anchor
-      title="Open repository (⌘O)"
+      :title="`Open repository (${shortcut('O')})`"
       aria-label="Open repository"
       @click="picker.toggle($event.currentTarget as HTMLElement)"
     >

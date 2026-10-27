@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { shortcut } from '../../utils/platform';
 import { watch, ref, computed, nextTick, onMounted, onUnmounted } from 'vue';
 import {
   clampMenuPosition,
@@ -312,7 +313,7 @@ async function rebaseOnto(target: string) {
     if (staging.isInRebase) {
       await Promise.all([branches.load(repoPath), commits.load(repoPath)]);
       toast.push(
-        `Rebase onto ${target} stopped on a conflict. Resolve it in the Working Tree (⌘2), then continue.`,
+        `Rebase onto ${target} stopped on a conflict. Resolve it in the Working Tree (${shortcut('2')}), then continue.`,
         'info',
         0
       );

@@ -101,6 +101,9 @@ internal/repo/
   stash.go                          stash list/apply/pop/drop/rename
   staging.go                        StageHunk/UnstageHunk (accept patch string from frontend), UndoDiscard,
                                     FetchAll, Commit, GetAmendInfo; BuildHunkPatch (test reference for the TS version)
+internal/desktop/
+  appimage.go                       Run as an AppImage on Linux ($APPIMAGE): writes ~/.local/share/applications/burlwood.desktop
+                                    + icon, so GNOME on Wayland shows the icon; skipped when another entry already launches it
 internal/graph/
   layout.go                         BuildGraph() — greedy lane assignment
                                     GraphRow{hash, column, color, edgesIn, edges, maxColumn}
@@ -123,6 +126,7 @@ frontend/src/
     diffRows.ts                     changedRanges (word-level change within a paired line), pairChanges, splitRows
     initials.ts                     author initials for the avatar circles
     folders.ts                      parentDir, orderByFolder (commit diffs are stored in folder order)
+    platform.ts                     mac | windows | linux (sets :root.platform-*), shortcut() → ⌘F or Ctrl+F for UI hints
   App.smoke.test.ts                 mounts the whole app on stubbed Wails bindings — catches setup-time crashes
   assets/labels.css                 ref/tag/stash label pills, rendered by graph/RefLabel.vue
   assets/fonts/                     Bricolage Grotesque subset for the welcome wordmark only (SIL OFL)
@@ -199,7 +203,7 @@ All colours are semantic tokens in `style.css`; never hard-code hex in component
 - Surfaces: `--surface-sunken` (diffs) → `-base` (canvas) → `-raised` (bars in panels) → `-chrome` (sidebar, tab bar, toolbar) → `-overlay` (menus, modals, toasts); plus `-field`, `-control`, `-hover`, `-selected`
 - Text: `--text-primary` / `-secondary` / `-tertiary` (all ≥4.5:1 on every surface), `--text-on-accent`
 - Accent: derived from the macOS accent colour (`--accent-system` = `-apple-system-control-accent`, blue fallback): `--accent-fill` for primary buttons and menu hover, `--accent-text`, `--focus-ring`; `html.window-inactive` greys the selection
-- Window is translucent (Mac options in main.go); the webview background is transparent, so every area except the sidebar (`--surface-sidebar`) must paint its own background. Controls use `cursor: default`, never `pointer`
+- Window is translucent (Mac options in main.go); the webview background is transparent, so every area except the sidebar (`--surface-sidebar`) must paint its own background. Other platforms have no vibrancy: `:root:not(.platform-mac)` makes the sidebar opaque and drops the traffic-light inset (`utils/platform.ts` sets the class). Controls use `cursor: default`, never `pointer`
 - Git meaning: `--add` / `--del` (+ `-fg`, `-line-bg`), `--modified`, `--untracked`, `--ours` / `--theirs`, `--tag`, `--stash`; `--danger*` and `--warning*` for destructive and in-progress states
 - Graph lanes (`internal/graph/layout.go`) are muted and avoid the add/del hues; syntax colours in `assets/prism-theme.css` follow Xcode's dark theme
 

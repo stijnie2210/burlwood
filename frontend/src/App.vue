@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { shortcut } from './utils/platform';
 import { onMounted, onUnmounted, ref, watch, type Ref, computed, nextTick } from 'vue';
 import { EventsOn, EventsOff } from '../wailsjs/runtime/runtime';
 import { useDetailWidth } from './composables/useDetailWidth';
@@ -272,7 +273,7 @@ onUnmounted(() => {
             <p class="welcome-lede">Open a repository to get started.</p>
             <button class="welcome-open" @click="repos.pickAndOpen()">
               Open Repository…
-              <kbd aria-hidden="true">⌘O</kbd>
+              <kbd aria-hidden="true">{{ shortcut('O') }}</kbd>
             </button>
 
             <section
