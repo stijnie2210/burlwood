@@ -13,6 +13,16 @@ const RULES: Rule[] = [
       'Another git process is using this repository. Wait for it to finish, or remove .git/index.lock if it crashed.',
   },
   {
+    test: /detected dubious ownership in repository at '([^']+)'/i,
+    message: (m) =>
+      `Git doesn't trust this folder because another user owns it. Run: git config --global --add safe.directory "${m[1]}"`,
+  },
+  {
+    test: /executable file not found|"git": file does not exist/i,
+    message: () =>
+      "Burlwood can't find git. Install git, or add it to your PATH, and restart the app.",
+  },
+  {
     test: /isn't inside a git repository|not a git repository/i,
     message: () =>
       "That folder isn't a git repository. Pick the repository's folder, or run git init.",

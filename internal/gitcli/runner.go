@@ -2,8 +2,10 @@ package gitcli
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	"os/exec"
+	"path/filepath"
 	"strings"
 )
 
@@ -76,8 +78,13 @@ func RunWithInput(repoPath string, stdin []byte, args ...string) (Result, error)
 // subfolder opens the repository instead of failing.
 func RepoRoot(path string) (string, error) {
 	out, err := Run(path, "rev-parse", "--show-toplevel")
-	if err != nil {
+	var exitErr *ExitError
+	if errors.As(err, &exitErr) && strings.Contains(exitErr.Stderr, "not a git repository") {
 		return "", fmt.Errorf("%s isn't inside a git repository", path)
 	}
-	return strings.TrimSpace(out.Stdout), nil
+	if err != nil {
+		return "", err
+	}
+	// Git for Windows prints C:/Users/…; the Manager keys repos by filepath.Abs (C:\Users\…).
+	return filepath.FromSlash(strings.TrimSpace(out.Stdout)), nil
 }

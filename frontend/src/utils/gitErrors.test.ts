@@ -25,6 +25,19 @@ describe('describeGitError', () => {
     );
   });
 
+  it('explains dubious ownership with the safe.directory command', () => {
+    const r = describeGitError(
+      "git exited 128: fatal: detected dubious ownership in repository at 'D:/code/app'\nTo add an exception..."
+    );
+    expect(r.message).toContain('git config --global --add safe.directory "D:/code/app"');
+  });
+
+  it('explains a missing git binary', () => {
+    expect(describeGitError('exec: "git": executable file not found in %PATH%').message).toMatch(
+      /can't find git/
+    );
+  });
+
   it('falls back to a cleaned first line and keeps the raw text', () => {
     const r = describeGitError('git exited 128: fatal: something unexpected\nmore output');
     expect(r.message).toBe('Something unexpected');

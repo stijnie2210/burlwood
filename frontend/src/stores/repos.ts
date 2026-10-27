@@ -96,7 +96,7 @@ export const useReposStore = defineStore('repos', () => {
       useToastStore().error(e);
       return false;
     }
-    const name = path.split('/').pop() ?? path;
+    const name = path.split(/[\\/]/).pop() ?? path;
     const existing = tabs.value.findIndex((t) => t.path === path);
     if (existing >= 0) {
       activeIndex.value = existing;
