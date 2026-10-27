@@ -1,7 +1,7 @@
 import { acceptHMRUpdate, defineStore } from 'pinia';
 import { isActive } from './repos';
 import { ref } from 'vue';
-import { ListStashes } from '../../wailsjs/go/main/App';
+import { ListStashes } from '../../bindings/burlwood/app';
 
 export interface StashEntry {
   index: number;

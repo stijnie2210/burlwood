@@ -23,7 +23,7 @@ import {
   ResetBranch,
   HardResetBranch,
   UndoHardReset,
-} from '../../../wailsjs/go/main/App';
+} from '../../../bindings/burlwood/app';
 
 const props = defineProps<{
   row: GraphRow;
@@ -398,10 +398,10 @@ async function pushTag(name: string) {
         <button role="menuitem" class="ctx-item" @click="openTagInput">Create tag here…</button>
         <button role="menuitem" class="ctx-item" @click="openMoveTagInput">Move tag here…</button>
 
-        <template v-if="row.labels.some((l) => l.type === 'tag')">
+        <template v-if="row.labels?.some((l) => l.type === 'tag')">
           <div class="ctx-divider" />
           <button
-            v-for="l in row.labels.filter((l) => l.type === 'tag')"
+            v-for="l in (row.labels ?? []).filter((l) => l.type === 'tag')"
             :key="l.name"
             class="ctx-item"
             @click="pushTag(l.name)"

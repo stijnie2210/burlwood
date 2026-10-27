@@ -5,4 +5,4 @@ Icon=burlwood
 Type=Application
 Categories=Development;
 Terminal=false
-StartupWMClass=burlwood
+StartupWMClass=dev.mommersteeg.burlwood

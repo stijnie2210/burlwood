@@ -8,6 +8,9 @@ import (
 	"time"
 )
 
+// GTK 4 uses the application id as the window's Wayland app id, which docks match against StartupWMClass.
+const AppID = "dev.mommersteeg.burlwood"
+
 const entryName = "burlwood.desktop"
 
 var shellRescanDelay = time.Second
@@ -49,7 +52,7 @@ func desktopEntry(appImage, iconPath string) string {
 		"Type=Application",
 		"Categories=Development;",
 		"Terminal=false",
-		"StartupWMClass=burlwood",
+		"StartupWMClass=" + AppID,
 		"",
 	}, "\n")
 }

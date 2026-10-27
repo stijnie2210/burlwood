@@ -25,7 +25,7 @@ function startFileListResize(e: MouseEvent) {
 }
 import { useCommitsStore } from '../../stores/commits';
 import { useReposStore } from '../../stores/repos';
-import { GetFileAtCommitBase64 } from '../../../wailsjs/go/main/App';
+import { GetFileAtCommitBase64 } from '../../../bindings/burlwood/app';
 import CommitFileList from './CommitFileList.vue';
 
 const commits = useCommitsStore();
@@ -162,7 +162,7 @@ onUnmounted(() => document.removeEventListener('keydown', onKeyDown));
           <div v-else class="fdv-notice">Binary file not shown</div>
         </template>
         <template v-else>
-          <div v-if="file.hunks.length === 0" class="fdv-notice">No changes</div>
+          <div v-if="!file.hunks?.length" class="fdv-notice">No changes</div>
           <div v-for="(entry, hi) in visible" :key="entry.hunk.header + hi" class="fdv-hunk">
             <div class="fdv-hunk-header">{{ entry.hunk.header }}</div>
             <DiffLines :lines="entry.lines" :lang="lang" :layout="layout" :wrap="wrap" />

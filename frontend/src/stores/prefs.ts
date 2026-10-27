@@ -1,7 +1,7 @@
 import { acceptHMRUpdate, defineStore } from 'pinia';
 import { ref } from 'vue';
-import { GetPrefs, SavePrefs } from '../../wailsjs/go/main/App';
-import type { repo } from '../../wailsjs/go/models';
+import { GetPrefs, SavePrefs } from '../../bindings/burlwood/app';
+import type * as repo from '../../bindings/burlwood/internal/repo';
 
 export type AppPrefs = repo.AppPrefs;
 

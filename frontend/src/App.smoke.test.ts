@@ -2,7 +2,7 @@ import { describe, it, expect, vi } from 'vitest';
 import { createApp, nextTick } from 'vue';
 import { createPinia } from 'pinia';
 
-vi.mock('../wailsjs/go/main/App', async (importOriginal) => {
+vi.mock('../bindings/burlwood/app', async (importOriginal) => {
   const orig = (await importOriginal()) as Record<string, unknown>;
   const lists = [
     'GetCommitGraph',
@@ -40,10 +40,8 @@ vi.mock('../wailsjs/go/main/App', async (importOriginal) => {
     ])
   );
 });
-vi.mock('../wailsjs/runtime/runtime', () => ({
-  EventsOn: () => () => {},
-  EventsOff: () => {},
-  OnFileDrop: () => {},
+vi.mock('@wailsio/runtime', () => ({
+  Events: { On: () => () => {}, Off: () => {} },
 }));
 
 // Mounts the whole app against stubbed Wails bindings, so setup-time errors (like reading a

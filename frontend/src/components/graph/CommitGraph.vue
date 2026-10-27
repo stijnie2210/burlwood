@@ -223,7 +223,9 @@ function rowLabel(row: GraphRow | undefined): string | undefined {
   if (!row) {
     return undefined;
   }
-  const refs = row.labels.map((l) => (l.type === 'remote' ? `${l.remote}/${l.name}` : l.name));
+  const refs = (row.labels ?? []).map((l) =>
+    l.type === 'remote' ? `${l.remote}/${l.name}` : l.name
+  );
   return [
     row.subject,
     refs.length ? `refs ${refs.join(', ')}` : '',

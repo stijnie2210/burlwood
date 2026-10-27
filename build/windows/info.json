@@ -1,0 +1,15 @@
+{
+	"fixed": {
+		"file_version": "0.3.4"
+	},
+	"info": {
+		"0409": {
+			"ProductVersion": "0.3.4",
+			"CompanyName": "Stijn Mommersteeg",
+			"FileDescription": "A Git client",
+			"LegalCopyright": "© 2026, Stijn Mommersteeg",
+			"ProductName": "Burlwood",
+			"Comments": "A Git client"
+		}
+	}
+}

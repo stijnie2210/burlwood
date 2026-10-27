@@ -31,7 +31,7 @@ import {
   AppendToGitignore,
   SavePatchFile,
   DeleteWorkingFile,
-} from '../../../wailsjs/go/main/App';
+} from '../../../bindings/burlwood/app';
 
 const repos = useReposStore();
 const branches = useBranchesStore();

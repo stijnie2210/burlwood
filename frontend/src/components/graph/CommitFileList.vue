@@ -42,8 +42,8 @@ const entries = computed<FileEntry[]>(() =>
     const path = file.newPath || file.oldPath || '';
     let add = 0;
     let del = 0;
-    for (const h of file.hunks) {
-      for (const l of h.lines) {
+    for (const h of file.hunks ?? []) {
+      for (const l of h.lines ?? []) {
         if (l.type === 'add') {
           add++;
         } else if (l.type === 'del') {

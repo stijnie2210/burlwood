@@ -1,13 +1,12 @@
 package main
 
 import (
-	"context"
 	"encoding/base64"
 	"fmt"
 	"os"
 	"path/filepath"
 
-	"github.com/wailsapp/wails/v2/pkg/runtime"
+	"github.com/wailsapp/wails/v3/pkg/application"
 
 	"burlwood/internal/gitcli"
 	"burlwood/internal/graph"
@@ -15,7 +14,8 @@ import (
 )
 
 type App struct {
-	ctx     context.Context
+	app     *application.App
+	window  *application.WebviewWindow
 	manager *repo.Manager
 }
 
@@ -25,19 +25,9 @@ func NewApp() *App {
 	}
 }
 
-func (a *App) startup(ctx context.Context) {
-	a.ctx = ctx
-	if prefs, err := repo.LoadWindowPrefs(); err == nil && prefs != nil {
-		runtime.WindowSetSize(ctx, prefs.Width, prefs.Height)
-		runtime.WindowSetPosition(ctx, prefs.X, prefs.Y)
-	}
-}
-
-func (a *App) beforeClose(ctx context.Context) bool {
-	w, h := runtime.WindowGetSize(ctx)
-	x, y := runtime.WindowGetPosition(ctx)
-	_ = repo.SaveWindowPrefs(w, h, x, y)
-	return false
+func (a *App) attach(app *application.App, window *application.WebviewWindow) {
+	a.app = app
+	a.window = window
 }
 
 // Returns the repository root, which differs from path when a subfolder was picked.
@@ -91,9 +81,13 @@ func (a *App) GetAheadBehind(repoPath string) (repo.AheadBehind, error) {
 }
 
 func (a *App) PickDirectory() (string, error) {
-	return runtime.OpenDirectoryDialog(a.ctx, runtime.OpenDialogOptions{
-		Title: "Open Repository",
-	})
+	return a.app.Dialog.OpenFile().
+		SetTitle("Open Repository").
+		CanChooseDirectories(true).
+		CanChooseFiles(false).
+		CanCreateDirectories(true).
+		AttachToWindow(a.window).
+		PromptForSingleSelection()
 }
 
 func (a *App) GetCommitGraph(repoPath string, limit int) ([]graph.GraphRow, error) {
@@ -349,13 +343,15 @@ func (a *App) SavePatchFile(repoPath, filePath string) error {
 	if patch == "" {
 		return fmt.Errorf("no changes to patch")
 	}
-	savePath, err := runtime.SaveFileDialog(a.ctx, runtime.SaveDialogOptions{
-		Title:           "Save patch",
-		DefaultFilename: filepath.Base(filePath) + ".patch",
-		Filters: []runtime.FileFilter{
+	savePath, err := a.app.Dialog.SaveFileWithOptions(&application.SaveFileDialogOptions{
+		Title:                "Save patch",
+		Filename:             filepath.Base(filePath) + ".patch",
+		CanCreateDirectories: true,
+		Filters: []application.FileFilter{
 			{DisplayName: "Patch files (*.patch)", Pattern: "*.patch"},
 		},
-	})
+		Window: a.window,
+	}).PromptForSingleSelection()
 	if err != nil || savePath == "" {
 		return nil
 	}

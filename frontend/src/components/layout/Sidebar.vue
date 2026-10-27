@@ -25,7 +25,7 @@ import {
   DropStash,
   PopStash,
   RenameStash,
-} from '../../../wailsjs/go/main/App';
+} from '../../../bindings/burlwood/app';
 
 defineOptions({ inheritAttrs: false });
 

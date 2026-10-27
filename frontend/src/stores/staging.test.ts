@@ -1,13 +1,13 @@
 import { describe, it, expect } from 'vitest';
 import { buildHunkPatch, isConflictedFile } from './staging';
 import type { FileStatus } from './staging';
-import { repo } from '../../wailsjs/go/models';
+import type * as repo from '../../bindings/burlwood/internal/repo';
 
 function makeHunk(
   header: string,
   lines: { type: string; content: string; oldLine: number; newLine: number }[]
 ): repo.Hunk {
-  return repo.Hunk.createFrom({ header, lines });
+  return { header, lines };
 }
 
 describe('buildHunkPatch', () => {

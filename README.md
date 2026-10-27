@@ -43,17 +43,17 @@ xattr -dr com.apple.quarantine /Applications/Burlwood.app
 
 ### Linux
 
-The AppImage needs WebKit2GTK 4.1:
+The AppImage needs GTK 4 and WebKitGTK 6.0 (Ubuntu 24.04, Debian 13, Fedora 40 or newer):
 
 ```bash
 # Fedora / RHEL
-sudo dnf install webkit2gtk4.1
+sudo dnf install webkitgtk6.0
 
 # Ubuntu / Debian
-sudo apt install libwebkit2gtk-4.1-0
+sudo apt install libwebkitgtk-6.0-4
 
 # Arch Linux
-sudo pacman -S webkit2gtk-4.1
+sudo pacman -S webkitgtk-6.0
 ```
 
 Then make it executable and run it:
@@ -75,11 +75,14 @@ Requirements:
 
 - Go 1.27.3+ (the October 2026 security release)
 - Node.js 22.23.4+ or 24.22.1+ (the October 2026 security releases)
-- [Wails CLI](https://wails.io/docs/gettingstarted/installation) v2.17, the version `go.mod` pins: `go install github.com/wailsapp/wails/v2/cmd/wails@v2.17.0`
+- [Wails CLI](https://v3.wails.io/getting-started/installation/) v3.0, the version `go.mod` pins: `go install github.com/wailsapp/wails/v3/cmd/wails3@v3.0.0`
+- On Linux: gcc and the GTK 4 / WebKitGTK 6.0 headers (`sudo apt install build-essential libgtk-4-dev libwebkitgtk-6.0-dev`)
 
 ```bash
-wails dev        # development build with hot reload
-wails build      # production build → build/bin/
+wails3 dev                           # development build with hot reload
+wails3 build                         # production binary → bin/
+wails3 task darwin:package           # macOS: bin/Burlwood.app
+wails3 task windows:build ARCH=amd64 # Windows, also from macOS or Linux: bin/burlwood.exe
 ```
 
 Tests and checks:

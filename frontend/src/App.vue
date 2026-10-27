@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { shortcut } from './utils/platform';
 import { onMounted, onUnmounted, ref, watch, type Ref, computed, nextTick } from 'vue';
-import { EventsOn, EventsOff } from '../wailsjs/runtime/runtime';
+import { Events } from '@wailsio/runtime';
 import { useDetailWidth } from './composables/useDetailWidth';
 import TabBar from './components/layout/TabBar.vue';
 import ToolBar from './components/layout/ToolBar.vue';
@@ -228,8 +228,8 @@ onMounted(() => {
   window.addEventListener('focus', onWindowFocusChange);
   window.addEventListener('blur', onWindowFocusChange);
   document.addEventListener('visibilitychange', refreshOnFocus);
-  EventsOn('open-preferences', () => prefsStore.openModal());
-  EventsOn('menu', runAction);
+  Events.On('open-preferences', () => prefsStore.openModal());
+  Events.On('menu', (ev) => runAction(ev.data));
 });
 onUnmounted(() => {
   window.removeEventListener('keydown', onGlobalKeyDown);
@@ -237,8 +237,7 @@ onUnmounted(() => {
   window.removeEventListener('focus', onWindowFocusChange);
   window.removeEventListener('blur', onWindowFocusChange);
   document.removeEventListener('visibilitychange', refreshOnFocus);
-  EventsOff('open-preferences');
-  EventsOff('menu');
+  Events.Off('open-preferences', 'menu');
 });
 </script>
 
