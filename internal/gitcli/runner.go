@@ -27,6 +27,7 @@ func Run(repoPath string, args ...string) (Result, error) {
 	cmd := exec.Command("git", args...)
 	cmd.Dir = repoPath
 	cmd.Env = mergedEnv()
+	hideWindow(cmd)
 
 	var stdout, stderr bytes.Buffer
 	cmd.Stdout = &stdout
@@ -52,6 +53,7 @@ func RunWithInput(repoPath string, stdin []byte, args ...string) (Result, error)
 	cmd := exec.Command("git", args...)
 	cmd.Dir = repoPath
 	cmd.Env = mergedEnv()
+	hideWindow(cmd)
 	cmd.Stdin = bytes.NewReader(stdin)
 
 	var stdout, stderr bytes.Buffer

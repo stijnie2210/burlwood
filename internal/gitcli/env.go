@@ -5,6 +5,7 @@ import (
 	"errors"
 	"os"
 	"os/exec"
+	"runtime"
 	"strings"
 	"sync"
 	"time"
@@ -23,6 +24,9 @@ var (
 func shellPath() string {
 	shellPathOnce.Do(func() {
 		shellPathValue = os.Getenv("PATH")
+		if runtime.GOOS == "windows" {
+			return
+		}
 
 		shell := os.Getenv("SHELL")
 		if shell == "" {
