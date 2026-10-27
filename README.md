@@ -35,7 +35,7 @@ Burlwood calls the `git` on your system for most operations, so git must be inst
 
 ### macOS
 
-Open `burlwood-mac-universal.dmg` and drag Burlwood to Applications. The app isn't signed with an Apple Developer ID, so macOS blocks it on the first launch. Clear the quarantine flag once:
+Burlwood needs macOS 12 (Monterey) or newer. Open `burlwood-mac-universal.dmg` and drag Burlwood to Applications. The app isn't signed with an Apple Developer ID, so macOS blocks it on the first launch. Clear the quarantine flag once:
 
 ```bash
 xattr -dr com.apple.quarantine /Applications/Burlwood.app
