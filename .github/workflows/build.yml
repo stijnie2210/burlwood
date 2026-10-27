@@ -36,20 +36,24 @@ jobs:
         run: go install github.com/wailsapp/wails/v2/cmd/wails@v2.17.0
       - name: Build
         run: wails build -platform linux/${{ matrix.arch }} -tags webkit2_41
-      - name: Download linuxdeploy
+      - name: Download appimagetool
         run: |
-          wget -q -O linuxdeploy "https://github.com/linuxdeploy/linuxdeploy/releases/download/continuous/linuxdeploy-${{ matrix.appimage-arch }}.AppImage"
-          chmod +x linuxdeploy
+          wget -q -O appimagetool "https://github.com/AppImage/appimagetool/releases/download/continuous/appimagetool-${{ matrix.appimage-arch }}.AppImage"
+          chmod +x appimagetool
+      # Only the binary goes in: a bundled libwebkit2gtk would talk to the system's WebKitWebProcess, whose
+      # path is compiled in, and crash with "Received invalid message" on any other WebKit version.
       - name: Create AppImage
         env:
           APPIMAGE_EXTRACT_AND_RUN: 1
+          ARCH: ${{ matrix.appimage-arch }}
         run: |
-          mkdir -p AppDir/usr/bin AppDir/usr/share/applications AppDir/usr/share/icons/hicolor/1024x1024/apps
+          mkdir -p AppDir/usr/bin
           cp build/bin/burlwood AppDir/usr/bin/burlwood
-          cp build/appicon.png AppDir/usr/share/icons/hicolor/1024x1024/apps/burlwood.png
-          cp build/linux/burlwood.desktop AppDir/usr/share/applications/burlwood.desktop
-          ./linuxdeploy --appdir AppDir --output appimage
-          mv *${{ matrix.appimage-arch }}.AppImage burlwood-linux-${{ matrix.arch }}.AppImage
+          cp build/linux/burlwood.desktop AppDir/burlwood.desktop
+          cp build/appicon.png AppDir/burlwood.png
+          ln -s burlwood.png AppDir/.DirIcon
+          ln -s usr/bin/burlwood AppDir/AppRun
+          ./appimagetool AppDir burlwood-linux-${{ matrix.arch }}.AppImage
       - uses: actions/upload-artifact@v7
         with:
           name: burlwood-linux-${{ matrix.arch }}
