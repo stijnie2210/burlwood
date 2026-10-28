@@ -14,5 +14,6 @@ export type {
     Session,
     SessionTab,
     SwitchResult,
-    TagInfo
+    TagInfo,
+    WorktreeInfo
 } from "./models.js";

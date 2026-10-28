@@ -28,6 +28,20 @@ const RULES: Rule[] = [
       "That folder isn't a git repository. Pick the repository's folder, or run git init.",
   },
   {
+    test: /(?:checked out|used by worktree) at '([^']+)'/i,
+    message: (m) =>
+      `That branch is checked out in the worktree ${m[1].split(/[\\/]/).pop()}. Open that worktree from the sidebar, or remove the worktree first.`,
+  },
+  {
+    test: /contains modified or untracked files, use --force/i,
+    message: () =>
+      'That worktree has uncommitted changes. Commit or stash them there, or force remove it.',
+  },
+  {
+    test: /cannot remove a locked working tree/i,
+    message: () => 'That worktree is locked. Run git worktree unlock on it first.',
+  },
+  {
     test: /has no upstream branch|no upstream configured/i,
     message: () => "This branch doesn't track a remote branch yet. Push it once to set one.",
   },

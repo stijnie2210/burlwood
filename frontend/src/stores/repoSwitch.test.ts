@@ -12,6 +12,7 @@ const pending: Record<string, Deferred<unknown>> = {};
 vi.mock('../../bindings/burlwood/app', () => ({
   ListBranches: (repo: string) => (pending[`branches:${repo}`] = deferred()).promise,
   ListTags: async () => [],
+  ListWorktrees: async () => [],
   GetAheadBehind: async () => ({ ahead: 0, behind: 0 }),
   ListStashes: (repo: string) => (pending[`stash:${repo}`] = deferred()).promise,
   SwitchBranch: async () => null,

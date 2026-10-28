@@ -19,6 +19,15 @@ describe('describeGitError', () => {
     );
   });
 
+  it('names the worktree that holds a branch, for old and new git wording', () => {
+    for (const raw of [
+      "git exited 128: fatal: 'feature' is already used by worktree at '/repo/.claude/worktrees/fix'",
+      "git exited 1: error: cannot delete branch 'feature' checked out at '/repo/.claude/worktrees/fix'",
+    ]) {
+      expect(describeGitError(raw).message).toMatch(/checked out in the worktree fix\./);
+    }
+  });
+
   it('recognises a non-repo folder from the backend', () => {
     expect(describeGitError("/tmp/x isn't inside a git repository").message).toMatch(
       /isn't a git repository/

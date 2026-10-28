@@ -69,6 +69,7 @@ internal/gitcli/
   commit.go                         Commit (incl. amend)
   commits.go                        CheckoutRef, CreateBranchAt, RevertCommit, CreateTag, MoveTag, ResetBranch(mode)
   branches.go                       DeleteBranch, RenameBranch
+  worktree.go                       RemoveWorktree (optionally --force), PruneWorktrees
   stash.go                          ListStashes, Apply/Pop/Drop/RenameStash, Stash/StashPop, StashPushNamed, CreateBranch
   rebase.go                         StartRebase, ContinueRebase, AbortRebase
   staging.go                        StageFile, UnstageFile, StageFiles/UnstageFiles (one call, paths via stdin),
@@ -91,7 +92,9 @@ internal/repo/
   prefs.go / session.go /           AppPrefs (editor, auto-fetch, graph limit, diff context, date format, pull mode),
     windowprefs.go                  open tabs + active tab, window frame — JSON files next to repos.json
   configdir.go                      configPath(): the settings folder; moves the pre-rename `gitgood` folder once
-  branches.go                       ListBranches (for-each-ref), GetAheadBehind
+  branches.go                       ListBranches (for-each-ref), GetAheadBehind; BranchInfo.worktree names another
+                                    worktree that has the branch checked out (%(worktreepath))
+  worktrees.go                      ListWorktrees (git worktree list --porcelain): main first, isCurrent per repoPath
   tags.go                           ListTags: newest first, annotated tags peeled to their commit
   commits.go                        GetCommitGraph (git log --all --date-order + stashes + ref labels), GetCommitDiff
                                     buildHunks() — context lines from prefs.DiffContextLines
@@ -140,7 +143,8 @@ frontend/src/
   stores/
     repos.ts                        tabs[], activeRepo, openRepo, pickAndOpen, closeTab; restoreSession (App shows a loading
                                     screen while `restoring`; drops only tabs whose repo is gone, see RepoGone in session.go)
-    branches.ts                     local[], remote[], tags[], aheadBehind, lastFetchedAt — loaded on activeRepo change
+    branches.ts                     local[], remote[], tags[], worktrees[], aheadBehind, lastFetchedAt — loaded on
+                                    activeRepo change, focus and fetch (so worktrees made outside the app show up)
     commits.ts                      rows[], selectedHash, diff[], searchQuery — GetCommitGraph(prefs.commitGraphLimit), loads more on demand
     staging.ts                      files[], unstagedFiles, stagedFiles, diff[]
                                     buildHunkPatch() — constructs patch string for git apply
@@ -154,8 +158,9 @@ frontend/src/
                                     aria-labels), Find commit field (⌘F via the 'burlwood:find' event), Settings
     layout/TabBar.vue               Repo tabs (open/close/switch); only rendered with 2+ repos
     layout/RepoPicker.vue           Recent repos + Open…; shared by the toolbar repo button and the tab bar + (stores/repoPicker.ts)
-    layout/Sidebar.vue              Branches, remotes grouped per remote, tags, stashes (collapsible sections); arrow keys move
-                                    between options with the same data-list — width set by App.vue via :style
+    layout/Sidebar.vue              Branches, worktrees (only with linked ones), remotes grouped per remote, tags, stashes
+                                    (collapsible sections); arrow keys move between options with the same data-list —
+                                    width set by App.vue via :style
     layout/PreferencesModal.vue     Edits AppPrefs (stores/prefs.ts)
     layout/LogViewerModal.vue       Full git output with Copy (stores/logModal.ts)
     layout/ToastStack.vue           Renders stores/toast.ts
@@ -239,6 +244,14 @@ All context menus are teleported to `<body>` to escape overflow clipping. Positi
 - Not built yet (see Open Work): **Merge into current** (`git merge <branch>`, conflicts land in Working Tree) and **Set upstream** (`git branch --set-upstream-to=origin/<name>`)
 
 The stash section of the sidebar has its own menu: Apply, Pop, Rename, Drop.
+
+### Worktrees (`Sidebar.vue` + `internal/repo/worktrees.go`)
+A worktree opens as an ordinary repo tab (`repos.openRepo(path)`); everything else already works there because git does.
+Git won't check out or delete a branch that another worktree has checked out, so such a branch shows that worktree's
+name, double-click opens the worktree instead of switching, and Delete is disabled. The worktree menu: Open, Show in
+Finder, Open in Terminal, Open in editor, Copy path, Remove (confirm; `confirm-force-remove` when it has changes;
+closes its tab). Remove is disabled for the main worktree, the one you're in and locked ones. A missing folder
+(`prunable`) offers Prune instead.
 
 ### Commit context menu (`CommitContextMenu.vue` + `internal/gitcli/commits.go`)
 Checkout, Create branch here (`checkout -b <name> <hash>`), Create tag (then optionally push it), Move tag, Push/Force-push tag, Revert (confirm mode), Reset branch soft/mixed, hard reset via `HardResetBranch` (undoable with `UndoHardReset`), Copy hash. Name inputs and confirmations are `mode` states (`'branch'`, `'tag'`, `'move-tag'`, `'revert-confirm'`, `'tag-created'`).

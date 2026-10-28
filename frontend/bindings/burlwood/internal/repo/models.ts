@@ -34,6 +34,11 @@ export interface BranchInfo {
     "remote": string;
     "isCurrent": boolean;
     "hash": string;
+
+    /**
+     * another worktree that has this branch checked out
+     */
+    "worktree": string;
 }
 
 export interface ConflictContent {
@@ -119,4 +124,24 @@ export interface SwitchResult {
 export interface TagInfo {
     "name": string;
     "hash": string;
+}
+
+export interface WorktreeInfo {
+    "path": string;
+    "head": string;
+
+    /**
+     * empty when detached
+     */
+    "branch": string;
+    "isMain": boolean;
+    "isCurrent": boolean;
+    "bare": boolean;
+    "locked": boolean;
+    "lockReason": string;
+
+    /**
+     * its folder is gone; git worktree prune drops the entry
+     */
+    "prunable": boolean;
 }

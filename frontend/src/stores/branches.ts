@@ -4,6 +4,7 @@ import { ref } from 'vue';
 import {
   ListBranches,
   ListTags,
+  ListWorktrees,
   GetAheadBehind,
   SwitchBranch,
   FetchAll,
@@ -15,11 +16,24 @@ export interface BranchInfo {
   remote: string;
   isCurrent: boolean;
   hash: string;
+  worktree: string;
 }
 
 export interface TagInfo {
   name: string;
   hash: string;
+}
+
+export interface WorktreeInfo {
+  path: string;
+  head: string;
+  branch: string;
+  isMain: boolean;
+  isCurrent: boolean;
+  bare: boolean;
+  locked: boolean;
+  lockReason: string;
+  prunable: boolean;
 }
 
 export interface AheadBehind {
@@ -31,13 +45,20 @@ export const useBranchesStore = defineStore('branches', () => {
   const local = ref<BranchInfo[]>([]);
   const remote = ref<BranchInfo[]>([]);
   const tags = ref<TagInfo[]>([]);
+  const worktrees = ref<WorktreeInfo[]>([]);
   const loading = ref(false);
   const aheadBehind = ref<AheadBehind>({ ahead: 0, behind: 0 });
 
   let loadedFor: string | null = null;
   const cache = new Map<
     string,
-    { local: BranchInfo[]; remote: BranchInfo[]; tags: TagInfo[]; aheadBehind: AheadBehind }
+    {
+      local: BranchInfo[];
+      remote: BranchInfo[];
+      tags: TagInfo[];
+      worktrees: WorktreeInfo[];
+      aheadBehind: AheadBehind;
+    }
   >();
   const fetchedAt = new Map<string, number>();
   const lastFetchedAt = ref<number | null>(null);
@@ -55,15 +76,17 @@ export const useBranchesStore = defineStore('branches', () => {
       local.value = cached?.local ?? [];
       remote.value = cached?.remote ?? [];
       tags.value = cached?.tags ?? [];
+      worktrees.value = cached?.worktrees ?? [];
       lastFetchedAt.value = fetchedAt.get(repoPath) ?? null;
       aheadBehind.value = cached?.aheadBehind ?? { ahead: 0, behind: 0 };
       loadedFor = repoPath;
     }
     loading.value = true;
     try {
-      const [branchList, tagList, ab] = await Promise.all([
+      const [branchList, tagList, worktreeList, ab] = await Promise.all([
         ListBranches(repoPath),
         ListTags(repoPath),
+        ListWorktrees(repoPath),
         GetAheadBehind(repoPath),
       ]);
       if (!isActive(repoPath)) {
@@ -73,11 +96,13 @@ export const useBranchesStore = defineStore('branches', () => {
       local.value = all.filter((b) => !b.isRemote);
       remote.value = all.filter((b) => b.isRemote);
       tags.value = tagList ?? [];
+      worktrees.value = worktreeList ?? [];
       aheadBehind.value = ab;
       cache.set(repoPath, {
         local: local.value,
         remote: remote.value,
         tags: tags.value,
+        worktrees: worktrees.value,
         aheadBehind: ab,
       });
     } finally {
@@ -113,6 +138,7 @@ export const useBranchesStore = defineStore('branches', () => {
     local.value = [];
     remote.value = [];
     tags.value = [];
+    worktrees.value = [];
     lastFetchedAt.value = null;
     aheadBehind.value = { ahead: 0, behind: 0 };
   }
@@ -125,6 +151,7 @@ export const useBranchesStore = defineStore('branches', () => {
     local,
     remote,
     tags,
+    worktrees,
     loading,
     aheadBehind,
     lastFetchedAt,
