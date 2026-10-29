@@ -11,6 +11,8 @@ export default defineConfig({
   },
   plugins: [vue(), wails('./bindings')],
   test: {
-    environment: 'jsdom',
+    // @wailsio/runtime starts a window timer on import under jsdom; it fires after a fast test file's
+    // environment is gone ("window is not defined"), so only DOM tests opt into jsdom per file
+    environment: 'node',
   },
 })

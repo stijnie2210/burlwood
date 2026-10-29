@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 import { describe, it, expect } from 'vitest';
 import { drawGraphCell, CELL_W } from './graphRenderer';
 import type { GraphRow } from '../../stores/commits';
