@@ -1,6 +1,7 @@
 package repo
 
 import (
+	"path/filepath"
 	"strconv"
 	"strings"
 
@@ -10,9 +11,10 @@ import (
 type BranchInfo struct {
 	Name      string `json:"name"`
 	IsRemote  bool   `json:"isRemote"`
-	Remote    string `json:"remote"`    // e.g. "origin" — empty for local branches
+	Remote    string `json:"remote"` // e.g. "origin" — empty for local branches
 	IsCurrent bool   `json:"isCurrent"`
 	Hash      string `json:"hash"`
+	Worktree  string `json:"worktree"` // another worktree that has this branch checked out
 }
 
 type AheadBehind struct {
@@ -45,7 +47,7 @@ func (m *Manager) ListBranches(repoPath string) ([]BranchInfo, error) {
 	currentBranch := strings.TrimSpace(headResult.Stdout)
 
 	result, err := gitcli.Run(repoPath, "for-each-ref",
-		"--format=%(refname)\t%(objectname)\t%(upstream:short)",
+		"--format=%(refname)\t%(objectname)\t%(upstream:short)\t%(worktreepath)",
 		"refs/heads/", "refs/remotes/")
 	if err != nil {
 		return nil, err
@@ -56,7 +58,7 @@ func (m *Manager) ListBranches(repoPath string) ([]BranchInfo, error) {
 		if line == "" {
 			continue
 		}
-		parts := strings.SplitN(line, "\t", 3)
+		parts := strings.SplitN(line, "\t", 4)
 		if len(parts) < 2 {
 			continue
 		}
@@ -66,11 +68,16 @@ func (m *Manager) ListBranches(repoPath string) ([]BranchInfo, error) {
 		switch {
 		case strings.HasPrefix(refname, "refs/heads/"):
 			name := strings.TrimPrefix(refname, "refs/heads/")
+			var worktree string
+			if len(parts) == 4 && parts[3] != "" && !samePath(parts[3], repoPath) {
+				worktree = filepath.FromSlash(parts[3])
+			}
 			branches = append(branches, BranchInfo{
 				Name:      name,
 				IsRemote:  false,
 				IsCurrent: name == currentBranch,
 				Hash:      hash,
+				Worktree:  worktree,
 			})
 		case strings.HasPrefix(refname, "refs/remotes/"):
 			short := strings.TrimPrefix(refname, "refs/remotes/")

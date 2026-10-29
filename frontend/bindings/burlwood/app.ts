@@ -167,6 +167,10 @@ export function ListTags(repoPath: string): $CancellablePromise<repo$0.TagInfo[]
     return $Call.ByID(3646709620, repoPath);
 }
 
+export function ListWorktrees(repoPath: string): $CancellablePromise<repo$0.WorktreeInfo[] | null> {
+    return $Call.ByID(3490360453, repoPath);
+}
+
 export function LoadSession(): $CancellablePromise<repo$0.Session> {
     return $Call.ByID(2280082259);
 }
@@ -202,6 +206,10 @@ export function PopStash(repoPath: string, ref: string): $CancellablePromise<voi
     return $Call.ByID(49574233, repoPath, ref);
 }
 
+export function PruneWorktrees(repoPath: string): $CancellablePromise<void> {
+    return $Call.ByID(128506511, repoPath);
+}
+
 export function PullBranch(repoPath: string, mode: string): $CancellablePromise<void> {
     return $Call.ByID(1254511478, repoPath, mode);
 }
@@ -212,6 +220,10 @@ export function PushBranch(repoPath: string, branch: string, force: boolean): $C
 
 export function PushTag(repoPath: string, tagName: string): $CancellablePromise<void> {
     return $Call.ByID(2617833571, repoPath, tagName);
+}
+
+export function RemoveWorktree(repoPath: string, path: string, force: boolean): $CancellablePromise<void> {
+    return $Call.ByID(3556111720, repoPath, path, force);
 }
 
 export function RenameBranch(repoPath: string, oldName: string, newName: string): $CancellablePromise<void> {

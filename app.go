@@ -262,6 +262,18 @@ func (a *App) RenameBranch(repoPath, oldName, newName string) error {
 	return gitcli.RenameBranch(repoPath, oldName, newName)
 }
 
+func (a *App) ListWorktrees(repoPath string) ([]repo.WorktreeInfo, error) {
+	return a.manager.ListWorktrees(repoPath)
+}
+
+func (a *App) RemoveWorktree(repoPath, path string, force bool) error {
+	return gitcli.RemoveWorktree(repoPath, path, force)
+}
+
+func (a *App) PruneWorktrees(repoPath string) error {
+	return gitcli.PruneWorktrees(repoPath)
+}
+
 func (a *App) PushTag(repoPath, tagName string) error {
 	return gitcli.PushTag(repoPath, tagName)
 }

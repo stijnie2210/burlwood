@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { shortcut } from '../../utils/platform';
+import { platform, shortcut } from '../../utils/platform';
 import { watch, ref, computed, nextTick, onMounted, onUnmounted } from 'vue';
 import {
   clampMenuPosition,
@@ -16,7 +16,7 @@ import { useToastStore } from '../../stores/toast';
 import { pushWithFeedback } from '../../composables/usePush';
 import { useStashStore } from '../../stores/stash';
 import type { StashEntry } from '../../stores/stash';
-import type { BranchInfo, TagInfo } from '../../stores/branches';
+import type { BranchInfo, TagInfo, WorktreeInfo } from '../../stores/branches';
 import {
   StartRebase,
   DeleteBranch,
@@ -25,6 +25,11 @@ import {
   DropStash,
   PopStash,
   RenameStash,
+  RemoveWorktree,
+  PruneWorktrees,
+  ShowInFinder,
+  OpenTerminal,
+  OpenInEditor,
 } from '../../../bindings/burlwood/app';
 
 defineOptions({ inheritAttrs: false });
@@ -38,12 +43,19 @@ const stash = useStashStore();
 
 interface CollapsedState {
   local: boolean;
+  worktrees: boolean;
   remote: boolean;
   tags: boolean;
   stashes: boolean;
 }
 
-const EXPANDED: CollapsedState = { local: false, remote: false, tags: false, stashes: false };
+const EXPANDED: CollapsedState = {
+  local: false,
+  worktrees: false,
+  remote: false,
+  tags: false,
+  stashes: false,
+};
 
 const branchFilter = ref('');
 const filteredLocal = computed(() => {
@@ -95,6 +107,7 @@ function loadPrefs(repoPath: string) {
       const p = JSON.parse(raw);
       collapsed.value = {
         local: !!p.local,
+        worktrees: !!p.worktrees,
         remote: !!p.remote,
         tags: !!p.tags,
         stashes: !!p.stashes,
@@ -164,6 +177,14 @@ watch(
   { immediate: true }
 );
 
+function activateLocal(b: BranchInfo) {
+  if (b.worktree) {
+    openWorktree(b.worktree);
+  } else {
+    switchTo(b.name, false);
+  }
+}
+
 async function switchTo(target: string, trackRemote: boolean) {
   const repoPath = repos.activeRepo?.path;
   if (!repoPath) {
@@ -201,6 +222,7 @@ interface CtxMenu {
   label: string;
   isLocal: boolean;
   isCurrent: boolean;
+  worktree: string;
   mode: CtxMode;
   renameValue: string;
 }
@@ -214,7 +236,8 @@ async function openCtxMenu(
   target: string,
   label: string,
   isLocal: boolean,
-  isCurrent: boolean
+  isCurrent: boolean,
+  worktree = ''
 ) {
   e.preventDefault();
   e.stopPropagation();
@@ -226,6 +249,7 @@ async function openCtxMenu(
     label,
     isLocal,
     isCurrent,
+    worktree,
     mode: 'default',
     renameValue: label,
   };
@@ -258,8 +282,12 @@ function restoreMenuFocus() {
 }
 
 // One Tab stop per list; arrow keys move within it.
-const roving = ref({ local: 0, remote: 0, tag: 0, stash: 0 });
-function rovingTab(list: 'local' | 'remote' | 'tag' | 'stash', i: number, length: number) {
+const roving = ref({ local: 0, worktree: 0, remote: 0, tag: 0, stash: 0 });
+function rovingTab(
+  list: 'local' | 'worktree' | 'remote' | 'tag' | 'stash',
+  i: number,
+  length: number
+) {
   return i === Math.min(roving.value[list], length - 1) ? 0 : -1;
 }
 
@@ -292,6 +320,9 @@ function onWindowMouseDown(e: MouseEvent) {
   }
   if (stashCtxMenuEl.value && !stashCtxMenuEl.value.contains(e.target as Node)) {
     closeStashCtxMenu();
+  }
+  if (wtCtxMenuEl.value && !wtCtxMenuEl.value.contains(e.target as Node)) {
+    closeWtCtxMenu();
   }
 }
 
@@ -417,6 +448,158 @@ async function confirmDelete(force: boolean) {
     }
     closeCtxMenu();
     toast.error(msg);
+  }
+}
+
+// ── Worktrees ─────────────────────────────────────────────────────────────
+
+const fileManagerName = { mac: 'Finder', windows: 'Explorer', linux: 'file manager' }[platform];
+
+// A repo without linked worktrees has only its own folder to list.
+const showWorktrees = computed(() => branches.worktrees.length > 1);
+
+function worktreeName(path: string): string {
+  return path.split(/[\\/]/).pop() ?? path;
+}
+
+function worktreeTitle(wt: WorktreeInfo): string {
+  if (wt.prunable) {
+    return `${wt.path} no longer exists. Right-click to prune it.`;
+  }
+  if (wt.isCurrent) {
+    return `${wt.path} (open)`;
+  }
+  return `${wt.path}\nDouble-click or Enter to open`;
+}
+
+function canOpen(wt: WorktreeInfo): boolean {
+  return !wt.isCurrent && !wt.prunable && !wt.bare;
+}
+
+async function openWorktree(path: string) {
+  if (path === repos.activeRepo?.path) {
+    return;
+  }
+  await repos.openRepo(path);
+}
+
+type WtCtxMode = 'default' | 'confirm-remove' | 'confirm-force-remove';
+
+interface WtCtxMenu {
+  x: number;
+  y: number;
+  wt: WorktreeInfo;
+  mode: WtCtxMode;
+}
+
+const wtCtxMenu = ref<WtCtxMenu | null>(null);
+const wtCtxMenuEl = ref<HTMLElement | null>(null);
+
+watch(
+  () => wtCtxMenu.value?.mode,
+  () => nextTick(() => keepFocusInMenu(wtCtxMenuEl.value))
+);
+
+const removeBlocker = computed(() => {
+  const wt = wtCtxMenu.value?.wt;
+  if (!wt) {
+    return '';
+  }
+  if (wt.isMain) {
+    return "The main worktree holds the repository; it can't be removed";
+  }
+  if (wt.isCurrent) {
+    return 'Open another tab to remove the worktree you are in';
+  }
+  if (wt.locked) {
+    return 'Locked' + (wt.lockReason ? `: ${wt.lockReason}` : '');
+  }
+  return '';
+});
+
+async function openWtCtxMenu(e: MouseEvent, wt: WorktreeInfo) {
+  e.preventDefault();
+  e.stopPropagation();
+  rememberMenuFocus();
+  wtCtxMenu.value = { x: e.clientX, y: e.clientY, wt, mode: 'default' };
+  await nextTick();
+  const menu = wtCtxMenuEl.value;
+  if (menu && wtCtxMenu.value) {
+    const { x, y } = clampMenuPosition(menu, e.clientX, e.clientY);
+    wtCtxMenu.value = { ...wtCtxMenu.value, x, y };
+  }
+  focusFirstMenuItem(menu);
+}
+
+function closeWtCtxMenu() {
+  wtCtxMenu.value = null;
+  restoreMenuFocus();
+}
+
+async function runWtAction(action: (path: string) => Promise<unknown>) {
+  const menu = wtCtxMenu.value;
+  closeWtCtxMenu();
+  if (!menu) {
+    return;
+  }
+  try {
+    await action(menu.wt.path);
+  } catch (e: unknown) {
+    toast.error(e);
+  }
+}
+
+async function copyWorktreePath(path: string) {
+  await navigator.clipboard.writeText(path);
+  toast.success('Copied: ' + path);
+}
+
+async function confirmRemoveWorktree(force: boolean) {
+  const menu = wtCtxMenu.value;
+  const repoPath = repos.activeRepo?.path;
+  if (!menu || !repoPath) {
+    closeWtCtxMenu();
+    return;
+  }
+  const name = worktreeName(menu.wt.path);
+  try {
+    await RemoveWorktree(repoPath, menu.wt.path, force);
+    closeWtCtxMenu();
+    const tab = repos.tabs.findIndex((t) => t.path === menu.wt.path);
+    if (tab >= 0) {
+      repos.closeTab(tab);
+    }
+    await branches.load(repoPath);
+    toast.success('Removed worktree ' + name);
+  } catch (e: unknown) {
+    const msg = String(e);
+    if (!force && msg.includes('use --force') && wtCtxMenu.value?.wt.path === menu.wt.path) {
+      wtCtxMenu.value.mode = 'confirm-force-remove';
+      await nextTick();
+      const el = wtCtxMenuEl.value;
+      if (el && wtCtxMenu.value) {
+        const { x, y } = clampMenuPosition(el, wtCtxMenu.value.x, wtCtxMenu.value.y);
+        wtCtxMenu.value = { ...wtCtxMenu.value, x, y };
+      }
+      return;
+    }
+    closeWtCtxMenu();
+    toast.error(e);
+  }
+}
+
+async function pruneWorktrees() {
+  const repoPath = repos.activeRepo?.path;
+  closeWtCtxMenu();
+  if (!repoPath) {
+    return;
+  }
+  try {
+    await PruneWorktrees(repoPath);
+    await branches.load(repoPath);
+    toast.success('Pruned missing worktrees');
+  } catch (e: unknown) {
+    toast.error(e);
   }
 }
 
@@ -638,19 +821,28 @@ async function confirmStashRename() {
             role="option"
             data-list="local"
             :aria-current="b.isCurrent ? 'true' : undefined"
+            :aria-label="
+              b.worktree
+                ? `${b.name}, checked out in the worktree ${worktreeName(b.worktree)}`
+                : undefined
+            "
             :title="
-              b.isCurrent ? b.name + ' (current)' : 'Double-click or Enter to switch to ' + b.name
+              b.isCurrent
+                ? b.name + ' (current)'
+                : b.worktree
+                  ? `Checked out in the worktree ${worktreeName(b.worktree)}. Double-click or Enter to open it`
+                  : 'Double-click or Enter to switch to ' + b.name
             "
             :tabindex="rovingTab('local', i, filteredLocal.length)"
             @focus="roving.local = i"
-            @dblclick="switchTo(b.name, false)"
-            @keydown.enter="switchTo(b.name, false)"
+            @dblclick="activateLocal(b)"
+            @keydown.enter="activateLocal(b)"
             @keydown.up.prevent.stop="focusSiblingItem($event, -1)"
             @keydown.down.prevent.stop="focusSiblingItem($event, 1)"
             @keydown.shift.f10.prevent="
-              openCtxMenu(menuEventFor($event), b.name, b.name, true, b.isCurrent)
+              openCtxMenu(menuEventFor($event), b.name, b.name, true, b.isCurrent, b.worktree)
             "
-            @contextmenu="openCtxMenu($event, b.name, b.name, true, b.isCurrent)"
+            @contextmenu="openCtxMenu($event, b.name, b.name, true, b.isCurrent, b.worktree)"
           >
             <svg
               v-if="b.isCurrent"
@@ -678,6 +870,21 @@ async function confirmStashRename() {
               <path d="M18 9a9 9 0 0 1-9 9" />
             </svg>
             <span class="branch-name">{{ b.name }}</span>
+            <span v-if="b.worktree" class="branch-worktree">
+              <svg
+                class="branch-icon"
+                width="11"
+                height="11"
+                viewBox="0 0 24 24"
+                stroke-width="2"
+                aria-hidden="true"
+              >
+                <path
+                  d="M3 6a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"
+                />
+              </svg>
+              {{ worktreeName(b.worktree) }}
+            </span>
             <template v-if="b.isCurrent">
               <span
                 v-if="branches.aheadBehind.ahead > 0"
@@ -694,6 +901,98 @@ async function confirmStashRename() {
                 >↓{{ branches.aheadBehind.behind }}</span
               >
             </template>
+          </li>
+        </ul>
+      </section>
+
+      <section v-if="showWorktrees" class="branch-section worktree-section">
+        <h3 class="section-title">
+          <button
+            type="button"
+            class="section-title--toggle"
+            :aria-expanded="!collapsed.worktrees"
+            @click="toggleSection('worktrees')"
+          >
+            <svg
+              class="section-chevron"
+              :class="{ collapsed: collapsed.worktrees }"
+              width="10"
+              height="10"
+              viewBox="0 0 10 10"
+              aria-hidden="true"
+            >
+              <path d="M2.5 3.75L5 6.25L7.5 3.75" />
+            </svg>
+            <span class="section-label">Worktrees</span>
+            <span class="section-count">{{ branches.worktrees.length }}</span>
+          </button>
+        </h3>
+        <ul
+          v-if="!collapsed.worktrees"
+          class="branch-list worktree-list"
+          role="listbox"
+          aria-label="Worktrees"
+        >
+          <li
+            v-for="(wt, i) in branches.worktrees"
+            :key="wt.path"
+            class="branch-item worktree-item"
+            :class="{ current: wt.isCurrent, missing: wt.prunable }"
+            role="option"
+            data-list="worktree"
+            :aria-current="wt.isCurrent ? 'true' : undefined"
+            :title="worktreeTitle(wt)"
+            :tabindex="rovingTab('worktree', i, branches.worktrees.length)"
+            @focus="roving.worktree = i"
+            @dblclick="canOpen(wt) && openWorktree(wt.path)"
+            @keydown.enter="canOpen(wt) && openWorktree(wt.path)"
+            @keydown.up.prevent.stop="focusSiblingItem($event, -1)"
+            @keydown.down.prevent.stop="focusSiblingItem($event, 1)"
+            @keydown.shift.f10.prevent="openWtCtxMenu(menuEventFor($event), wt)"
+            @contextmenu="openWtCtxMenu($event, wt)"
+          >
+            <svg
+              v-if="wt.isCurrent"
+              class="branch-icon"
+              width="13"
+              height="13"
+              viewBox="0 0 24 24"
+              stroke-width="2.5"
+              aria-hidden="true"
+            >
+              <path d="M20 6L9 17l-5-5" />
+            </svg>
+            <svg
+              v-else
+              class="branch-icon"
+              width="13"
+              height="13"
+              viewBox="0 0 24 24"
+              stroke-width="2"
+              aria-hidden="true"
+            >
+              <path
+                d="M3 6a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"
+              />
+            </svg>
+            <span class="branch-name">{{ worktreeName(wt.path) }}</span>
+            <span class="worktree-head">{{
+              wt.bare ? 'bare' : wt.branch || wt.head.slice(0, 7) + ' (detached)'
+            }}</span>
+            <span v-if="wt.prunable" class="worktree-flag missing-flag">missing</span>
+            <svg
+              v-else-if="wt.locked"
+              class="branch-icon worktree-lock"
+              width="11"
+              height="11"
+              viewBox="0 0 24 24"
+              stroke-width="2"
+              role="img"
+              aria-label="Locked"
+            >
+              <rect x="5" y="11" width="14" height="10" rx="2" />
+              <path d="M8 11V7a4 4 0 0 1 8 0v4" />
+            </svg>
           </li>
         </ul>
       </section>
@@ -928,7 +1227,18 @@ async function confirmStashRename() {
       <!-- Default actions -->
       <template v-if="ctxMenu.mode === 'default'">
         <button
-          v-if="!ctxMenu.isCurrent"
+          v-if="ctxMenu.worktree"
+          role="menuitem"
+          class="ctx-menu-item ctx-menu-item-primary"
+          @click="
+            openWorktree(ctxMenu!.worktree);
+            closeCtxMenu();
+          "
+        >
+          Open worktree {{ worktreeName(ctxMenu.worktree) }}
+        </button>
+        <button
+          v-else-if="!ctxMenu.isCurrent"
           role="menuitem"
           class="ctx-menu-item ctx-menu-item-primary"
           @click="
@@ -953,8 +1263,14 @@ async function confirmStashRename() {
           <button
             role="menuitem"
             class="ctx-menu-item ctx-menu-item-danger"
-            :disabled="ctxMenu.isCurrent"
-            :title="ctxMenu.isCurrent ? 'Cannot delete the current branch' : ''"
+            :disabled="ctxMenu.isCurrent || !!ctxMenu.worktree"
+            :title="
+              ctxMenu.isCurrent
+                ? 'Cannot delete the current branch'
+                : ctxMenu.worktree
+                  ? `Checked out in the worktree ${worktreeName(ctxMenu.worktree)}: remove that worktree first`
+                  : ''
+            "
             @click="startDelete()"
           >
             Delete
@@ -1006,6 +1322,113 @@ async function confirmStashRename() {
               Force delete
             </button>
             <button class="ctx-menu-btn" @click="closeCtxMenu()">Keep branch</button>
+          </div>
+        </div>
+      </template>
+    </div>
+  </Teleport>
+
+  <Teleport to="body">
+    <div
+      v-if="wtCtxMenu"
+      ref="wtCtxMenuEl"
+      class="ctx-menu"
+      role="menu"
+      :style="{ left: wtCtxMenu.x + 'px', top: wtCtxMenu.y + 'px' }"
+      @keydown="handleMenuKeydown($event, wtCtxMenuEl, closeWtCtxMenu)"
+    >
+      <div class="ctx-menu-label">{{ worktreeName(wtCtxMenu.wt.path) }}</div>
+
+      <template v-if="wtCtxMenu.mode === 'default' && wtCtxMenu.wt.prunable">
+        <p class="ctx-menu-confirm-text ctx-menu-note">
+          This folder no longer exists. Pruning drops every missing worktree from git's list.
+        </p>
+        <button
+          role="menuitem"
+          class="ctx-menu-item ctx-menu-item-primary"
+          @click="pruneWorktrees()"
+        >
+          Prune missing worktrees
+        </button>
+        <button role="menuitem" class="ctx-menu-item" @click="runWtAction(copyWorktreePath)">
+          Copy path
+        </button>
+      </template>
+
+      <template v-else-if="wtCtxMenu.mode === 'default'">
+        <button
+          role="menuitem"
+          class="ctx-menu-item ctx-menu-item-primary"
+          :disabled="!canOpen(wtCtxMenu.wt)"
+          @click="runWtAction(openWorktree)"
+        >
+          Open
+        </button>
+        <button
+          role="menuitem"
+          class="ctx-menu-item"
+          @click="runWtAction((path) => ShowInFinder(path, ''))"
+        >
+          Show in {{ fileManagerName }}
+        </button>
+        <button role="menuitem" class="ctx-menu-item" @click="runWtAction(OpenTerminal)">
+          Open in Terminal
+        </button>
+        <button
+          role="menuitem"
+          class="ctx-menu-item"
+          @click="runWtAction((path) => OpenInEditor(path, ''))"
+        >
+          Open in editor
+        </button>
+        <button role="menuitem" class="ctx-menu-item" @click="runWtAction(copyWorktreePath)">
+          Copy path
+        </button>
+        <div class="ctx-menu-divider" />
+        <button
+          role="menuitem"
+          class="ctx-menu-item ctx-menu-item-danger"
+          :disabled="!!removeBlocker"
+          :title="removeBlocker"
+          @click="wtCtxMenu.mode = 'confirm-remove'"
+        >
+          Remove…
+        </button>
+      </template>
+
+      <template v-else-if="wtCtxMenu.mode === 'confirm-remove'">
+        <div class="ctx-menu-confirm">
+          <p class="ctx-menu-confirm-text">
+            Remove the worktree "{{ worktreeName(wtCtxMenu.wt.path) }}"? Git deletes its folder.
+            {{
+              wtCtxMenu.wt.branch
+                ? `The branch ${wtCtxMenu.wt.branch} stays.`
+                : 'Its detached commits stay reachable only through the reflog.'
+            }}
+          </p>
+          <div class="ctx-menu-row">
+            <button
+              class="ctx-menu-btn ctx-menu-btn-danger-soft"
+              @click="confirmRemoveWorktree(false)"
+            >
+              Remove
+            </button>
+            <button class="ctx-menu-btn" @click="closeWtCtxMenu()">Cancel</button>
+          </div>
+        </div>
+      </template>
+
+      <template v-else-if="wtCtxMenu.mode === 'confirm-force-remove'">
+        <div class="ctx-menu-confirm">
+          <p class="ctx-menu-confirm-text ctx-menu-confirm-text--warn">
+            "{{ worktreeName(wtCtxMenu.wt.path) }}" has uncommitted or untracked changes. Force
+            removing it deletes them for good.
+          </p>
+          <div class="ctx-menu-row">
+            <button class="ctx-menu-btn ctx-menu-btn-danger" @click="confirmRemoveWorktree(true)">
+              Force remove
+            </button>
+            <button class="ctx-menu-btn" @click="closeWtCtxMenu()">Keep worktree</button>
           </div>
         </div>
       </template>
@@ -1276,6 +1699,50 @@ async function confirmStashRename() {
   border-radius: 50%;
 }
 
+.branch-worktree {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  max-width: 45%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: var(--text-meta);
+  font-weight: 400;
+  color: var(--text-tertiary);
+}
+
+.worktree-section {
+  flex-shrink: 0;
+}
+
+.worktree-list {
+  max-height: 140px;
+  overflow-y: auto;
+}
+
+.worktree-head {
+  flex-shrink: 1;
+  min-width: 0;
+  max-width: 50%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: var(--text-meta);
+  font-weight: 400;
+  color: var(--text-tertiary);
+}
+
+.worktree-item.missing .branch-name {
+  color: var(--text-tertiary);
+  text-decoration: line-through;
+}
+
+.missing-flag {
+  flex-shrink: 0;
+  font-size: var(--text-meta);
+  color: var(--warning);
+}
+
 .tag-item.tag-selected {
   background: var(--tag-soft);
   color: var(--text-primary);
@@ -1531,6 +1998,10 @@ async function confirmStashRename() {
   line-height: 1.4;
   color: var(--text-secondary);
   text-align: left;
+}
+.ctx-menu-note {
+  max-width: 260px;
+  padding: 4px 12px 6px;
 }
 .ctx-menu-confirm-text--warn {
   color: var(--danger);
