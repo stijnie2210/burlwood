@@ -64,10 +64,14 @@ export function menuEventFor(e: KeyboardEvent): MouseEvent {
 }
 
 // Switching a menu into a confirm or input mode removes the focused button; pull focus back
-// inside so Escape and the arrow keys keep working.
+// inside so Escape and the arrow keys keep working. A destructive confirmation marks its safe
+// button with data-autofocus, so a repeated Enter can't confirm it.
 export function keepFocusInMenu(el: HTMLElement | null | undefined) {
   if (!el || el.contains(document.activeElement)) {
     return;
   }
-  el.querySelector<HTMLElement>('input, ' + MENU_ITEMS)?.focus();
+  (
+    el.querySelector<HTMLElement>('[data-autofocus]') ??
+    el.querySelector<HTMLElement>('input, ' + MENU_ITEMS)
+  )?.focus();
 }

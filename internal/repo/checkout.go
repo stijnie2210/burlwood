@@ -91,3 +91,27 @@ func switchConflictFiles(repoPath string) ([]string, error) {
 	}
 	return files, nil
 }
+
+// Checking out origin/x when a local x exists switches to x instead of failing on
+// "branch already exists", and fast-forwards x when it tracks origin/x and is behind.
+func (m *Manager) CheckoutRemoteBranch(repoPath, remote, name string) (SwitchResult, error) {
+	remoteRef := remote + "/" + name
+	if revParse(repoPath, "refs/heads/"+name) == "" {
+		return m.SwitchBranch(repoPath, remoteRef, true)
+	}
+	res, err := m.SwitchBranch(repoPath, name, false)
+	if err != nil || len(res.ConflictFiles) > 0 || upstreamOf(repoPath, name) != remoteRef {
+		return res, err
+	}
+	head, tip := revParse(repoPath, "HEAD"), revParse(repoPath, remoteRef)
+	if head == tip {
+		return res, nil
+	}
+	if _, err := gitcli.Run(repoPath, "merge-base", "--is-ancestor", head, tip); err != nil {
+		return res, nil
+	}
+	if _, err := gitcli.Run(repoPath, "merge", "--ff-only", "--quiet", remoteRef); err == nil {
+		res.Message = "Switched to " + name + " and fast-forwarded it to " + remoteRef
+	}
+	return res, nil
+}

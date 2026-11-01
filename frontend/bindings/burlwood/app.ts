@@ -39,6 +39,10 @@ export function CheckoutRef(repoPath: string, ref: string): $CancellablePromise<
     return $Call.ByID(2986346006, repoPath, ref);
 }
 
+export function CheckoutRemoteBranch(repoPath: string, remote: string, name: string): $CancellablePromise<repo$0.SwitchResult> {
+    return $Call.ByID(3388461335, repoPath, remote, name);
+}
+
 export function CloseRepository(path: string): $CancellablePromise<void> {
     return $Call.ByID(166157567, path);
 }
@@ -63,7 +67,7 @@ export function CreateTag(repoPath: string, name: string, hash: string): $Cancel
     return $Call.ByID(3527446643, repoPath, name, hash);
 }
 
-export function DeleteBranch(repoPath: string, name: string, force: boolean): $CancellablePromise<void> {
+export function DeleteBranch(repoPath: string, name: string, force: boolean): $CancellablePromise<repo$0.DeletedBranch> {
     return $Call.ByID(308689290, repoPath, name, force);
 }
 
@@ -210,6 +214,10 @@ export function PopStash(repoPath: string, ref: string): $CancellablePromise<voi
     return $Call.ByID(49574233, repoPath, ref);
 }
 
+export function PreviewRebase(repoPath: string, onto: string): $CancellablePromise<repo$0.RebasePreview> {
+    return $Call.ByID(1313725019, repoPath, onto);
+}
+
 export function PruneWorktrees(repoPath: string): $CancellablePromise<void> {
     return $Call.ByID(128506511, repoPath);
 }
@@ -250,6 +258,10 @@ export function ResolveConflict(repoPath: string, path: string, content: string)
     return $Call.ByID(1946249505, repoPath, path, content);
 }
 
+export function RestoreBranch(repoPath: string, branch: repo$0.DeletedBranch): $CancellablePromise<void> {
+    return $Call.ByID(960554369, repoPath, branch);
+}
+
 export function RevertCommit(repoPath: string, hash: string, commitImmediately: boolean): $CancellablePromise<void> {
     return $Call.ByID(2576408642, repoPath, hash, commitImmediately);
 }
@@ -286,7 +298,7 @@ export function StageHunk(repoPath: string, patch: string): $CancellablePromise<
     return $Call.ByID(2011609865, repoPath, patch);
 }
 
-export function StartRebase(repoPath: string, onto: string): $CancellablePromise<void> {
+export function StartRebase(repoPath: string, onto: string): $CancellablePromise<repo$0.RebaseResult> {
     return $Call.ByID(2258134579, repoPath, onto);
 }
 

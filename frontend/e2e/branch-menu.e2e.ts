@@ -11,9 +11,9 @@ function remoteBranch(page: Page, name: string) {
 
 async function openMenu(page: Page, branch: ReturnType<typeof localBranch>) {
   await branch.click({ button: 'right' });
-  const menu = page.getByRole('menu');
-  await expect(menu).toBeVisible();
-  return menu;
+  await expect(page.getByRole('menu')).toBeVisible();
+  // The menu becomes a dialog in its input and confirm modes, so tests keep hold of the element.
+  return page.locator('.ctx-menu');
 }
 
 function toast(page: Page) {
@@ -95,9 +95,13 @@ test.describe('Merge into current', () => {
     expect(sandbox.gitOk(repo, 'rev-parse', '--verify', '--quiet', 'MERGE_HEAD')).toBe(true);
 
     menu = await openMenu(page, localBranch(page, 'other'));
-    const merge = menu.getByRole('menuitem', { exact: true, name: 'Merge into main' });
-    await expect(merge).toBeDisabled();
-    await expect(merge).toHaveAttribute('title', /A merge is in progress/);
+    const merge = menu.getByRole('menuitem', { name: /^Merge into main/ });
+    await expect(merge).toHaveAttribute('aria-disabled', 'true');
+    await expect(merge).toContainText('Finish the merge in progress first');
+    await merge.focus();
+    await page.keyboard.press('Enter');
+    await expect(menu).toBeVisible();
+    expect(sandbox.gitOk(repo, 'rev-parse', '--verify', '--quiet', 'MERGE_HEAD')).toBe(true);
     await page.keyboard.press('Escape');
 
     await page.getByRole('tab', { name: /^Working Tree/ }).click();
@@ -166,7 +170,7 @@ test.describe('Set upstream', () => {
 
     await expect(menu.getByText('Pick the remote branch to pull from and push to:')).toBeVisible();
     await expect(menu.getByRole('textbox', { name: 'Filter remote branches' })).toBeFocused();
-    const options = menu.locator('.ctx-menu-scroll [role="menuitem"]');
+    const options = menu.locator('.ctx-menu-scroll button');
     await expect(options).toHaveText([
       'fork/feature',
       'origin/feature',
@@ -176,7 +180,7 @@ test.describe('Set upstream', () => {
       'origin/other',
     ]);
 
-    await menu.getByRole('menuitem', { exact: true, name: 'origin/feature' }).click();
+    await menu.getByRole('button', { exact: true, name: 'origin/feature' }).click();
     await expect(toast(page)).toContainText('feature now tracks origin/feature');
     expect(upstreamOf(sandbox, repo, 'feature')).toBe('origin/feature');
   });
@@ -188,7 +192,7 @@ test.describe('Set upstream', () => {
     const menu = await openMenu(page, localBranch(page, 'feature'));
     await menu.getByRole('menuitem', { exact: true, name: 'Set upstream…' }).click();
     await page.keyboard.type('origin/oth');
-    await expect(menu.locator('.ctx-menu-scroll [role="menuitem"]')).toHaveText(['origin/other']);
+    await expect(menu.locator('.ctx-menu-scroll button')).toHaveText(['origin/other']);
     await page.keyboard.press('Enter');
 
     await expect(toast(page)).toContainText('feature now tracks origin/other');
@@ -202,9 +206,9 @@ test.describe('Set upstream', () => {
     const menu = await openMenu(page, localBranch(page, 'feature'));
     await menu.getByRole('menuitem', { exact: true, name: 'Set upstream…' }).click();
     await page.keyboard.press('ArrowDown');
-    await expect(menu.getByRole('menuitem', { exact: true, name: 'fork/feature' })).toBeFocused();
+    await expect(menu.getByRole('button', { exact: true, name: 'fork/feature' })).toBeFocused();
     await page.keyboard.press('ArrowDown');
-    await expect(menu.getByRole('menuitem', { exact: true, name: 'origin/feature' })).toBeFocused();
+    await expect(menu.getByRole('button', { exact: true, name: 'origin/feature' })).toBeFocused();
     await page.keyboard.press('Enter');
 
     await expect(toast(page)).toContainText('feature now tracks origin/feature');
@@ -218,16 +222,14 @@ test.describe('Set upstream', () => {
     let menu = await openMenu(page, localBranch(page, 'feature'));
     await menu.getByRole('menuitem', { exact: true, name: 'Change upstream…' }).click();
     await expect(menu.getByText('Tracks origin/feature.')).toBeVisible();
-    await expect(menu.getByRole('menuitem', { exact: true, name: 'origin/feature' })).toHaveCount(
-      0
-    );
-    await menu.getByRole('menuitem', { exact: true, name: 'fork/feature' }).click();
+    await expect(menu.getByRole('button', { exact: true, name: 'origin/feature' })).toHaveCount(0);
+    await menu.getByRole('button', { exact: true, name: 'fork/feature' }).click();
     await expect(toast(page)).toContainText('feature now tracks fork/feature');
     expect(upstreamOf(sandbox, repo, 'feature')).toBe('fork/feature');
 
     menu = await openMenu(page, localBranch(page, 'feature'));
     await menu.getByRole('menuitem', { exact: true, name: 'Change upstream…' }).click();
-    await menu.getByRole('menuitem', { exact: true, name: 'Stop tracking fork/feature' }).click();
+    await menu.getByRole('button', { exact: true, name: 'Stop tracking fork/feature' }).click();
     await expect(toast(page)).toContainText('feature no longer tracks fork/feature');
     expect(upstreamOf(sandbox, repo, 'feature')).toBe('');
 
