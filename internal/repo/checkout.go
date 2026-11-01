@@ -93,25 +93,65 @@ func switchConflictFiles(repoPath string) ([]string, error) {
 }
 
 // Checking out origin/x when a local x exists switches to x instead of failing on
-// "branch already exists", and fast-forwards x when it tracks origin/x and is behind.
+// "branch already exists", and fast-forwards x when it tracks origin/x and is behind. When x
+// can't simply be moved (it has its own commits, or tracks something else), the message says
+// how it differs, since the user asked for origin/x and is now on something else.
 func (m *Manager) CheckoutRemoteBranch(repoPath, remote, name string) (SwitchResult, error) {
 	remoteRef := remote + "/" + name
 	if revParse(repoPath, "refs/heads/"+name) == "" {
 		return m.SwitchBranch(repoPath, remoteRef, true)
 	}
 	res, err := m.SwitchBranch(repoPath, name, false)
-	if err != nil || len(res.ConflictFiles) > 0 || upstreamOf(repoPath, name) != remoteRef {
+	if err != nil || len(res.ConflictFiles) > 0 {
 		return res, err
 	}
-	head, tip := revParse(repoPath, "HEAD"), revParse(repoPath, remoteRef)
-	if head == tip {
+	switch upstream := upstreamOf(repoPath, name); upstream {
+	case remoteRef:
+	case "":
+		res.Message += ". It doesn't track " + remoteRef + "."
+		return res, nil
+	default:
+		res.Message += ". It tracks " + upstream + ", not " + remoteRef + "."
 		return res, nil
 	}
-	if _, err := gitcli.Run(repoPath, "merge-base", "--is-ancestor", head, tip); err != nil {
+
+	ahead, behind, err := aheadBehind(repoPath, "HEAD", remoteRef)
+	if err != nil {
 		return res, nil
 	}
-	if _, err := gitcli.Run(repoPath, "merge", "--ff-only", "--quiet", remoteRef); err == nil {
-		res.Message = "Switched to " + name + " and fast-forwarded it to " + remoteRef
+	if ahead == 0 && behind > 0 {
+		if _, err := gitcli.Run(repoPath, "merge", "--ff-only", "--quiet", remoteRef); err == nil {
+			res.Message = "Switched to " + name + " and fast-forwarded it to " + remoteRef
+			return res, nil
+		}
+	}
+	switch {
+	case ahead > 0 && behind > 0:
+		res.Message += fmt.Sprintf(". It has %s that %s doesn't, and is %d behind it. Pull to bring those in.",
+			commits(ahead), remoteRef, behind)
+	case ahead > 0:
+		res.Message += fmt.Sprintf(". It has %s that %s doesn't.", commits(ahead), remoteRef)
+	case behind > 0:
+		res.Message += fmt.Sprintf(". It's %s behind %s. Pull to bring those in.", commits(behind), remoteRef)
 	}
 	return res, nil
+}
+
+func aheadBehind(repoPath, ours, theirs string) (int, int, error) {
+	out, err := gitcli.Run(repoPath, "rev-list", "--left-right", "--count", ours+"..."+theirs)
+	if err != nil {
+		return 0, 0, err
+	}
+	var ahead, behind int
+	if _, err := fmt.Sscanf(strings.TrimSpace(out.Stdout), "%d %d", &ahead, &behind); err != nil {
+		return 0, 0, err
+	}
+	return ahead, behind, nil
+}
+
+func commits(n int) string {
+	if n == 1 {
+		return "1 commit"
+	}
+	return fmt.Sprintf("%d commits", n)
 }

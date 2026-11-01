@@ -241,6 +241,25 @@ test.describe('Check out a remote branch', () => {
       'origin/feature'
     );
   });
+
+  test('says how a diverged local branch differs instead of moving it', async ({
+    sandbox,
+    launch,
+  }) => {
+    const repo = repoWithBehindFeature(sandbox);
+    sandbox.git(repo, 'checkout', '-q', 'feature');
+    sandbox.commit(repo, 'mine.txt', 'mine\n', 'local work');
+    const local = sandbox.git(repo, 'rev-parse', 'HEAD');
+    sandbox.git(repo, 'checkout', '-q', 'main');
+    const page = await launch([repo]);
+
+    const menu = await openMenu(page, remoteBranch(page, 'feature'));
+    await item(menu, 'Check out feature').click();
+    await expect(toast(page)).toContainText(
+      "Switched to feature. It has 1 commit that origin/feature doesn't, and is 1 behind it. Pull to bring those in."
+    );
+    expect(sandbox.git(repo, 'rev-parse', 'HEAD')).toBe(local);
+  });
 });
 
 test.describe('Rename and semantics', () => {
