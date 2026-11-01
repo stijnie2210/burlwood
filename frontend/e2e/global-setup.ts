@@ -9,12 +9,16 @@ export default function globalSetup() {
     return;
   }
   run('npx', ['vite', 'build'], FRONTEND_DIR);
-  run('go', ['build', '-tags', 'server', '-o', SERVER_BIN, '.'], join(FRONTEND_DIR, '..'));
+  // With cgo on, Wails' Linux packages still compile against GTK and WebKitGTK under the server
+  // tag; server mode needs neither, so CI runners don't have to install them.
+  run('go', ['build', '-tags', 'server', '-o', SERVER_BIN, '.'], join(FRONTEND_DIR, '..'), {
+    CGO_ENABLED: '0',
+  });
 }
 
-function run(cmd: string, args: string[], cwd: string) {
+function run(cmd: string, args: string[], cwd: string, env: NodeJS.ProcessEnv = {}) {
   try {
-    execFileSync(cmd, args, { cwd, stdio: 'pipe' });
+    execFileSync(cmd, args, { cwd, stdio: 'pipe', env: { ...process.env, ...env } });
   } catch (e) {
     const err = e as { stdout?: Buffer; stderr?: Buffer };
     throw new Error(
