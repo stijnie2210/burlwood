@@ -175,6 +175,10 @@ export function LoadSession(): $CancellablePromise<repo$0.Session> {
     return $Call.ByID(2280082259);
 }
 
+export function MergeBranch(repoPath: string, branch: string): $CancellablePromise<repo$0.MergeResult> {
+    return $Call.ByID(3631821023, repoPath, branch);
+}
+
 export function MoveTag(repoPath: string, name: string, hash: string): $CancellablePromise<void> {
     return $Call.ByID(3912636244, repoPath, name, hash);
 }
@@ -262,6 +266,10 @@ export function SaveSession(tabs: repo$0.SessionTab[] | null, activeIndex: numbe
     return $Call.ByID(1031450332, tabs, activeIndex);
 }
 
+export function SetUpstream(repoPath: string, branch: string, upstream: string): $CancellablePromise<void> {
+    return $Call.ByID(2129299246, repoPath, branch, upstream);
+}
+
 export function ShowInFinder(repoPath: string, filePath: string): $CancellablePromise<void> {
     return $Call.ByID(3920103375, repoPath, filePath);
 }
@@ -308,6 +316,10 @@ export function UndoDiscard(repoPath: string, snap: gitcli$0.DiscardSnapshot): $
 
 export function UndoHardReset(repoPath: string, undo: gitcli$0.ResetUndo): $CancellablePromise<void> {
     return $Call.ByID(2791439269, repoPath, undo);
+}
+
+export function UnsetUpstream(repoPath: string, branch: string): $CancellablePromise<void> {
+    return $Call.ByID(2753412607, repoPath, branch);
 }
 
 export function UnstageFile(repoPath: string, path: string): $CancellablePromise<void> {

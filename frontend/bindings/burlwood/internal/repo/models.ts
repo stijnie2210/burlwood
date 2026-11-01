@@ -39,6 +39,11 @@ export interface BranchInfo {
      * another worktree that has this branch checked out
      */
     "worktree": string;
+
+    /**
+     * e.g. "origin/main" — empty when it tracks nothing
+     */
+    "upstream": string;
 }
 
 export interface ConflictContent {
@@ -95,6 +100,21 @@ export interface HunkLine {
      * 0 for deleted lines
      */
     "newLine": number;
+}
+
+export enum MergeOutcome {
+    /**
+     * The Go zero value for the underlying type of the enum.
+     */
+    $zero = "",
+
+    MergeUpToDate = "up-to-date",
+    MergeFastForward = "fast-forward",
+    MergeCommit = "merged",
+};
+
+export interface MergeResult {
+    "outcome": MergeOutcome;
 }
 
 export interface RebaseState {

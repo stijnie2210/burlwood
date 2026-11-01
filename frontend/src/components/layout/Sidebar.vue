@@ -17,8 +17,12 @@ import { pushWithFeedback } from '../../composables/usePush';
 import { useStashStore } from '../../stores/stash';
 import type { StashEntry } from '../../stores/stash';
 import type { BranchInfo, TagInfo, WorktreeInfo } from '../../stores/branches';
+import { MergeOutcome } from '../../../bindings/burlwood/internal/repo/models';
 import {
   StartRebase,
+  MergeBranch,
+  SetUpstream,
+  UnsetUpstream,
   DeleteBranch,
   RenameBranch,
   ApplyStash,
@@ -213,7 +217,7 @@ async function switchTo(target: string, trackRemote: boolean) {
 
 // ── Context menu ──────────────────────────────────────────────────────────
 
-type CtxMode = 'default' | 'rename' | 'confirm-delete' | 'confirm-force-delete';
+type CtxMode = 'default' | 'rename' | 'upstream' | 'confirm-delete' | 'confirm-force-delete';
 
 interface CtxMenu {
   x: number;
@@ -223,12 +227,15 @@ interface CtxMenu {
   isLocal: boolean;
   isCurrent: boolean;
   worktree: string;
+  upstream: string;
   mode: CtxMode;
   renameValue: string;
+  upstreamFilter: string;
 }
 
 const ctxMenu = ref<CtxMenu | null>(null);
 const renameInputRef = ref<HTMLInputElement | null>(null);
+const upstreamInputRef = ref<HTMLInputElement | null>(null);
 const branchCtxMenuEl = ref<HTMLElement | null>(null);
 
 async function openCtxMenu(
@@ -250,8 +257,10 @@ async function openCtxMenu(
     isLocal,
     isCurrent,
     worktree,
+    upstream: isLocal ? (branches.local.find((b) => b.name === target)?.upstream ?? '') : '',
     mode: 'default',
     renameValue: label,
+    upstreamFilter: '',
   };
   await nextTick();
   const menu = branchCtxMenuEl.value;
@@ -351,6 +360,122 @@ async function rebaseOnto(target: string) {
     } else {
       toast.error(e);
     }
+  }
+}
+
+const currentBranchName = computed(() => branches.local.find((b) => b.isCurrent)?.name ?? '');
+const mergeBlockedReason = computed(() => {
+  if (staging.isInMerge) {
+    return 'A merge is in progress: commit or abort it in the Working Tree first';
+  }
+  if (staging.isInRebase) {
+    return 'A rebase is in progress: continue or abort it in the Working Tree first';
+  }
+  return '';
+});
+
+async function mergeIntoCurrent(target: string) {
+  closeCtxMenu();
+  const repoPath = repos.activeRepo?.path;
+  if (!repoPath) {
+    return;
+  }
+  const into = currentBranchName.value || 'HEAD';
+  try {
+    const { outcome } = await MergeBranch(repoPath, target);
+    await Promise.all([branches.load(repoPath), commits.load(repoPath), staging.load(repoPath)]);
+    if (outcome === MergeOutcome.MergeUpToDate) {
+      toast.success(`${into} already contains ${target}`);
+    } else if (outcome === MergeOutcome.MergeFastForward) {
+      toast.success(`Fast-forwarded ${into} to ${target}`);
+    } else {
+      toast.success(`Merged ${target} into ${into}`);
+    }
+  } catch (e) {
+    await staging.load(repoPath);
+    if (staging.isInMerge) {
+      await Promise.all([branches.load(repoPath), commits.load(repoPath)]);
+      toast.push(
+        `Merging ${target} into ${into} stopped on a conflict. Resolve it in the Working Tree (${shortcut('2')}), then commit.`,
+        'info',
+        0
+      );
+    } else {
+      toast.error(e);
+    }
+  }
+}
+
+// The branch's namesake on each remote comes first: that's nearly always the one to track.
+const upstreamCandidates = computed(() => {
+  const menu = ctxMenu.value;
+  if (!menu || menu.mode !== 'upstream') {
+    return [];
+  }
+  const q = menu.upstreamFilter.trim().toLowerCase();
+  const names = branches.remote
+    .map((b) => ({ full: `${b.remote}/${b.name}`, sameName: b.name === menu.target }))
+    .filter((c) => c.full !== menu.upstream && c.full.toLowerCase().includes(q));
+  return [...names.filter((c) => c.sameName), ...names.filter((c) => !c.sameName)].map(
+    (c) => c.full
+  );
+});
+
+async function startSetUpstream() {
+  if (!ctxMenu.value) {
+    return;
+  }
+  ctxMenu.value.mode = 'upstream';
+  ctxMenu.value.upstreamFilter = '';
+  await nextTick();
+  const el = branchCtxMenuEl.value;
+  if (el && ctxMenu.value) {
+    const { x, y } = clampMenuPosition(el, ctxMenu.value.x, ctxMenu.value.y);
+    ctxMenu.value = { ...ctxMenu.value, x, y };
+  }
+  upstreamInputRef.value?.focus();
+}
+
+function onUpstreamFilterEnter() {
+  const first = upstreamCandidates.value[0];
+  if (first) {
+    setUpstream(first);
+  }
+}
+
+function focusUpstreamList() {
+  branchCtxMenuEl.value?.querySelector<HTMLElement>('.ctx-menu-scroll button')?.focus();
+}
+
+async function setUpstream(upstream: string) {
+  const menu = ctxMenu.value;
+  const repoPath = repos.activeRepo?.path;
+  closeCtxMenu();
+  if (!menu || !repoPath) {
+    return;
+  }
+  try {
+    await SetUpstream(repoPath, menu.target, upstream);
+    await branches.load(repoPath);
+    toast.success(`${menu.target} now tracks ${upstream}`);
+  } catch (e: unknown) {
+    toast.error(e);
+  }
+}
+
+async function unsetUpstream() {
+  const menu = ctxMenu.value;
+  const repoPath = repos.activeRepo?.path;
+  closeCtxMenu();
+  if (!menu || !repoPath) {
+    return;
+  }
+  try {
+    await UnsetUpstream(repoPath, menu.target);
+    await branches.load(repoPath);
+    toast.success(`${menu.target} no longer tracks ${menu.upstream}`);
+  } catch (e: unknown) {
+    toast.error(e);
   }
 }
 
@@ -1251,8 +1376,26 @@ async function confirmStashRename() {
         <button v-if="ctxMenu.isLocal" role="menuitem" class="ctx-menu-item" @click="pushBranch()">
           Push
         </button>
+        <button
+          v-if="ctxMenu.isLocal"
+          role="menuitem"
+          class="ctx-menu-item"
+          @click="startSetUpstream()"
+        >
+          {{ ctxMenu.upstream ? 'Change upstream…' : 'Set upstream…' }}
+        </button>
         <button role="menuitem" class="ctx-menu-item" @click="copyBranchName()">
           Copy branch name
+        </button>
+        <button
+          v-if="!ctxMenu.isCurrent"
+          role="menuitem"
+          class="ctx-menu-item"
+          :disabled="!!mergeBlockedReason"
+          :title="mergeBlockedReason"
+          @click="mergeIntoCurrent(ctxMenu!.target)"
+        >
+          Merge into {{ currentBranchName || 'HEAD' }}
         </button>
         <button role="menuitem" class="ctx-menu-item" @click="rebaseOnto(ctxMenu!.target)">
           Rebase current branch onto this
@@ -1294,6 +1437,55 @@ async function confirmStashRename() {
             <button class="ctx-menu-btn" @click="closeCtxMenu()">Cancel</button>
           </div>
         </div>
+      </template>
+
+      <template v-else-if="ctxMenu.mode === 'upstream'">
+        <div class="ctx-menu-upstream">
+          <p class="ctx-menu-confirm-text">
+            {{
+              ctxMenu.upstream
+                ? `Tracks ${ctxMenu.upstream}. Pick another remote branch to track:`
+                : 'Pick the remote branch to pull from and push to:'
+            }}
+          </p>
+          <input
+            ref="upstreamInputRef"
+            v-model="ctxMenu.upstreamFilter"
+            class="ctx-menu-input"
+            placeholder="Filter remote branches"
+            aria-label="Filter remote branches"
+            @keydown.enter.prevent="onUpstreamFilterEnter()"
+            @keydown.down.prevent="focusUpstreamList()"
+          />
+        </div>
+        <div v-if="upstreamCandidates.length" class="ctx-menu-scroll">
+          <button
+            v-for="name in upstreamCandidates"
+            :key="name"
+            role="menuitem"
+            class="ctx-menu-item"
+            @click="setUpstream(name)"
+          >
+            {{ name }}
+          </button>
+        </div>
+        <p v-else class="ctx-menu-confirm-text ctx-menu-note">
+          {{
+            branches.remote.length
+              ? 'No remote branch matches.'
+              : 'There are no remote branches. Push this branch to create one.'
+          }}
+        </p>
+        <div class="ctx-menu-divider" />
+        <button
+          v-if="ctxMenu.upstream"
+          role="menuitem"
+          class="ctx-menu-item"
+          @click="unsetUpstream()"
+        >
+          Stop tracking {{ ctxMenu.upstream }}
+        </button>
+        <button role="menuitem" class="ctx-menu-item" @click="closeCtxMenu()">Cancel</button>
       </template>
 
       <!-- Delete confirmation mode -->
@@ -1983,6 +2175,16 @@ async function confirmStashRename() {
 .ctx-menu-btn:hover {
   background: var(--surface-control-hover);
   color: var(--text-primary);
+}
+
+/* Upstream mode */
+.ctx-menu-upstream {
+  max-width: 260px;
+  padding: 4px 10px 6px;
+}
+.ctx-menu-scroll {
+  max-height: 240px;
+  overflow-y: auto;
 }
 
 /* Delete confirm mode */

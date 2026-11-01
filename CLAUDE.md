@@ -19,16 +19,32 @@ go test ./internal/... && go vet ./internal/...
 
 # in frontend/
 npm test             # vitest
+npm run e2e          # Playwright end-to-end tests against the real backend (see End-to-end tests)
 npm run lint         # eslint
 npm run build        # vue-tsc type-check + vite build
 npx prettier --check src
 ```
 
-CI (`.github/workflows/ci.yml`) runs all of the above on PRs to `main`; lint and format are non-blocking there.
+CI (`.github/workflows/ci.yml`) runs all of the above on PRs to `main`, the e2e tests included (WebKit on Ubuntu; failures upload `frontend/test-results`); lint and format are non-blocking there.
 
 After adding Go methods to `App` or new structs crossing the boundary, `wails3 dev` / `wails3 build` regenerates `frontend/bindings/` (commit it: CI's frontend checks use it). Never edit those files by hand.
 
 Builds run through Taskfiles: `Taskfile.yml` and `build/{darwin,windows,linux}/Taskfile.yml`, trimmed from the `wails3 init` template. `build/config.yml` holds the product info that `wails3 task common:update:build-assets` renders into `build/darwin/Info*.plist` and `build/windows/`. macOS builds always add `-tags private_mac_apis`: without it the webview stays opaque and the sidebar loses its vibrancy. Linux builds use GTK 4 / WebKitGTK 6.0 (Wails' default; the `gtk3` tag goes away in v3.1).
+
+## End-to-end tests
+
+`frontend/e2e/*.e2e.ts` drive the real app: Go backend, system git, real repos. Wails' server mode (`go build -tags server`)
+serves the app over HTTP with bindings and events working, without a window, and Playwright loads it in WebKit (the
+engine closest to WKWebView). Global setup builds the frontend and `e2e/.server/burlwood-server` first;
+`BURLWOOD_E2E_SKIP_BUILD=1` reuses the last build.
+
+- `e2e/harness.ts`: each test gets a `sandbox` (a temp `HOME`, so settings and git config never touch the machine's own)
+  with git helpers for repos, commits and bare remotes, and `launch(repos)`, which writes `session.json` (those repos as
+  tabs; auto-fetch off), starts the server on a free port and opens the page
+- Assert on git afterwards (`sandbox.git`/`gitOk`), not only on the UI; failures attach a screenshot, trace and the
+  server's output under `frontend/test-results/`
+- Out of reach: native dialogs (Open…, Save patch) and macOS window chrome (vibrancy, traffic lights, menu bar)
+- First run on a machine: `npx playwright install webkit`
 
 ## Architecture
 
@@ -68,7 +84,7 @@ internal/gitcli/
   env.go                            login-shell PATH for subprocesses (cached once)
   commit.go                         Commit (incl. amend)
   commits.go                        CheckoutRef, CreateBranchAt, RevertCommit, CreateTag, MoveTag, ResetBranch(mode)
-  branches.go                       DeleteBranch, RenameBranch
+  branches.go                       DeleteBranch, RenameBranch, SetUpstream/UnsetUpstream, Merge (--no-edit)
   worktree.go                       RemoveWorktree (optionally --force), PruneWorktrees
   stash.go                          ListStashes, Apply/Pop/Drop/RenameStash, Stash/StashPop, StashPushNamed, CreateBranch
   rebase.go                         StartRebase, ContinueRebase, AbortRebase
@@ -93,7 +109,9 @@ internal/repo/
     windowprefs.go                  open tabs + active tab, window frame — JSON files next to repos.json
   configdir.go                      configPath(): the settings folder; moves the pre-rename `gitgood` folder once
   branches.go                       ListBranches (for-each-ref), GetAheadBehind; BranchInfo.worktree names another
-                                    worktree that has the branch checked out (%(worktreepath))
+                                    worktree that has the branch checked out (%(worktreepath)), .upstream its tracked branch
+  merge.go                          MergeBranch: outcome (up-to-date / fast-forward / merged) from HEAD before and after,
+                                    not git's (translated) output; a conflict returns an error and leaves MERGE_HEAD
   worktrees.go                      ListWorktrees (git worktree list --porcelain): main first, isCurrent per repoPath
   tags.go                           ListTags: newest first, annotated tags peeled to their commit
   commits.go                        GetCommitGraph (git log --all --date-order + stashes + ref labels), GetCommitDiff
@@ -130,7 +148,8 @@ frontend/src/
   utils/
     gitErrors.ts                    describeGitError: raw git stderr → sentence + next step (toast.error uses it; raw text under Details)
     conflicts.ts                    parseConflicts (see Conflict resolution flow)
-    highlight.ts                    Prism syntax highlighting for diff lines
+    highlight.ts                    Prism tokens for a diff line as segments (text + nested token classes), cut at the
+                                    changed-word range; never HTML strings
     imageUtils.ts                   isImageFile, imageDataUrl
     date.ts                         formatDate (relative | absolute, from prefs)
     diffRows.ts                     changedRanges (word-level change within a paired line), pairChanges, splitRows
@@ -180,6 +199,7 @@ frontend/src/
                                     Right-click context menu (teleported); image preview for image file types
     staging/HunkSelector.vue        Per-hunk Stage/Unstage buttons around diff/DiffLines
     diff/DiffLines.vue              Shared diff renderer: unified or split, wrap, changed-word highlight
+    diff/CodeLine.ts                Renders one highlighted line as elements (no v-html: file contents stay text)
     diff/DiffLayoutControls.vue     Unified|Split + Wrap controls (composables/useDiffLayout.ts)
     staging/ConflictView.vue        Conflict resolution: parse markers → per-conflict Accept Ours/Theirs
 ```
@@ -240,8 +260,11 @@ All context menus are teleported to `<body>` to escape overflow clipping. Positi
 - **Rename**: `git branch -m <old> <new>`; name input via inline prompt
 - **Copy name**: `navigator.clipboard.writeText()`
 - **Push**: `pushWithFeedback` (`composables/usePush.ts`) → `PushBranch` in `internal/gitcli/push.go`
+- **Set / Change upstream…** (local only): `upstream` mode lists remote branches (same name first) behind a filter
+  input; `git branch --set-upstream-to`, or Stop tracking (`--unset-upstream`)
+- **Merge into <current>**: `MergeBranch`; disabled while a merge or rebase is in progress. A conflict leaves the
+  merge in progress, so the Working Tree's merge banner, ConflictView and MERGE_MSG summary take over
 - **Rebase onto X**: `StartRebase`
-- Not built yet (see Open Work): **Merge into current** (`git merge <branch>`, conflicts land in Working Tree) and **Set upstream** (`git branch --set-upstream-to=origin/<name>`)
 
 The stash section of the sidebar has its own menu: Apply, Pop, Rename, Drop.
 
@@ -272,12 +295,10 @@ Right-click on any file item (conflicts, unstaged, staged). Items are contextual
 
 ## Open Work
 
-- Branch context menu: Merge into current, Set upstream
 - HTTPS auth via go-keyring for push/pull on private repos (SSH agent already works)
 - A commit selected outside the loaded rows (a parent past the commit limit, an old tag, or one hidden by Find) shows
   only its files: CommitDetail has no row for its hash, subject and parent links
-- Changed-word highlight (`utils/diffRows.ts`) works on UTF-16 units and ASCII word characters: an emoji can split,
-  and a mark inside a string literal breaks the syntax colours after it
+- Changed-word highlight (`utils/diffRows.ts`) works on UTF-16 units and ASCII word characters: an emoji can split
 - Copy hash gives no feedback when the clipboard write fails; select-by-hash and copy-hash each exist twice
   (CommitGraph/CommitDetail, Sidebar selectTag/selectStash)
 - ListTags peels nested annotated tags one level only, and a tag that shares a branch's name shows as `tags/<name>`

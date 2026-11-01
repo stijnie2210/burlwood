@@ -8,6 +8,9 @@ build/bin
 node_modules
 frontend/dist
 frontend/node_modules
+frontend/e2e/.server
+frontend/test-results
+frontend/playwright-report
 
 # Go
 *.test

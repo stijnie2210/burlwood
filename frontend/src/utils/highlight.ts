@@ -78,35 +78,95 @@ export function languageForPath(path: string): string | null {
   return lang && Prism.languages[lang] ? lang : null;
 }
 
-export function highlightLine(content: string, lang: string | null): string {
-  if (!lang || content === '') {
-    return escapeHtml(content);
-  }
-  const grammar = Prism.languages[lang];
-  if (!grammar) {
-    return escapeHtml(content);
-  }
-  return Prism.highlight(content, grammar, lang);
+// A run of text with the classes of every Prism token around it, outermost first. Nested
+// tokens stay nested when rendered, so the theme's innermost colour wins as it would in HTML.
+export interface CodeSegment {
+  text: string;
+  tokens: string[][];
 }
 
-function escapeHtml(text: string): string {
-  return text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+// Consecutive segments inside or outside the changed range; a changed run renders as one mark.
+export interface CodeRun {
+  changed: boolean;
+  segments: CodeSegment[];
 }
 
-// Each part is highlighted on its own so the mark never splits a Prism token's HTML.
+export function highlightSegments(content: string, lang: string | null): CodeSegment[] {
+  const grammar = lang ? Prism.languages[lang] : undefined;
+  if (!lang || !grammar || content === '') {
+    return content === '' ? [] : [{ text: content, tokens: [] }];
+  }
+  // The same steps as Prism.highlight: markup-templating languages (PHP) tokenize in these hooks.
+  const env: {
+    code: string;
+    grammar: Prism.Grammar;
+    language: string;
+    tokens?: Prism.TokenStream;
+  } = { code: content, grammar, language: lang };
+  Prism.hooks.run('before-tokenize', env);
+  env.tokens = Prism.tokenize(env.code, env.grammar);
+  Prism.hooks.run('after-tokenize', env);
+  const out: CodeSegment[] = [];
+  flatten(env.tokens, [], out);
+  return out;
+}
+
+function flatten(stream: Prism.TokenStream, tokens: string[][], out: CodeSegment[]) {
+  if (typeof stream === 'string') {
+    if (stream !== '') {
+      out.push({ text: stream, tokens });
+    }
+    return;
+  }
+  if (Array.isArray(stream)) {
+    for (const part of stream) {
+      flatten(part, tokens, out);
+    }
+    return;
+  }
+  const alias = stream.alias ? ([] as string[]).concat(stream.alias) : [];
+  flatten(stream.content, [...tokens, ['token', stream.type, ...alias]], out);
+}
+
+// The whole line is tokenized once and the segments are cut at the change, so a change inside
+// a string or comment keeps that token's colour on both sides.
 export function highlightChange(
   content: string,
   lang: string | null,
   change?: { start: number; end: number }
-): string {
+): CodeRun[] {
+  const segments = highlightSegments(content, lang);
   if (!change || change.start === change.end) {
-    return highlightLine(content, lang);
+    return segments.length ? [{ changed: false, segments }] : [];
   }
-  return (
-    highlightLine(content.slice(0, change.start), lang) +
-    '<mark class="diff-change">' +
-    highlightLine(content.slice(change.start, change.end), lang) +
-    '</mark>' +
-    highlightLine(content.slice(change.end), lang)
-  );
+  const runs: CodeRun[] = [];
+  const push = (changed: boolean, segment: CodeSegment) => {
+    if (segment.text === '') {
+      return;
+    }
+    const last = runs[runs.length - 1];
+    if (last && last.changed === changed) {
+      last.segments.push(segment);
+    } else {
+      runs.push({ changed, segments: [segment] });
+    }
+  };
+  let offset = 0;
+  for (const seg of segments) {
+    const end = offset + seg.text.length;
+    const cuts = [
+      offset,
+      Math.min(Math.max(change.start, offset), end),
+      Math.min(Math.max(change.end, offset), end),
+      end,
+    ];
+    for (let i = 0; i < 3; i++) {
+      push(i === 1, {
+        text: seg.text.slice(cuts[i] - offset, cuts[i + 1] - offset),
+        tokens: seg.tokens,
+      });
+    }
+    offset = end;
+  }
+  return runs;
 }

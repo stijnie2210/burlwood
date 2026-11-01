@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue';
-import { highlightChange } from '../../utils/highlight';
-import { pairChanges, splitRows, type DiffCell, type HunkLine } from '../../utils/diffRows';
+import CodeLine from './CodeLine';
+import { pairChanges, splitRows, type HunkLine } from '../../utils/diffRows';
 import type { DiffLayout } from '../../composables/useDiffLayout';
 
 const props = defineProps<{
@@ -23,10 +23,6 @@ function oldNo(line: HunkLine): number | string {
 function newNo(line: HunkLine): number | string {
   return line.type === 'del' ? '' : line.newLine || '';
 }
-
-function cellHtml(cell: DiffCell): string {
-  return highlightChange(cell.line.content, props.lang, cell.change);
-}
 </script>
 
 <template>
@@ -41,7 +37,9 @@ function cellHtml(cell: DiffCell): string {
         <span class="diff-lineno">{{ oldNo(line) }}</span>
         <span class="diff-lineno">{{ newNo(line) }}</span>
         <span class="diff-gutter" aria-hidden="true">{{ SIGNS[line.type] }}</span>
-        <span class="diff-content" v-html="highlightChange(line.content, lang, ranges[li])"></span>
+        <span class="diff-content"
+          ><CodeLine :content="line.content" :lang="lang" :change="ranges[li]"
+        /></span>
       </div>
     </template>
     <template v-else>
@@ -53,7 +51,9 @@ function cellHtml(cell: DiffCell): string {
         >
           <span class="diff-lineno">{{ oldNo(row.left.line) }}</span>
           <span class="diff-gutter" aria-hidden="true">{{ SIGNS[row.left.line.type] }}</span>
-          <span class="diff-content" v-html="cellHtml(row.left)"></span>
+          <span class="diff-content"
+            ><CodeLine :content="row.left.line.content" :lang="lang" :change="row.left.change"
+          /></span>
         </div>
         <div v-else class="split-cell split-cell--empty" />
         <div
@@ -63,7 +63,9 @@ function cellHtml(cell: DiffCell): string {
         >
           <span class="diff-lineno">{{ newNo(row.right.line) }}</span>
           <span class="diff-gutter" aria-hidden="true">{{ SIGNS[row.right.line.type] }}</span>
-          <span class="diff-content" v-html="cellHtml(row.right)"></span>
+          <span class="diff-content"
+            ><CodeLine :content="row.right.line.content" :lang="lang" :change="row.right.change"
+          /></span>
         </div>
         <div v-else class="split-cell split-cell--empty" />
       </div>
