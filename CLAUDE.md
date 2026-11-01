@@ -19,16 +19,32 @@ go test ./internal/... && go vet ./internal/...
 
 # in frontend/
 npm test             # vitest
+npm run e2e          # Playwright end-to-end tests against the real backend (see End-to-end tests)
 npm run lint         # eslint
 npm run build        # vue-tsc type-check + vite build
 npx prettier --check src
 ```
 
-CI (`.github/workflows/ci.yml`) runs all of the above on PRs to `main`; lint and format are non-blocking there.
+CI (`.github/workflows/ci.yml`) runs all of the above on PRs to `main`, the e2e tests included (WebKit on Ubuntu; failures upload `frontend/test-results`); lint and format are non-blocking there.
 
 After adding Go methods to `App` or new structs crossing the boundary, `wails3 dev` / `wails3 build` regenerates `frontend/bindings/` (commit it: CI's frontend checks use it). Never edit those files by hand.
 
 Builds run through Taskfiles: `Taskfile.yml` and `build/{darwin,windows,linux}/Taskfile.yml`, trimmed from the `wails3 init` template. `build/config.yml` holds the product info that `wails3 task common:update:build-assets` renders into `build/darwin/Info*.plist` and `build/windows/`. macOS builds always add `-tags private_mac_apis`: without it the webview stays opaque and the sidebar loses its vibrancy. Linux builds use GTK 4 / WebKitGTK 6.0 (Wails' default; the `gtk3` tag goes away in v3.1).
+
+## End-to-end tests
+
+`frontend/e2e/*.e2e.ts` drive the real app: Go backend, system git, real repos. Wails' server mode (`go build -tags server`)
+serves the app over HTTP with bindings and events working, without a window, and Playwright loads it in WebKit (the
+engine closest to WKWebView). Global setup builds the frontend and `e2e/.server/burlwood-server` first;
+`BURLWOOD_E2E_SKIP_BUILD=1` reuses the last build.
+
+- `e2e/harness.ts`: each test gets a `sandbox` (a temp `HOME`, so settings and git config never touch the machine's own)
+  with git helpers for repos, commits and bare remotes, and `launch(repos)`, which writes `session.json` (those repos as
+  tabs; auto-fetch off), starts the server on a free port and opens the page
+- Assert on git afterwards (`sandbox.git`/`gitOk`), not only on the UI; failures attach a screenshot, trace and the
+  server's output under `frontend/test-results/`
+- Out of reach: native dialogs (Open…, Save patch) and macOS window chrome (vibrancy, traffic lights, menu bar)
+- First run on a machine: `npx playwright install webkit`
 
 ## Architecture
 
