@@ -68,7 +68,7 @@ internal/gitcli/
   env.go                            login-shell PATH for subprocesses (cached once)
   commit.go                         Commit (incl. amend)
   commits.go                        CheckoutRef, CreateBranchAt, RevertCommit, CreateTag, MoveTag, ResetBranch(mode)
-  branches.go                       DeleteBranch, RenameBranch
+  branches.go                       DeleteBranch, RenameBranch, SetUpstream/UnsetUpstream, Merge (--no-edit)
   worktree.go                       RemoveWorktree (optionally --force), PruneWorktrees
   stash.go                          ListStashes, Apply/Pop/Drop/RenameStash, Stash/StashPop, StashPushNamed, CreateBranch
   rebase.go                         StartRebase, ContinueRebase, AbortRebase
@@ -93,7 +93,9 @@ internal/repo/
     windowprefs.go                  open tabs + active tab, window frame — JSON files next to repos.json
   configdir.go                      configPath(): the settings folder; moves the pre-rename `gitgood` folder once
   branches.go                       ListBranches (for-each-ref), GetAheadBehind; BranchInfo.worktree names another
-                                    worktree that has the branch checked out (%(worktreepath))
+                                    worktree that has the branch checked out (%(worktreepath)), .upstream its tracked branch
+  merge.go                          MergeBranch: outcome (up-to-date / fast-forward / merged) from HEAD before and after,
+                                    not git's (translated) output; a conflict returns an error and leaves MERGE_HEAD
   worktrees.go                      ListWorktrees (git worktree list --porcelain): main first, isCurrent per repoPath
   tags.go                           ListTags: newest first, annotated tags peeled to their commit
   commits.go                        GetCommitGraph (git log --all --date-order + stashes + ref labels), GetCommitDiff
@@ -240,8 +242,11 @@ All context menus are teleported to `<body>` to escape overflow clipping. Positi
 - **Rename**: `git branch -m <old> <new>`; name input via inline prompt
 - **Copy name**: `navigator.clipboard.writeText()`
 - **Push**: `pushWithFeedback` (`composables/usePush.ts`) → `PushBranch` in `internal/gitcli/push.go`
+- **Set / Change upstream…** (local only): `upstream` mode lists remote branches (same name first) behind a filter
+  input; `git branch --set-upstream-to`, or Stop tracking (`--unset-upstream`)
+- **Merge into <current>**: `MergeBranch`; disabled while a merge or rebase is in progress. A conflict leaves the
+  merge in progress, so the Working Tree's merge banner, ConflictView and MERGE_MSG summary take over
 - **Rebase onto X**: `StartRebase`
-- Not built yet (see Open Work): **Merge into current** (`git merge <branch>`, conflicts land in Working Tree) and **Set upstream** (`git branch --set-upstream-to=origin/<name>`)
 
 The stash section of the sidebar has its own menu: Apply, Pop, Rename, Drop.
 
@@ -272,7 +277,6 @@ Right-click on any file item (conflicts, unstaged, staged). Items are contextual
 
 ## Open Work
 
-- Branch context menu: Merge into current, Set upstream
 - HTTPS auth via go-keyring for push/pull on private repos (SSH agent already works)
 - A commit selected outside the loaded rows (a parent past the commit limit, an old tag, or one hidden by Find) shows
   only its files: CommitDetail has no row for its hash, subject and parent links

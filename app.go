@@ -262,6 +262,18 @@ func (a *App) RenameBranch(repoPath, oldName, newName string) error {
 	return gitcli.RenameBranch(repoPath, oldName, newName)
 }
 
+func (a *App) MergeBranch(repoPath, branch string) (repo.MergeResult, error) {
+	return a.manager.MergeBranch(repoPath, branch)
+}
+
+func (a *App) SetUpstream(repoPath, branch, upstream string) error {
+	return gitcli.SetUpstream(repoPath, branch, upstream)
+}
+
+func (a *App) UnsetUpstream(repoPath, branch string) error {
+	return gitcli.UnsetUpstream(repoPath, branch)
+}
+
 func (a *App) ListWorktrees(repoPath string) ([]repo.WorktreeInfo, error) {
 	return a.manager.ListWorktrees(repoPath)
 }

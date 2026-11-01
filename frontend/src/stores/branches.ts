@@ -17,6 +17,7 @@ export interface BranchInfo {
   isCurrent: boolean;
   hash: string;
   worktree: string;
+  upstream: string;
 }
 
 export interface TagInfo {

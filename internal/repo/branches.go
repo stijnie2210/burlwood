@@ -15,6 +15,7 @@ type BranchInfo struct {
 	IsCurrent bool   `json:"isCurrent"`
 	Hash      string `json:"hash"`
 	Worktree  string `json:"worktree"` // another worktree that has this branch checked out
+	Upstream  string `json:"upstream"` // e.g. "origin/main" — empty when it tracks nothing
 }
 
 type AheadBehind struct {
@@ -68,7 +69,10 @@ func (m *Manager) ListBranches(repoPath string) ([]BranchInfo, error) {
 		switch {
 		case strings.HasPrefix(refname, "refs/heads/"):
 			name := strings.TrimPrefix(refname, "refs/heads/")
-			var worktree string
+			var upstream, worktree string
+			if len(parts) >= 3 {
+				upstream = parts[2]
+			}
 			if len(parts) == 4 && parts[3] != "" && !samePath(parts[3], repoPath) {
 				worktree = filepath.FromSlash(parts[3])
 			}
@@ -78,6 +82,7 @@ func (m *Manager) ListBranches(repoPath string) ([]BranchInfo, error) {
 				IsCurrent: name == currentBranch,
 				Hash:      hash,
 				Worktree:  worktree,
+				Upstream:  upstream,
 			})
 		case strings.HasPrefix(refname, "refs/remotes/"):
 			short := strings.TrimPrefix(refname, "refs/remotes/")
