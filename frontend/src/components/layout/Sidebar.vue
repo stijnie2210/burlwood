@@ -1775,7 +1775,7 @@ async function confirmStashRename() {
             >
               Remove
             </button>
-            <button class="ctx-menu-btn" @click="closeWtCtxMenu()">Cancel</button>
+            <button class="ctx-menu-btn" data-autofocus @click="closeWtCtxMenu()">Cancel</button>
           </div>
         </div>
       </template>
@@ -1790,7 +1790,9 @@ async function confirmStashRename() {
             <button class="ctx-menu-btn ctx-menu-btn-danger" @click="confirmRemoveWorktree(true)">
               Force remove
             </button>
-            <button class="ctx-menu-btn" @click="closeWtCtxMenu()">Keep worktree</button>
+            <button class="ctx-menu-btn" data-autofocus @click="closeWtCtxMenu()">
+              Keep worktree
+            </button>
           </div>
         </div>
       </template>
@@ -1852,7 +1854,7 @@ async function confirmStashRename() {
             <button class="ctx-menu-btn ctx-menu-btn-danger" @click="confirmStashDrop()">
               Drop
             </button>
-            <button class="ctx-menu-btn" @click="closeStashCtxMenu()">Cancel</button>
+            <button class="ctx-menu-btn" data-autofocus @click="closeStashCtxMenu()">Cancel</button>
           </div>
         </div>
       </template>

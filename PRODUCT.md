@@ -32,8 +32,8 @@ Native macOS feel, plain-language errors and undo are part of the product, but t
 
 ## Capabilities and Constraints
 
-- **Built:** commit graph with branch lanes, refs, tags and stashes; commit actions (checkout, branch, tag, revert, soft/mixed/hard reset with undo for hard reset); working tree staging per file or hunk, discard with undo; commit and amend with a warning before rewriting pushed commits; branch switch, rename, delete, push, rebase; stashes; merge and rebase conflict resolution (diff3/zdiff3 aware); fetch, pull with autostash, push with automatic upstream and force-with-lease on rejection; git errors rewritten as a sentence with a next step.
-- **Not built yet:** merge into current branch, set upstream, HTTPS authentication for private repositories (SSH via the agent works).
+- **Built:** commit graph with branch lanes, refs, tags and stashes; commit actions (checkout, branch, tag, revert, soft/mixed/hard reset with undo for hard reset); working tree staging per file or hunk, discard with undo; commit and amend with a warning before rewriting pushed commits; branch switch, rename, delete with undo, push, set upstream, merge into the current branch, rebase with a warning before rewriting pushed commits; stashes; merge and rebase conflict resolution (diff3/zdiff3 aware); fetch, pull with autostash, push with automatic upstream and force-with-lease on rejection; git errors rewritten as a sentence with a next step.
+- **Not built yet:** HTTPS authentication for private repositories (SSH via the agent works).
 - **Requires** git installed and on the user's PATH.
 - **macOS is the target.** Linux (AppImage) and Windows (zip) builds ship because Wails makes them cheap; they are best-effort and design and testing aim at macOS.
 - The macOS build is not signed with an Apple Developer ID; users clear the quarantine flag once.
