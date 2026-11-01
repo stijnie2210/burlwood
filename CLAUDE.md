@@ -148,7 +148,8 @@ frontend/src/
   utils/
     gitErrors.ts                    describeGitError: raw git stderr → sentence + next step (toast.error uses it; raw text under Details)
     conflicts.ts                    parseConflicts (see Conflict resolution flow)
-    highlight.ts                    Prism syntax highlighting for diff lines
+    highlight.ts                    Prism tokens for a diff line as segments (text + nested token classes), cut at the
+                                    changed-word range; never HTML strings
     imageUtils.ts                   isImageFile, imageDataUrl
     date.ts                         formatDate (relative | absolute, from prefs)
     diffRows.ts                     changedRanges (word-level change within a paired line), pairChanges, splitRows
@@ -198,6 +199,7 @@ frontend/src/
                                     Right-click context menu (teleported); image preview for image file types
     staging/HunkSelector.vue        Per-hunk Stage/Unstage buttons around diff/DiffLines
     diff/DiffLines.vue              Shared diff renderer: unified or split, wrap, changed-word highlight
+    diff/CodeLine.ts                Renders one highlighted line as elements (no v-html: file contents stay text)
     diff/DiffLayoutControls.vue     Unified|Split + Wrap controls (composables/useDiffLayout.ts)
     staging/ConflictView.vue        Conflict resolution: parse markers → per-conflict Accept Ours/Theirs
 ```
@@ -296,8 +298,7 @@ Right-click on any file item (conflicts, unstaged, staged). Items are contextual
 - HTTPS auth via go-keyring for push/pull on private repos (SSH agent already works)
 - A commit selected outside the loaded rows (a parent past the commit limit, an old tag, or one hidden by Find) shows
   only its files: CommitDetail has no row for its hash, subject and parent links
-- Changed-word highlight (`utils/diffRows.ts`) works on UTF-16 units and ASCII word characters: an emoji can split,
-  and a mark inside a string literal breaks the syntax colours after it
+- Changed-word highlight (`utils/diffRows.ts`) works on UTF-16 units and ASCII word characters: an emoji can split
 - Copy hash gives no feedback when the clipboard write fails; select-by-hash and copy-hash each exist twice
   (CommitGraph/CommitDetail, Sidebar selectTag/selectStash)
 - ListTags peels nested annotated tags one level only, and a tag that shares a branch's name shows as `tags/<name>`
