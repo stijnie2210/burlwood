@@ -42,6 +42,16 @@ const RULES: Rule[] = [
     message: () => 'That worktree is locked. Run git worktree unlock on it first.',
   },
   {
+    test: /'([^']+)' is not a valid branch name/i,
+    message: (m) =>
+      `"${m[1]}" isn't a valid branch name. Leave out spaces and the characters ~ ^ : ? * [ \\.`,
+  },
+  {
+    test: /a branch named '([^']+)' already exists/i,
+    message: (m) =>
+      `A branch named ${m[1]} already exists. Pick another name, or check out that branch.`,
+  },
+  {
     test: /has no upstream branch|no upstream configured/i,
     message: () => "This branch doesn't track a remote branch yet. Push it once to set one.",
   },

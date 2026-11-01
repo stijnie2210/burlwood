@@ -2,6 +2,22 @@ import { describe, it, expect } from 'vitest';
 import { describeGitError } from './gitErrors';
 
 describe('describeGitError', () => {
+  it('explains an invalid branch name instead of calling it missing', () => {
+    const r = describeGitError(
+      "git exited 128: fatal: 'foo bar' is not a valid branch name\nhint: See 'git help check-ref-format'"
+    );
+    expect(r.message).toBe(
+      '"foo bar" isn\'t a valid branch name. Leave out spaces and the characters ~ ^ : ? * [ \\.'
+    );
+  });
+
+  it('names a branch that already exists', () => {
+    const r = describeGitError("git exited 128: fatal: a branch named 'feature' already exists");
+    expect(r.message).toBe(
+      'A branch named feature already exists. Pick another name, or check out that branch.'
+    );
+  });
+
   it('translates a missing upstream', () => {
     const r = describeGitError(
       'git exited 128: fatal: The current branch feature has no upstream branch.'

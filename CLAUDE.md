@@ -109,7 +109,8 @@ internal/repo/
     windowprefs.go                  open tabs + active tab, window frame — JSON files next to repos.json
   configdir.go                      configPath(): the settings folder; moves the pre-rename `gitgood` folder once
   branches.go                       ListBranches (for-each-ref), GetAheadBehind; BranchInfo.worktree names another
-                                    worktree that has the branch checked out (%(worktreepath)), .upstream its tracked branch
+                                    worktree that has the branch checked out (%(worktreepath)), .upstream its tracked branch;
+                                    DeleteBranch returns name/hash/upstream so RestoreBranch can undo it
   merge.go                          MergeBranch: outcome (up-to-date / fast-forward / merged) from HEAD before and after,
                                     not git's (translated) output; a conflict returns an error and leaves MERGE_HEAD
   worktrees.go                      ListWorktrees (git worktree list --porcelain): main first, isCurrent per repoPath
@@ -119,10 +120,13 @@ internal/repo/
   diff.go                           GetStatus (git status --porcelain), GetWorkingDiff
                                     parseUnifiedDiff() — parses git diff output → []FileDiff
   checkout.go                       SwitchBranch: plain checkout; if local changes block it, stash → checkout → pop,
-                                    returning the conflicted files when the pop conflicts
+                                    returning the conflicted files when the pop conflicts. CheckoutRemoteBranch: origin/x
+                                    switches to an existing local x (fast-forwarded when it tracks origin/x and is behind),
+                                    else creates a tracking branch
   pull.go                           PullBranch with autostash; a conflicted pull leaves the stash pending and
                                     SyncAutostash pops/drops it once the merge/rebase concludes (phase re-derived on restart)
-  rebase.go                         IsInRebase, GetRebaseState (step/total), Start/Continue/AbortRebase
+  rebase.go                         IsInRebase, GetRebaseState (step/total), Start/Continue/AbortRebase;
+                                    PreviewRebase counts pushed commits a rebase would rewrite; StartRebase reports up-to-date
   conflict.go                       IsInMerge, GetMergeMessage, GetConflictContent, ResolveConflict, AbortMerge
   stash.go                          stash list/apply/pop/drop/rename
   staging.go                        StageHunk/UnstageHunk (accept patch string from frontend), UndoDiscard,
@@ -256,15 +260,23 @@ All context menus are teleported to `<body>` to escape overflow clipping. Positi
 - Global `.ctx-menu` / `.ctx-menu-item` / `.ctx-menu-divider` styles live in an unscoped `<style>` block in `Sidebar.vue`
 
 ### Branch context menu (`Sidebar.vue` + `internal/gitcli/branches.go`)
-- **Delete**: `git branch -d <name>`; on failure offer force-delete (`-D`) via confirmation
-- **Rename**: `git branch -m <old> <new>`; name input via inline prompt
+- **Check out**: local branches switch; on a remote branch the label says what happens ("Check out x" when a local x
+  exists, else "Check out as new local branch") → `CheckoutRemoteBranch`
+- **Delete…**: confirm (Cancel focused), `git branch -d`; when it isn't merged, a force-delete step (Keep branch focused)
+  naming the base git checked (the upstream, else the current branch). Both end in an Undo toast (`RestoreBranch`)
+- **Rename…**: `git branch -m <old> <new>`; a failure keeps the menu open with the error under the field
 - **Copy name**: `navigator.clipboard.writeText()`
 - **Push**: `pushWithFeedback` (`composables/usePush.ts`) → `PushBranch` in `internal/gitcli/push.go`
 - **Set / Change upstream…** (local only): `upstream` mode lists remote branches (same name first) behind a filter
   input; `git branch --set-upstream-to`, or Stop tracking (`--unset-upstream`)
 - **Merge into <current>**: `MergeBranch`; disabled while a merge or rebase is in progress. A conflict leaves the
   merge in progress, so the Working Tree's merge banner, ConflictView and MERGE_MSG summary take over
-- **Rebase onto X**: `StartRebase`
+- **Rebase <current> onto X**: hidden on the current branch; `PreviewRebase` first, and a `confirm-rebase` step when it
+  would rewrite commits already on the upstream (Cancel focused); then `StartRebase`
+- Unavailable items (Merge/Rebase mid-merge or rebase, Delete on the current or a worktree's branch) use `aria-disabled`,
+  stay reachable by arrow keys and show their reason as a second line. The menu is `role="menu"` named by its header;
+  input and confirm modes switch it to `role="dialog"` described by their text (`#branch-menu-desc`).
+  `keepFocusInMenu` focuses a `[data-autofocus]` button first: put it on the safe button of a destructive step
 
 The stash section of the sidebar has its own menu: Apply, Pop, Rename, Drop.
 

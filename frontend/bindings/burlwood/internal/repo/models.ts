@@ -53,6 +53,12 @@ export interface ConflictContent {
     "working": string;
 }
 
+export interface DeletedBranch {
+    "name": string;
+    "hash": string;
+    "upstream": string;
+}
+
 export interface FileDiff {
     "oldPath": string;
     "newPath": string;
@@ -115,6 +121,15 @@ export enum MergeOutcome {
 
 export interface MergeResult {
     "outcome": MergeOutcome;
+}
+
+export interface RebasePreview {
+    "upstream": string;
+    "pushedCommits": number;
+}
+
+export interface RebaseResult {
+    "upToDate": boolean;
 }
 
 export interface RebaseState {

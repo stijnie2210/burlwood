@@ -234,6 +234,10 @@ func (a *App) SwitchBranch(repoPath, target string, trackRemote bool) (repo.Swit
 	return a.manager.SwitchBranch(repoPath, target, trackRemote)
 }
 
+func (a *App) CheckoutRemoteBranch(repoPath, remote, name string) (repo.SwitchResult, error) {
+	return a.manager.CheckoutRemoteBranch(repoPath, remote, name)
+}
+
 func (a *App) IsInRebase(repoPath string) (bool, error) {
 	return a.manager.IsInRebase(repoPath)
 }
@@ -242,7 +246,11 @@ func (a *App) GetRebaseState(repoPath string) (repo.RebaseState, error) {
 	return a.manager.GetRebaseState(repoPath)
 }
 
-func (a *App) StartRebase(repoPath, onto string) error {
+func (a *App) PreviewRebase(repoPath, onto string) (repo.RebasePreview, error) {
+	return a.manager.PreviewRebase(repoPath, onto)
+}
+
+func (a *App) StartRebase(repoPath, onto string) (repo.RebaseResult, error) {
 	return a.manager.StartRebase(repoPath, onto)
 }
 
@@ -254,8 +262,12 @@ func (a *App) AbortRebase(repoPath string) error {
 	return a.manager.AbortRebase(repoPath)
 }
 
-func (a *App) DeleteBranch(repoPath, name string, force bool) error {
-	return gitcli.DeleteBranch(repoPath, name, force)
+func (a *App) DeleteBranch(repoPath, name string, force bool) (repo.DeletedBranch, error) {
+	return a.manager.DeleteBranch(repoPath, name, force)
+}
+
+func (a *App) RestoreBranch(repoPath string, branch repo.DeletedBranch) error {
+	return a.manager.RestoreBranch(repoPath, branch)
 }
 
 func (a *App) RenameBranch(repoPath, oldName, newName string) error {

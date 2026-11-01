@@ -104,3 +104,46 @@ func (m *Manager) ListBranches(repoPath string) ([]BranchInfo, error) {
 
 	return branches, nil
 }
+
+type DeletedBranch struct {
+	Name     string `json:"name"`
+	Hash     string `json:"hash"`
+	Upstream string `json:"upstream"`
+}
+
+// git branch -d drops the branch's upstream config with it, so Undo needs the upstream too.
+func (m *Manager) DeleteBranch(repoPath, name string, force bool) (DeletedBranch, error) {
+	if _, err := m.Get(repoPath); err != nil {
+		return DeletedBranch{}, err
+	}
+	deleted := DeletedBranch{
+		Name:     name,
+		Hash:     revParse(repoPath, "refs/heads/"+name),
+		Upstream: upstreamOf(repoPath, name),
+	}
+	if err := gitcli.DeleteBranch(repoPath, name, force); err != nil {
+		return DeletedBranch{}, err
+	}
+	return deleted, nil
+}
+
+func (m *Manager) RestoreBranch(repoPath string, b DeletedBranch) error {
+	if _, err := m.Get(repoPath); err != nil {
+		return err
+	}
+	if _, err := gitcli.Run(repoPath, "branch", b.Name, b.Hash); err != nil {
+		return err
+	}
+	if b.Upstream != "" {
+		_ = gitcli.SetUpstream(repoPath, b.Name, b.Upstream)
+	}
+	return nil
+}
+
+func upstreamOf(repoPath, branch string) string {
+	out, err := gitcli.Run(repoPath, "rev-parse", "--abbrev-ref", "--symbolic-full-name", branch+"@{upstream}")
+	if err != nil {
+		return ""
+	}
+	return strings.TrimSpace(out.Stdout)
+}
