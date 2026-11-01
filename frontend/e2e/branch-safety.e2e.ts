@@ -1,5 +1,7 @@
 import { test, expect, type Sandbox } from './harness';
 import type { Page } from '@playwright/test';
+import { existsSync, writeFileSync } from 'node:fs';
+import { join } from 'node:path';
 
 function localBranch(page: Page, name: string) {
   return page.locator('[data-list="local"]').filter({ hasText: new RegExp(`^\\s*${name}(\\s|$)`) });
@@ -239,6 +241,25 @@ test.describe('Check out a remote branch', () => {
       'origin/feature'
     );
   });
+
+  test('says how a diverged local branch differs instead of moving it', async ({
+    sandbox,
+    launch,
+  }) => {
+    const repo = repoWithBehindFeature(sandbox);
+    sandbox.git(repo, 'checkout', '-q', 'feature');
+    sandbox.commit(repo, 'mine.txt', 'mine\n', 'local work');
+    const local = sandbox.git(repo, 'rev-parse', 'HEAD');
+    sandbox.git(repo, 'checkout', '-q', 'main');
+    const page = await launch([repo]);
+
+    const menu = await openMenu(page, remoteBranch(page, 'feature'));
+    await item(menu, 'Check out feature').click();
+    await expect(toast(page)).toContainText(
+      "Switched to feature. It has 1 commit that origin/feature doesn't, and is 1 behind it. Pull to bring those in."
+    );
+    expect(sandbox.git(repo, 'rev-parse', 'HEAD')).toBe(local);
+  });
 });
 
 test.describe('Rename and semantics', () => {
@@ -279,5 +300,44 @@ test.describe('Rename and semantics', () => {
     const menu = page.getByRole('menu', { name: 'feature' });
     await expect(menu).toBeVisible();
     await expect(menu.getByRole('separator')).toHaveCount(1);
+  });
+});
+
+test.describe('Other destructive confirmations focus the safe button', () => {
+  test('dropping a stash focuses Cancel', async ({ sandbox, launch }) => {
+    const repo = sandbox.repo();
+    writeFileSync(join(repo, 'README.md'), 'changed\n');
+    sandbox.git(repo, 'stash', 'push', '-q', '-m', 'wip');
+    const page = await launch([repo]);
+
+    await page.locator('[data-list="stash"]').first().click({ button: 'right' });
+    await page.getByRole('menuitem', { name: 'Drop' }).click();
+    await expect(page.locator('.ctx-menu').getByRole('button', { name: 'Cancel' })).toBeFocused();
+    await page.keyboard.press('Enter');
+    expect(sandbox.git(repo, 'stash', 'list')).toContain('wip');
+  });
+
+  test('removing a worktree focuses Cancel, and the force step focuses Keep worktree', async ({
+    sandbox,
+    launch,
+  }) => {
+    const repo = sandbox.repo();
+    const wt = join(sandbox.home, 'wt-review');
+    sandbox.git(repo, 'worktree', 'add', '-q', '-b', 'review', wt);
+    writeFileSync(join(wt, 'scratch.txt'), 'unsaved\n');
+    const page = await launch([repo]);
+
+    await page
+      .locator('[data-list="worktree"]')
+      .filter({ hasText: 'wt-review' })
+      .click({ button: 'right' });
+    await page.getByRole('menuitem', { name: 'Remove…' }).click();
+    const menu = page.locator('.ctx-menu');
+    await expect(menu.getByRole('button', { name: 'Cancel' })).toBeFocused();
+
+    await menu.getByRole('button', { name: 'Remove', exact: true }).click();
+    await expect(menu.getByRole('button', { name: 'Keep worktree' })).toBeFocused();
+    await page.keyboard.press('Enter');
+    expect(existsSync(wt)).toBe(true);
   });
 });

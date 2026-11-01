@@ -152,7 +152,7 @@ func TestCheckoutRemoteBranch(t *testing.T) {
 	}
 }
 
-func TestCheckoutRemoteBranch_LeavesDivergedLocalAlone(t *testing.T) {
+func TestCheckoutRemoteBranch_SaysHowALocalBranchItCantMoveDiffers(t *testing.T) {
 	dir, m := repoWithOrigin(t)
 	gitIn(t, dir, "checkout", "-q", "-b", "feature")
 	gitIn(t, dir, "push", "-q", "-u", "origin", "feature")
@@ -160,10 +160,57 @@ func TestCheckoutRemoteBranch_LeavesDivergedLocalAlone(t *testing.T) {
 	local := revParse(dir, "HEAD")
 	gitIn(t, dir, "checkout", "-q", "main")
 
-	if _, err := m.CheckoutRemoteBranch(dir, "origin", "feature"); err != nil {
+	res, err := m.CheckoutRemoteBranch(dir, "origin", "feature")
+	if err != nil {
 		t.Fatal(err)
 	}
 	if revParse(dir, "HEAD") != local {
 		t.Fatal("a local branch ahead of its remote must not move")
+	}
+	if want := "Switched to feature. It has 1 commit that origin/feature doesn't."; res.Message != want {
+		t.Fatalf("ahead: got %q, want %q", res.Message, want)
+	}
+
+	gitIn(t, dir, "checkout", "-q", "-b", "elsewhere", "origin/feature")
+	commitIn(t, dir, "r1.txt", "remote one")
+	commitIn(t, dir, "r2.txt", "remote two")
+	gitIn(t, dir, "push", "-q", "origin", "HEAD:feature")
+	gitIn(t, dir, "checkout", "-q", "main")
+
+	res, err = m.CheckoutRemoteBranch(dir, "origin", "feature")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if revParse(dir, "HEAD") != local {
+		t.Fatal("a diverged local branch must not move")
+	}
+	want := "Switched to feature. It has 1 commit that origin/feature doesn't, and is 2 behind it. Pull to bring those in."
+	if res.Message != want {
+		t.Fatalf("diverged: got %q, want %q", res.Message, want)
+	}
+}
+
+func TestCheckoutRemoteBranch_NamesWhatTheLocalBranchTracksInstead(t *testing.T) {
+	dir, m := repoWithOrigin(t)
+	gitIn(t, dir, "checkout", "-q", "-b", "feature")
+	gitIn(t, dir, "push", "-q", "origin", "feature")
+	gitIn(t, dir, "checkout", "-q", "main")
+
+	res, err := m.CheckoutRemoteBranch(dir, "origin", "feature")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if want := "Switched to feature. It doesn't track origin/feature."; res.Message != want {
+		t.Fatalf("no upstream: got %q, want %q", res.Message, want)
+	}
+
+	gitIn(t, dir, "branch", "-q", "--set-upstream-to=origin/main", "feature")
+	gitIn(t, dir, "checkout", "-q", "main")
+	res, err = m.CheckoutRemoteBranch(dir, "origin", "feature")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if want := "Switched to feature. It tracks origin/main, not origin/feature."; res.Message != want {
+		t.Fatalf("other upstream: got %q, want %q", res.Message, want)
 	}
 }

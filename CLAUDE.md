@@ -121,7 +121,8 @@ internal/repo/
                                     parseUnifiedDiff() — parses git diff output → []FileDiff
   checkout.go                       SwitchBranch: plain checkout; if local changes block it, stash → checkout → pop,
                                     returning the conflicted files when the pop conflicts. CheckoutRemoteBranch: origin/x
-                                    switches to an existing local x (fast-forwarded when it tracks origin/x and is behind),
+                                    switches to an existing local x (fast-forwarded when it tracks origin/x and is behind;
+                                    otherwise the message says how x differs: ahead, diverged, or tracking something else),
                                     else creates a tracking branch
   pull.go                           PullBranch with autostash; a conflicted pull leaves the stash pending and
                                     SyncAutostash pops/drops it once the merge/rebase concludes (phase re-derived on restart)
