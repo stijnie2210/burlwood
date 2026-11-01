@@ -21,7 +21,6 @@ func (m *Manager) GetCommitGraph(repoPath string, limit int) ([]graph.GraphRow, 
 	return getCommitGraphShell(repoPath, limit)
 }
 
-
 func getCommitGraphShell(repoPath string, limit int) ([]graph.GraphRow, error) {
 	labelMap := buildLabelMapShell(repoPath)
 	stashWIP, stashInternal := getStashGraph(repoPath)
@@ -188,11 +187,10 @@ func buildLabelMapShell(repoPath string) map[string][]graph.Label {
 	return labelMap
 }
 
-
 const diffContextLines = 3
 
 type HunkLine struct {
-	Type    string `json:"type"`    // "add", "del", "context"
+	Type    string `json:"type"` // "add", "del", "context"
 	Content string `json:"content"`
 	OldLine int    `json:"oldLine"` // 0 for added lines
 	NewLine int    `json:"newLine"` // 0 for deleted lines
@@ -216,7 +214,6 @@ func (m *Manager) GetCommitDiff(repoPath, hash string) ([]FileDiff, error) {
 	}
 	return getCommitDiffShell(repoPath, hash)
 }
-
 
 func getCommitDiffShell(repoPath, hash string) ([]FileDiff, error) {
 	prefs, _ := LoadPrefs()

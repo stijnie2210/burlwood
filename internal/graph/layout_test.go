@@ -80,9 +80,9 @@ func TestBuildGraph_LinearChain(t *testing.T) {
 
 // Two branches diverging from the same parent:
 //
-//	* A (col 0, parent C)
-//	* B (col 1, parent C — opens new lane)
-//	* C (col 0, root)
+//   - A (col 0, parent C)
+//   - B (col 1, parent C — opens new lane)
+//   - C (col 0, root)
 func TestBuildGraph_DivergingBranches(t *testing.T) {
 	commits := []CommitNode{
 		node("aaaaaaa", "ccccccc"),
@@ -119,9 +119,9 @@ func TestBuildGraph_DivergingBranches(t *testing.T) {
 
 // Merge commit with two parents:
 //
-//	* C (merge, parents=[A,B])
-//	* A
-//	* B
+//   - C (merge, parents=[A,B])
+//   - A
+//   - B
 func TestBuildGraph_MergeCommit(t *testing.T) {
 	commits := []CommitNode{
 		node("ccccccc", "aaaaaaa", "bbbbbbb"),
@@ -144,10 +144,10 @@ func TestBuildGraph_MergeCommit(t *testing.T) {
 
 // Lane reuse: after a branch closes its lane, the slot should be reused.
 //
-//	* D (col 0, parent C)
-//	* B (col 1, no parent — branch tip)
-//	* C (col 0, parent A)
-//	* A (col 0, root)
+//   - D (col 0, parent C)
+//   - B (col 1, no parent — branch tip)
+//   - C (col 0, parent A)
+//   - A (col 0, root)
 func TestBuildGraph_LaneReuse(t *testing.T) {
 	commits := []CommitNode{
 		node("ddddddd", "ccccccc"),

@@ -10,7 +10,7 @@ import (
 
 type FileStatus struct {
 	Path     string `json:"path"`
-	OldPath  string `json:"oldPath"` // non-empty for renames
+	OldPath  string `json:"oldPath"`  // non-empty for renames
 	Staged   string `json:"staged"`   // X code: ' ', 'M', 'A', 'D', 'R', '?'
 	Unstaged string `json:"unstaged"` // Y code: ' ', 'M', 'D', '?'
 }

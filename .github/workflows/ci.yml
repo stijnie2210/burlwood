@@ -18,8 +18,12 @@ jobs:
         run: go test ./internal/...
       - name: Vet
         run: go vet ./internal/...
+      # gofmt -l exits 0 even when it lists files; failing the step makes them show up in the run.
       - name: Format
-        run: gofmt -l .
+        run: |
+          files=$(gofmt -l .)
+          for f in $files; do echo "::warning file=$f::gofmt would reformat this file"; done
+          test -z "$files"
         continue-on-error: true
 
   frontend-checks:
