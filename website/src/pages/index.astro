@@ -109,11 +109,9 @@ const installKnots = [
   </header>
 
   <main>
-    <section class="leaf" id="trailer" aria-labelledby="trailer-title">
+    <section class="leaf" id="trailer" aria-label="Trailer">
       <span class="stamp leaf-stamp" aria-hidden="true">LEAF 02</span>
       <div class="leaf-inner">
-        <h2 id="trailer-title">See it move.</h2>
-        <p class="leaf-intro">Twenty seconds of the graph and a merge. Sound on.</p>
         <figure class="frame frame-trailer">
           <video
             controls
@@ -122,6 +120,7 @@ const installKnots = [
             poster="/trailer/poster.webp"
             width="1280"
             height="720"
+            aria-label="Burlwood trailer"
             aria-describedby="trailer-description"
           >
             <source src="/trailer/burlwood-trailer.mp4" type="video/mp4" />
@@ -847,5 +846,34 @@ sudo pacman -S webkitgtk-6.0</code></pre>
         label.textContent = 'Copy';
       }, 2000);
     });
+  }
+
+  const trailer = document.querySelector<HTMLVideoElement>('#trailer video');
+  const calm = window.matchMedia('(prefers-reduced-motion: reduce)');
+  // Browsers only autoplay muted video; the controls let a visitor turn the sound on.
+  if (trailer && !calm.matches && 'IntersectionObserver' in window) {
+    trailer.muted = true;
+    trailer.loop = true;
+    let scrolledAway = false;
+    let stoppedByVisitor = false;
+    trailer.addEventListener('pause', () => {
+      if (!scrolledAway) {
+        stoppedByVisitor = true;
+      }
+    });
+    new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          scrolledAway = false;
+          if (!stoppedByVisitor) {
+            trailer.play().catch(() => {});
+          }
+        } else if (!trailer.paused) {
+          scrolledAway = true;
+          trailer.pause();
+        }
+      },
+      { threshold: 0.5 }
+    ).observe(trailer);
   }
 </script>
