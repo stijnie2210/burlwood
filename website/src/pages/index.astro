@@ -109,8 +109,33 @@ const installKnots = [
   </header>
 
   <main>
-    <section class="leaf" id="history" aria-labelledby="history-title">
+    <section class="leaf" id="trailer" aria-label="Trailer">
       <span class="stamp leaf-stamp" aria-hidden="true">LEAF 02</span>
+      <div class="leaf-inner">
+        <figure class="frame frame-trailer">
+          <video
+            controls
+            playsinline
+            preload="none"
+            poster="/trailer/poster.webp"
+            width="1280"
+            height="720"
+            aria-label="Burlwood trailer"
+            aria-describedby="trailer-description"
+          >
+            <source src="/trailer/burlwood-trailer.mp4" type="video/mp4" />
+          </video>
+          <p class="sr-only" id="trailer-description">
+            The burlwood wordmark splits around a wood knot, which becomes the commit graph's current commit. Commits
+            and branch lanes fill the window. Then a branch's menu opens in the sidebar, Merge into main is chosen,
+            the merge commit appears at the top and a message confirms it. Music, no speech.
+          </p>
+        </figure>
+      </div>
+    </section>
+
+    <section class="leaf" id="history" aria-labelledby="history-title">
+      <span class="stamp leaf-stamp" aria-hidden="true">LEAF 03</span>
       <div class="leaf-grid">
         <div class="leaf-copy">
           <h2 id="history-title">Read the history.</h2>
@@ -132,7 +157,7 @@ const installKnots = [
     </section>
 
     <section class="leaf" id="working-tree" aria-labelledby="working-tree-title">
-      <span class="stamp leaf-stamp" aria-hidden="true">LEAF 03</span>
+      <span class="stamp leaf-stamp" aria-hidden="true">LEAF 04</span>
       <div class="leaf-grid leaf-grid-top">
         <h2 id="working-tree-title">Shape the commit.</h2>
         <div class="leaf-copy">
@@ -160,7 +185,7 @@ const installKnots = [
     </section>
 
     <section class="leaf" id="features" aria-labelledby="features-title">
-      <span class="stamp leaf-stamp" aria-hidden="true">LEAF 04</span>
+      <span class="stamp leaf-stamp" aria-hidden="true">LEAF 05</span>
       <div class="leaf-inner">
         <h2 id="features-title">The cutting list.</h2>
         <p class="leaf-intro">Everything else in the box, as plain as git itself.</p>
@@ -191,7 +216,7 @@ const installKnots = [
 
     <section class="veneer" id="install" aria-labelledby="install-title">
       <Grain class="install-grain" width={1600} height={1000} knots={installKnots} gap={64} />
-      <span class="stamp leaf-stamp" aria-hidden="true">LEAF 05</span>
+      <span class="stamp leaf-stamp" aria-hidden="true">LEAF 06</span>
       <div class="leaf-inner">
         <h2 id="install-title">Take a leaf.</h2>
         <p class="leaf-intro">
@@ -478,6 +503,14 @@ sudo pacman -S webkitgtk-6.0</code></pre>
 
   .frame picture {
     display: block;
+  }
+
+  .frame-trailer video {
+    display: block;
+    width: 100%;
+    height: auto;
+    aspect-ratio: 16 / 9;
+    background: var(--heartwood);
   }
 
   .leaf-inner {
@@ -813,5 +846,34 @@ sudo pacman -S webkitgtk-6.0</code></pre>
         label.textContent = 'Copy';
       }, 2000);
     });
+  }
+
+  const trailer = document.querySelector<HTMLVideoElement>('#trailer video');
+  const calm = window.matchMedia('(prefers-reduced-motion: reduce)');
+  // Browsers only autoplay muted video; the controls let a visitor turn the sound on.
+  if (trailer && !calm.matches && 'IntersectionObserver' in window) {
+    trailer.muted = true;
+    trailer.loop = true;
+    let scrolledAway = false;
+    let stoppedByVisitor = false;
+    trailer.addEventListener('pause', () => {
+      if (!scrolledAway) {
+        stoppedByVisitor = true;
+      }
+    });
+    new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          scrolledAway = false;
+          if (!stoppedByVisitor) {
+            trailer.play().catch(() => {});
+          }
+        } else if (!trailer.paused) {
+          scrolledAway = true;
+          trailer.pause();
+        }
+      },
+      { threshold: 0.5 }
+    ).observe(trailer);
   }
 </script>
