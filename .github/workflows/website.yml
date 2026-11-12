@@ -1,0 +1,38 @@
+name: Website image
+
+on:
+  push:
+    branches: [main]
+    paths: ['website/**', '.github/workflows/website.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  image:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - name: Short SHA
+        id: sha
+        run: echo "short=${GITHUB_SHA::7}" >> "$GITHUB_OUTPUT"
+      - uses: docker/setup-buildx-action@v4
+      - uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      # The VPS pins this SHA tag; there is deliberately no moving tag such as latest.
+      - uses: docker/build-push-action@v7
+        with:
+          context: website
+          platforms: linux/amd64
+          push: true
+          tags: ghcr.io/stijnie2210/burlwood-site:${{ steps.sha.outputs.short }}
+          labels: org.opencontainers.image.source=https://github.com/${{ github.repository }}
+          # Shared runner IPs often hit the anonymous API rate limit, which would bake the fallback version into the page.
+          secrets: github_token=${{ secrets.GITHUB_TOKEN }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max

@@ -1,3 +1,5 @@
+declare const process: { env: Record<string, string | undefined> };
+
 export const repo = 'https://github.com/stijnie2210/burlwood';
 
 const fallbackVersion = 'v0.6.0';
@@ -13,7 +15,10 @@ export const downloads = {
 export async function latestVersion(): Promise<string> {
   try {
     const res = await fetch('https://api.github.com/repos/stijnie2210/burlwood/releases/latest', {
-      headers: { Accept: 'application/vnd.github+json' },
+      headers: {
+        Accept: 'application/vnd.github+json',
+        ...(process.env.GITHUB_TOKEN ? { Authorization: `Bearer ${process.env.GITHUB_TOKEN}` } : {}),
+      },
       signal: AbortSignal.timeout(4000),
     });
     if (!res.ok) {
