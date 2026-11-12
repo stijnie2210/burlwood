@@ -19,6 +19,8 @@ docker run --rm -p 8080:8080 burlwood-website
 docker compose up --build
 ```
 
+On every push to `main` that touches `website/`, `.github/workflows/website.yml` builds this image and pushes it as `ghcr.io/stijnie2210/burlwood-site:<short sha>`; the server pins one of those tags. Builds pass `GITHUB_TOKEN` as a build secret (optional locally) so the release lookup is not rate-limited.
+
 The build asks the GitHub API for the latest release tag and falls back to the version in `src/lib/release.ts` when it can't reach it. Download buttons point at `releases/latest/download/…`, so they follow new releases without a rebuild.
 
 The screenshots in `src/assets/` are copies and crops of `../assets/screenshots/`; retake those and recrop when the app changes.
