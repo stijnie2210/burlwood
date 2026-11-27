@@ -38,6 +38,7 @@ import {
   RestoreRemoteBranch,
   RenameBranch,
   DeleteTag,
+  PruneRemote,
   RestoreTag,
   PushTag,
   ApplyStash,
@@ -108,6 +109,66 @@ const remoteGroups = computed(() => {
 });
 
 const collapsedRemotes = ref<Record<string, boolean>>({});
+
+const remoteCtxMenu = ref<{ x: number; y: number; remote: string } | null>(null);
+const remoteCtxMenuEl = ref<HTMLElement | null>(null);
+
+async function openRemoteCtxMenu(e: MouseEvent, remote: string) {
+  e.preventDefault();
+  e.stopPropagation();
+  rememberMenuFocus();
+  remoteCtxMenu.value = { x: e.clientX, y: e.clientY, remote };
+  await nextTick();
+  const menu = remoteCtxMenuEl.value;
+  if (menu && remoteCtxMenu.value) {
+    const { x, y } = clampMenuPosition(menu, e.clientX, e.clientY);
+    remoteCtxMenu.value = { ...remoteCtxMenu.value, x, y };
+  }
+  focusFirstMenuItem(menu);
+}
+
+function closeRemoteCtxMenu() {
+  remoteCtxMenu.value = null;
+  restoreMenuFocus();
+}
+
+async function fetchRemote() {
+  const menu = remoteCtxMenu.value;
+  const repoPath = repos.activeRepo?.path;
+  closeRemoteCtxMenu();
+  if (!menu || !repoPath) {
+    return;
+  }
+  try {
+    await branches.fetchRemote(repoPath, menu.remote);
+    await commits.load(repoPath);
+    toast.success(`Fetched ${menu.remote}`);
+  } catch (e: unknown) {
+    toast.error(e);
+  }
+}
+
+async function pruneRemote() {
+  const menu = remoteCtxMenu.value;
+  const repoPath = repos.activeRepo?.path;
+  closeRemoteCtxMenu();
+  if (!menu || !repoPath) {
+    return;
+  }
+  try {
+    const pruned = (await PruneRemote(repoPath, menu.remote)) ?? [];
+    await Promise.all([branches.load(repoPath), commits.load(repoPath)]);
+    if (pruned.length === 0) {
+      toast.success(`Every branch under ${menu.remote} still exists there`);
+    } else if (pruned.length === 1) {
+      toast.success(`Removed ${menu.remote}/${pruned[0]}, which ${menu.remote} no longer has`);
+    } else {
+      toast.success(`Removed ${pruned.length} branches that ${menu.remote} no longer has`);
+    }
+  } catch (e: unknown) {
+    toast.error(e);
+  }
+}
 function remoteExpanded(remote: string): boolean {
   return branchFilter.value.trim() !== '' || !collapsedRemotes.value[remote];
 }
@@ -374,6 +435,9 @@ function onWindowMouseDown(e: MouseEvent) {
   }
   if (tagCtxMenuEl.value && !tagCtxMenuEl.value.contains(e.target as Node)) {
     closeTagCtxMenu();
+  }
+  if (remoteCtxMenuEl.value && !remoteCtxMenuEl.value.contains(e.target as Node)) {
+    closeRemoteCtxMenu();
   }
 }
 
@@ -1485,6 +1549,8 @@ async function confirmStashRename() {
               class="remote-group-toggle"
               :aria-expanded="remoteExpanded(g.remote)"
               @click="collapsedRemotes[g.remote] = !collapsedRemotes[g.remote]"
+              @keydown.shift.f10.prevent="openRemoteCtxMenu(menuEventFor($event), g.remote)"
+              @contextmenu="openRemoteCtxMenu($event, g.remote)"
             >
               <svg
                 class="section-chevron"
@@ -2011,6 +2077,27 @@ async function confirmStashRename() {
           </div>
         </div>
       </template>
+    </div>
+  </Teleport>
+
+  <!-- Remote context menu -->
+  <Teleport to="body">
+    <div
+      v-if="remoteCtxMenu"
+      ref="remoteCtxMenuEl"
+      class="ctx-menu"
+      role="menu"
+      aria-labelledby="remote-menu-label"
+      :style="{ left: remoteCtxMenu.x + 'px', top: remoteCtxMenu.y + 'px' }"
+      @keydown="handleMenuKeydown($event, remoteCtxMenuEl, closeRemoteCtxMenu)"
+    >
+      <div id="remote-menu-label" class="ctx-menu-label">{{ remoteCtxMenu.remote }}</div>
+      <button role="menuitem" class="ctx-menu-item" @click="fetchRemote()">
+        Fetch {{ remoteCtxMenu.remote }}
+      </button>
+      <button role="menuitem" class="ctx-menu-item" @click="pruneRemote()">
+        Remove branches deleted on {{ remoteCtxMenu.remote }}
+      </button>
     </div>
   </Teleport>
 

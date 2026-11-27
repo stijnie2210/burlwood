@@ -1,7 +1,20 @@
 package gitcli
 
-func FetchAll(repoPath string) error {
-	_, err := Run(repoPath, "fetch", "--all")
+func FetchAll(repoPath string, prune bool) error {
+	args := []string{"fetch", "--all"}
+	if prune {
+		args = append(args, "--prune")
+	}
+	_, err := Run(repoPath, args...)
+	return err
+}
+
+func FetchRemote(repoPath, remote string, prune bool) error {
+	args := []string{"fetch", remote}
+	if prune {
+		args = append(args, "--prune")
+	}
+	_, err := Run(repoPath, args...)
 	return err
 }
 

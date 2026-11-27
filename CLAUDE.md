@@ -90,7 +90,7 @@ internal/gitcli/
   rebase.go                         StartRebase, ContinueRebase, AbortRebase
   staging.go                        StageFile, UnstageFile, StageFiles/UnstageFiles (one call, paths via stdin),
                                     ApplyPatch, ReverseApplyToWorkingTree, DiscardFile
-  remote.go                         FetchAll, Pull, PushTag/ForcePushTag, RemoteHasRef (ls-remote --exit-code), DeleteRemoteRef
+  remote.go                         FetchAll / FetchRemote (--prune per prefs), Pull, PushTag/ForcePushTag, RemoteHasRef (ls-remote --exit-code), DeleteRemoteRef
   push.go                           PushBranch(branch, force): upstream from config or -u on the default remote;
                                     non-fast-forward → Rejected result (not an error); force = --force-with-lease --force-if-includes
                                     (the bare lease is defeated by background auto-fetch)
@@ -105,7 +105,7 @@ internal/gitcli/
 internal/repo/
   manager.go                        Manager{map[string]*git.Repository}; Open/Close/Get
                                     RecentEntry → ~/Library/Application Support/burlwood/repos.json; ListRecentRepos drops repos that are gone
-  prefs.go / session.go /           AppPrefs (editor, auto-fetch, graph limit, diff context, date format, pull mode),
+  prefs.go / session.go /           AppPrefs (editor, auto-fetch, prune on fetch, graph limit, diff context, date format, pull mode),
     windowprefs.go                  open tabs + active tab, window frame — JSON files next to repos.json
   configdir.go                      configPath(): the settings folder; moves the pre-rename `gitgood` folder once
   branches.go                       ListBranches (for-each-ref), GetAheadBehind; BranchInfo.worktree names another
@@ -113,6 +113,7 @@ internal/repo/
                                     DeleteBranch returns name/hash/upstream so RestoreBranch can undo it
   merge.go                          MergeBranch: outcome (up-to-date / fast-forward / merged) from HEAD before and after,
                                     not git's (translated) output; a conflict returns an error and leaves MERGE_HEAD
+  remotes.go                        FetchRemote, PruneRemote (names from comparing refs before/after, not git's output)
   remote_branches.go                DeleteRemoteBranch (push --delete; a branch the remote no longer has only drops the stale
                                     remote-tracking ref), RestoreRemoteBranch pushes the old hash back for Undo
   worktrees.go                      ListWorktrees (git worktree list --porcelain): main first, isCurrent per repoPath
@@ -287,6 +288,8 @@ All context menus are teleported to `<body>` to escape overflow clipping. Positi
   `keepFocusInMenu` focuses a `[data-autofocus]` button first: put it on the safe button of a destructive step
 
 The stash section of the sidebar has its own menu: Apply, Pop, Rename, Drop.
+
+Right-clicking a remote's group header: Fetch <remote>, Remove branches deleted on <remote> (`git remote prune`).
 
 The tag menu: Push to origin, Copy tag name, Delete… (confirm, Cancel focused; "Also delete it from origin" when
 origin exists, off by default). Undo restores the local tag, annotated ones with their message.

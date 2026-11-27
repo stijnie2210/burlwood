@@ -146,6 +146,14 @@ func (a *App) FetchAll(repoPath string) error {
 	return a.manager.FetchAll(repoPath)
 }
 
+func (a *App) FetchRemote(repoPath, remote string) error {
+	return a.manager.FetchRemote(repoPath, remote)
+}
+
+func (a *App) PruneRemote(repoPath, remote string) ([]string, error) {
+	return a.manager.PruneRemote(repoPath, remote)
+}
+
 func (a *App) PullBranch(repoPath, mode string) error {
 	return a.manager.PullBranch(repoPath, mode)
 }

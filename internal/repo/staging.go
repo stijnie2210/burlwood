@@ -53,7 +53,8 @@ func (m *Manager) UnstageHunk(repoPath, patch string) error {
 }
 
 func (m *Manager) FetchAll(repoPath string) error {
-	return gitcli.FetchAll(repoPath)
+	prefs, _ := LoadPrefs()
+	return gitcli.FetchAll(repoPath, prefs.PruneOnFetch)
 }
 
 func (m *Manager) Stash(repoPath string) error {

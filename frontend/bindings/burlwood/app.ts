@@ -103,6 +103,10 @@ export function FetchAll(repoPath: string): $CancellablePromise<void> {
     return $Call.ByID(2996999182, repoPath);
 }
 
+export function FetchRemote(repoPath: string, remote: string): $CancellablePromise<void> {
+    return $Call.ByID(3221457841, repoPath, remote);
+}
+
 export function ForcePushTag(repoPath: string, tagName: string): $CancellablePromise<void> {
     return $Call.ByID(1385375208, repoPath, tagName);
 }
@@ -236,6 +240,10 @@ export function PopStash(repoPath: string, ref: string): $CancellablePromise<voi
 
 export function PreviewRebase(repoPath: string, onto: string): $CancellablePromise<repo$0.RebasePreview> {
     return $Call.ByID(1313725019, repoPath, onto);
+}
+
+export function PruneRemote(repoPath: string, remote: string): $CancellablePromise<string[] | null> {
+    return $Call.ByID(2956229421, repoPath, remote);
 }
 
 export function PruneWorktrees(repoPath: string): $CancellablePromise<void> {
