@@ -16,21 +16,42 @@ type ConflictContent struct {
 	Working string `json:"working"`
 }
 
-// also catches cherry-pick in progress
-func (m *Manager) IsInMerge(repoPath string) (bool, error) {
+type MergeKind string
+
+const (
+	MergeKindNone       MergeKind = ""
+	MergeKindMerge      MergeKind = "merge"
+	MergeKindCherryPick MergeKind = "cherry-pick"
+	MergeKindRevert     MergeKind = "revert"
+)
+
+func (m *Manager) GetMergeKind(repoPath string) (MergeKind, error) {
 	if _, err := m.Get(repoPath); err != nil {
-		return false, err
+		return MergeKindNone, err
 	}
 	gitDir, err := getGitDir(repoPath)
 	if err != nil {
-		return false, nil
+		return MergeKindNone, nil
 	}
-	for _, marker := range []string{"MERGE_HEAD", "CHERRY_PICK_HEAD"} {
-		if _, err := os.Stat(filepath.Join(gitDir, marker)); err == nil {
-			return true, nil
+	markers := []struct {
+		file string
+		kind MergeKind
+	}{
+		{"MERGE_HEAD", MergeKindMerge},
+		{"CHERRY_PICK_HEAD", MergeKindCherryPick},
+		{"REVERT_HEAD", MergeKindRevert},
+	}
+	for _, mk := range markers {
+		if _, err := os.Stat(filepath.Join(gitDir, mk.file)); err == nil {
+			return mk.kind, nil
 		}
 	}
-	return false, nil
+	return MergeKindNone, nil
+}
+
+func (m *Manager) IsInMerge(repoPath string) (bool, error) {
+	kind, err := m.GetMergeKind(repoPath)
+	return kind != MergeKindNone, err
 }
 
 func (m *Manager) GetMergeMessage(repoPath string) (string, error) {
@@ -89,10 +110,18 @@ func (m *Manager) ResolveConflict(repoPath, path, content string) error {
 }
 
 func (m *Manager) AbortMerge(repoPath string) error {
-	if _, err := m.Get(repoPath); err != nil {
+	kind, err := m.GetMergeKind(repoPath)
+	if err != nil {
 		return err
 	}
-	_, err := gitcli.Run(repoPath, "merge", "--abort")
+	switch kind {
+	case MergeKindCherryPick:
+		_, err = gitcli.Run(repoPath, "cherry-pick", "--abort")
+	case MergeKindRevert:
+		_, err = gitcli.Run(repoPath, "revert", "--abort")
+	default:
+		_, err = gitcli.Run(repoPath, "merge", "--abort")
+	}
 	return err
 }
 

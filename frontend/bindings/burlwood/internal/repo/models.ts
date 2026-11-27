@@ -46,6 +46,22 @@ export interface BranchInfo {
     "upstream": string;
 }
 
+export enum CherryPickOutcome {
+    /**
+     * The Go zero value for the underlying type of the enum.
+     */
+    $zero = "",
+
+    CherryPickCommitted = "committed",
+    CherryPickStaged = "staged",
+    CherryPickEmpty = "empty",
+    CherryPickConflict = "conflict",
+};
+
+export interface CherryPickResult {
+    "outcome": CherryPickOutcome;
+}
+
 export interface ConflictContent {
     "base": string;
     "ours": string;
@@ -107,6 +123,18 @@ export interface HunkLine {
      */
     "newLine": number;
 }
+
+export enum MergeKind {
+    /**
+     * The Go zero value for the underlying type of the enum.
+     */
+    $zero = "",
+
+    MergeKindNone = "",
+    MergeKindMerge = "merge",
+    MergeKindCherryPick = "cherry-pick",
+    MergeKindRevert = "revert",
+};
 
 export enum MergeOutcome {
     /**

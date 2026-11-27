@@ -43,6 +43,10 @@ export function CheckoutRemoteBranch(repoPath: string, remote: string, name: str
     return $Call.ByID(3388461335, repoPath, remote, name);
 }
 
+export function CherryPick(repoPath: string, hash: string, commitImmediately: boolean): $CancellablePromise<repo$0.CherryPickResult> {
+    return $Call.ByID(3274398777, repoPath, hash, commitImmediately);
+}
+
 export function CloseRepository(path: string): $CancellablePromise<void> {
     return $Call.ByID(166157567, path);
 }
@@ -117,6 +121,10 @@ export function GetFileAtCommitBase64(repoPath: string, hash: string, filePath: 
 
 export function GetFileBase64(repoPath: string, filePath: string): $CancellablePromise<string> {
     return $Call.ByID(4156105134, repoPath, filePath);
+}
+
+export function GetMergeKind(repoPath: string): $CancellablePromise<repo$0.MergeKind> {
+    return $Call.ByID(241077923, repoPath);
 }
 
 export function GetMergeMessage(repoPath: string): $CancellablePromise<string> {

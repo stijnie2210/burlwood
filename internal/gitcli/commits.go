@@ -23,6 +23,15 @@ func RevertCommit(repoPath, hash string, commitImmediately bool) error {
 	return err
 }
 
+func CherryPick(repoPath, hash string, commitImmediately bool) error {
+	args := []string{"cherry-pick"}
+	if !commitImmediately {
+		args = append(args, "--no-commit")
+	}
+	_, err := Run(repoPath, append(args, hash)...)
+	return err
+}
+
 func CreateTag(repoPath, name, hash string) error {
 	_, err := Run(repoPath, "tag", name, hash)
 	return err

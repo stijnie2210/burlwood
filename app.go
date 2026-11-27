@@ -190,6 +190,10 @@ func (a *App) RevertCommit(repoPath, hash string, commitImmediately bool) error 
 	return gitcli.RevertCommit(repoPath, hash, commitImmediately)
 }
 
+func (a *App) CherryPick(repoPath, hash string, commitImmediately bool) (repo.CherryPickResult, error) {
+	return a.manager.CherryPick(repoPath, hash, commitImmediately)
+}
+
 func (a *App) CreateTag(repoPath, name, hash string) error {
 	return gitcli.CreateTag(repoPath, name, hash)
 }
@@ -212,6 +216,10 @@ func (a *App) UndoHardReset(repoPath string, undo gitcli.ResetUndo) error {
 
 func (a *App) IsInMerge(repoPath string) (bool, error) {
 	return a.manager.IsInMerge(repoPath)
+}
+
+func (a *App) GetMergeKind(repoPath string) (repo.MergeKind, error) {
+	return a.manager.GetMergeKind(repoPath)
 }
 
 func (a *App) GetMergeMessage(repoPath string) (string, error) {

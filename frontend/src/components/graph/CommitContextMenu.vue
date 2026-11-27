@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, nextTick, onMounted, onUnmounted, watch } from 'vue';
+import { ref, computed, nextTick, onMounted, onUnmounted, watch } from 'vue';
 import {
   clampMenuPosition,
   focusFirstMenuItem,
@@ -12,10 +12,12 @@ import { useCommitsStore } from '../../stores/commits';
 import { useBranchesStore } from '../../stores/branches';
 import { useStagingStore } from '../../stores/staging';
 import { useReposStore } from '../../stores/repos';
+import { shortcut } from '../../utils/platform';
 import {
   CheckoutRef,
   CreateBranchAt,
   RevertCommit,
+  CherryPick,
   CreateTag,
   MoveTag,
   PushTag,
@@ -24,6 +26,7 @@ import {
   HardResetBranch,
   UndoHardReset,
 } from '../../../bindings/burlwood/app';
+import { CherryPickOutcome } from '../../../bindings/burlwood/internal/repo/models';
 
 const props = defineProps<{
   row: GraphRow;
@@ -39,7 +42,14 @@ const emit = defineEmits<{
 
 const toast = useToastStore();
 
-type Mode = 'menu' | 'branch' | 'tag' | 'move-tag' | 'tag-created' | 'revert-confirm';
+type Mode =
+  | 'menu'
+  | 'branch'
+  | 'tag'
+  | 'move-tag'
+  | 'tag-created'
+  | 'revert-confirm'
+  | 'cherry-pick-confirm';
 const mode = ref<Mode>('menu');
 watch(mode, () => nextTick(() => keepFocusInMenu(menuEl.value)));
 const inputVal = ref('');
@@ -139,6 +149,60 @@ async function revert(commitImmediately: boolean) {
     toast.error(e);
   }
   emit('close');
+}
+
+const staging = useStagingStore();
+const branches = useBranchesStore();
+const currentBranch = computed(() => branches.local.find((b) => b.isCurrent)?.name ?? 'HEAD');
+const isStash = computed(() => (props.row.labels ?? []).some((l) => l.type === 'stash'));
+
+const cherryPickBlockedReason = computed(() => {
+  if (staging.isInMerge) {
+    return 'Finish the merge in progress first';
+  }
+  if (staging.isInRebase) {
+    return 'Finish the rebase in progress first';
+  }
+  if ((props.row.parentHashes?.length ?? 0) > 1) {
+    return "Merge commits can't be cherry-picked";
+  }
+  if ((props.row.labels ?? []).some((l) => l.type === 'head')) {
+    return 'This is the current commit';
+  }
+  return '';
+});
+
+function openCherryPickConfirm() {
+  if (cherryPickBlockedReason.value) {
+    return;
+  }
+  mode.value = 'cherry-pick-confirm';
+}
+
+async function cherryPick(commitImmediately: boolean) {
+  const repo = props.repoPath;
+  const short = props.row.shortHash;
+  const onto = currentBranch.value;
+  emit('close');
+  try {
+    const { outcome } = await CherryPick(repo, props.row.hash, commitImmediately);
+    await reloadRepo(repo);
+    if (outcome === CherryPickOutcome.CherryPickCommitted) {
+      toast.success(`Cherry-picked ${short} onto ${onto}`);
+    } else if (outcome === CherryPickOutcome.CherryPickStaged) {
+      toast.success(`Cherry-picked ${short} — changes staged, ready to commit`);
+    } else if (outcome === CherryPickOutcome.CherryPickEmpty) {
+      toast.success(`${onto} already has the changes from ${short}`);
+    } else {
+      toast.push(
+        `Cherry-picking ${short} stopped on a conflict. Resolve it in the Working Tree (${shortcut('2')}), then commit.`,
+        'info',
+        0
+      );
+    }
+  } catch (e) {
+    toast.error(e);
+  }
 }
 
 async function reset(resetMode: 'soft' | 'mixed' | 'hard') {
@@ -282,6 +346,25 @@ async function pushTag(name: string) {
         </div>
       </template>
 
+      <!-- ── Cherry-pick confirmation ─────────────── -->
+      <template v-else-if="mode === 'cherry-pick-confirm'">
+        <div class="ctx-input-header">Cherry-pick {{ row.shortHash }} onto {{ currentBranch }}</div>
+        <div class="ctx-choices">
+          <button class="ctx-choice" @click="cherryPick(true)">
+            <span class="ctx-choice-title">Cherry-pick and commit</span>
+            <span class="ctx-choice-desc"
+              >Copies {{ row.shortHash }} as a new commit on {{ currentBranch }}</span
+            >
+          </button>
+          <button class="ctx-choice" @click="cherryPick(false)">
+            <span class="ctx-choice-title">Stage the changes</span>
+            <span class="ctx-choice-desc"
+              >Leaves the changes staged so you can edit them first</span
+            >
+          </button>
+        </div>
+      </template>
+
       <!-- ── Branch input ─────────────────────────── -->
       <template v-else-if="mode === 'branch'">
         <div class="ctx-input-header">Create branch at {{ row.shortHash }}</div>
@@ -375,6 +458,18 @@ async function pushTag(name: string) {
         <div class="ctx-divider" />
 
         <button role="menuitem" class="ctx-item" @click="openRevertConfirm">Revert commit</button>
+        <button
+          v-if="!isStash"
+          role="menuitem"
+          class="ctx-item"
+          :aria-disabled="cherryPickBlockedReason ? 'true' : undefined"
+          @click="openCherryPickConfirm"
+        >
+          Cherry-pick commit…
+          <span v-if="cherryPickBlockedReason" class="ctx-item-reason">{{
+            cherryPickBlockedReason
+          }}</span>
+        </button>
 
         <div class="ctx-divider" />
 
@@ -461,6 +556,20 @@ async function pushTag(name: string) {
   outline: none;
   background: var(--accent-fill);
   color: var(--text-on-accent);
+}
+
+.ctx-item[aria-disabled='true'] {
+  color: var(--text-tertiary);
+}
+.ctx-item[aria-disabled='true']:focus-visible,
+.ctx-item[aria-disabled='true']:hover {
+  background: var(--surface-hover);
+  color: var(--text-tertiary);
+}
+.ctx-item-reason {
+  display: block;
+  font-size: var(--text-meta);
+  color: var(--text-tertiary);
 }
 
 .ctx-item--indent {

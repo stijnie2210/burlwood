@@ -83,7 +83,7 @@ internal/gitcli/
   runner.go                         Run() / RunWithInput() — exec.Command wrapper
   env.go                            login-shell PATH for subprocesses (cached once)
   commit.go                         Commit (incl. amend)
-  commits.go                        CheckoutRef, CreateBranchAt, RevertCommit, CreateTag, MoveTag, ResetBranch(mode)
+  commits.go                        CheckoutRef, CreateBranchAt, RevertCommit, CherryPick, CreateTag, MoveTag, ResetBranch(mode)
   branches.go                       DeleteBranch, RenameBranch, SetUpstream/UnsetUpstream, Merge (--no-edit)
   worktree.go                       RemoveWorktree (optionally --force), PruneWorktrees
   stash.go                          ListStashes, Apply/Pop/Drop/RenameStash, Stash/StashPop, StashPushNamed, CreateBranch
@@ -128,7 +128,10 @@ internal/repo/
                                     SyncAutostash pops/drops it once the merge/rebase concludes (phase re-derived on restart)
   rebase.go                         IsInRebase, GetRebaseState (step/total), Start/Continue/AbortRebase;
                                     PreviewRebase counts pushed commits a rebase would rewrite; StartRebase reports up-to-date
-  conflict.go                       IsInMerge, GetMergeMessage, GetConflictContent, ResolveConflict, AbortMerge
+  cherrypick.go                     CherryPick: outcome committed / staged / empty / conflict; an empty pick (changes
+                                    already on the branch) is skipped instead of left in progress
+  conflict.go                       GetMergeKind (merge / cherry-pick / revert), IsInMerge, GetMergeMessage,
+                                    GetConflictContent, ResolveConflict, AbortMerge (the --abort for that kind)
   stash.go                          stash list/apply/pop/drop/rename
   staging.go                        StageHunk/UnstageHunk (accept patch string from frontend), UndoDiscard,
                                     FetchAll, Commit, GetAmendInfo; BuildHunkPatch (test reference for the TS version)
@@ -245,8 +248,7 @@ All colours are semantic tokens in `style.css`; never hard-code hex in component
 - Graph lanes (`internal/graph/layout.go`) are muted and avoid the add/del hues; syntax colours in `assets/prism-theme.css` follow Xcode's dark theme
 
 ### Conflict resolution flow (`internal/repo/conflict.go`)
-`IsInMerge()` checks for `MERGE_HEAD` / `CHERRY_PICK_HEAD`. `GetConflictContent()` calls `git show :1:/:2:/:3:` for base/ours/theirs plus reads the working file (with markers). `ResolveConflict()` writes the file and stages it. `AbortMerge()` runs `git merge --abort`.
-
+`GetMergeKind()` checks for `MERGE_HEAD` / `CHERRY_PICK_HEAD` / `REVERT_HEAD` (`IsInMerge()` is any of them); the Working Tree banner and Abort name the operation, and `AbortMerge()` runs its own `--abort`. `GetConflictContent()` calls `git show :1:/:2:/:3:` for base/ours/theirs plus reads the working file (with markers). `ResolveConflict()` writes the file and stages it.
 Frontend parses markers with `utils/conflicts.ts` (`parseConflicts`, unit-tested) into context + conflict chunks; diff3/zdiff3 `|||||||` sections become a read-only base, never part of "ours". Save & Stage refuses output that still contains `<<<<<<<`/`|||||||`/`>>>>>>>`. Each conflict chunk has Accept Ours / Accept Theirs buttons. "Save & Stage" assembles accepted chunks and calls `ResolveConflict`. Merge message auto-fills commit summary when `isInMerge` becomes true.
 
 ### Rebase flow (`internal/gitcli/rebase.go` + `internal/repo/rebase.go`)
@@ -290,7 +292,7 @@ closes its tab). Remove is disabled for the main worktree, the one you're in and
 (`prunable`) offers Prune instead.
 
 ### Commit context menu (`CommitContextMenu.vue` + `internal/gitcli/commits.go`)
-Checkout, Create branch here (`checkout -b <name> <hash>`), Create tag (then optionally push it), Move tag, Push/Force-push tag, Revert (confirm mode), Reset branch soft/mixed, hard reset via `HardResetBranch` (undoable with `UndoHardReset`), Copy hash. Name inputs and confirmations are `mode` states (`'branch'`, `'tag'`, `'move-tag'`, `'revert-confirm'`, `'tag-created'`).
+Checkout, Create branch here (`checkout -b <name> <hash>`), Create tag (then optionally push it), Move tag, Push/Force-push tag, Revert (confirm mode), Cherry-pick (commit or stage; unavailable on merge commits, the current commit and mid-merge/rebase; hidden on stashes), Reset branch soft/mixed, hard reset via `HardResetBranch` (undoable with `UndoHardReset`), Copy hash. Name inputs and confirmations are `mode` states (`'branch'`, `'tag'`, `'move-tag'`, `'revert-confirm'`, `'cherry-pick-confirm'`, `'tag-created'`).
 
 ### Working tree file context menu (`StagingView.vue` + `internal/gitcli/fileops.go`)
 Right-click on any file item (conflicts, unstaged, staged). Items are contextual per section:
