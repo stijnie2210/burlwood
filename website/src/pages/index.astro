@@ -96,6 +96,7 @@ const installKnots = [
       <a class="button button-outline" href="#install">Linux · Windows</a>
     </div>
     <p class="meta mono">{version} · universal DMG · free under GPL-3.0</p>
+    <p class="meta-note">Not notarized by Apple yet, so the first launch takes <a href="#macos">one extra step</a>.</p>
 
     <figure class="inlay">
       <picture>
@@ -144,8 +145,8 @@ const installKnots = [
         <div class="leaf-copy">
           <h2 id="history-title">Read the history.</h2>
           <p>
-            Every branch, tag and stash gets its own lane, and the graph scrolls smoothly through thousands of commits.
-            <kbd>⌘F</kbd> finds a commit, and its changed files sit grouped by folder.
+            Every branch, tag and stash gets its own lane, and the graph scrolls smoothly through thousands of
+            commits. <kbd>⌘F</kbd> finds a commit, and its changed files sit grouped by folder.
           </p>
           <p>
             Checkout, cherry-pick onto your branch, create a branch or tag at any commit, revert, or reset soft, mixed or
@@ -227,30 +228,40 @@ const installKnots = [
       <div class="leaf-inner">
         <h2 id="install-title">Take a leaf.</h2>
         <p class="leaf-intro">
-          Free to download, free to change. Burlwood runs your system git, so git must be installed and on your
-          <code>PATH</code>.
+          Free to download, free to change. Burlwood runs your system git, so git must be installed and on
+          your <code>PATH</code>.
         </p>
 
         <div class="platforms">
-          <article class="platform">
-            <h3>macOS</h3>
+          <article class="platform" id="macos" data-platform="mac">
+            <div class="platform-head">
+              <h3>macOS</h3>
+              <span class="yours" hidden>Your system</span>
+            </div>
             <p>A universal DMG for macOS 12 or newer. Open it and drag Burlwood to Applications.</p>
             <p>
-              The app isn’t signed with an Apple Developer ID, so macOS blocks the first launch. Clear the quarantine flag
-              once:
+              Burlwood isn’t notarized by Apple yet, so on the first launch macOS says “Burlwood” is damaged and can’t
+              be opened. It isn’t damaged. Clear the quarantine flag once in Terminal, then open it as usual:
             </p>
             <div class="command">
               <pre><code>xattr -dr com.apple.quarantine /Applications/Burlwood.app</code></pre>
-              <button class="copy" type="button" data-copy="xattr -dr com.apple.quarantine /Applications/Burlwood.app">
+              <button class="copy" type="button" hidden data-copy="xattr -dr com.apple.quarantine /Applications/Burlwood.app">
                 <Icon name="copy" />
                 <span>Copy</span>
               </button>
             </div>
+            <p class="fine">
+              The flag is the mark macOS puts on every download. This removes it from Burlwood only; Gatekeeper keeps
+              checking everything else.
+            </p>
             <a class="button button-solid" href={downloads.mac}><Icon name="download" />Download .dmg</a>
           </article>
 
-          <article class="platform">
-            <h3>Linux</h3>
+          <article class="platform" data-platform="linux">
+            <div class="platform-head">
+              <h3>Linux</h3>
+              <span class="yours" hidden>Your system</span>
+            </div>
             <p>An AppImage. It needs GTK 4 and WebKitGTK 6.0:</p>
             <pre><code><span class="comment"># Fedora / RHEL</span>
 sudo dnf install webkitgtk6.0
@@ -259,14 +270,18 @@ sudo apt install libwebkitgtk-6.0-4
 <span class="comment"># Arch Linux</span>
 sudo pacman -S webkitgtk-6.0</code></pre>
             <p>
-              Then make it executable and run it. On an ARM64 machine, take the
-              <a href={downloads.linuxArm}>ARM64 AppImage</a>.
+              Then make it executable and run it. On an ARM64 machine, take the <a href={downloads.linuxArm}
+                >ARM64 AppImage</a
+              >.
             </p>
             <a class="button button-solid" href={downloads.linux}><Icon name="download" />Download AppImage</a>
           </article>
 
-          <article class="platform">
-            <h3>Windows</h3>
+          <article class="platform" data-platform="windows">
+            <div class="platform-head">
+              <h3>Windows</h3>
+              <span class="yours" hidden>Your system</span>
+            </div>
             <p>A zip. Unzip it and run <code>burlwood.exe</code>.</p>
             <p>
               The app isn’t signed, so SmartScreen may stop the first launch with “Windows protected your PC”. Choose
@@ -298,7 +313,7 @@ sudo pacman -S webkitgtk-6.0</code></pre>
     isolation: isolate;
     overflow: hidden;
     padding-bottom: clamp(48px, 7vw, 96px);
-    background: linear-gradient(180deg, #cf8d50 0, var(--amber-low) 640px, var(--burl) 100%);
+    background: linear-gradient(180deg, #cf8d50 0, var(--amber-low) 680px, var(--burl) 100%);
     color: var(--heartwood);
     text-align: center;
   }
@@ -323,6 +338,9 @@ sudo pacman -S webkitgtk-6.0</code></pre>
   }
 
   .top a {
+    display: inline-block;
+    margin: -6px 0;
+    padding: 6px 0;
     font-weight: 650;
     font-size: 16px;
     text-decoration: none;
@@ -448,6 +466,12 @@ sudo pacman -S webkitgtk-6.0</code></pre>
     font-size: 13px;
   }
 
+  .meta-note {
+    margin-top: 6px;
+    padding: 0 var(--gutter);
+    font-size: 15px;
+  }
+
   .inlay {
     width: min(100% - 2 * var(--gutter), 1248px);
     margin: clamp(40px, 4vw, 52px) auto 0;
@@ -567,6 +591,7 @@ sudo pacman -S webkitgtk-6.0</code></pre>
 
   .cutting-list {
     width: 100%;
+    max-width: 52em;
     border-collapse: collapse;
     background: var(--sapwood);
     color: var(--heartwood);
@@ -644,10 +669,31 @@ sudo pacman -S webkitgtk-6.0</code></pre>
     border-left: 2px solid var(--heartwood);
   }
 
+  #macos {
+    scroll-margin-top: 24px;
+  }
+
+  .platform-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px 12px;
+  }
+
   .platform h3 {
     font-size: 30px;
     letter-spacing: -0.02em;
     line-height: 1.1;
+  }
+
+  .yours {
+    font-size: 15px;
+    font-weight: 650;
+  }
+
+  .platform .fine {
+    font-size: 15px;
   }
 
   .platform .button {
@@ -655,7 +701,7 @@ sudo pacman -S webkitgtk-6.0</code></pre>
     margin-top: auto;
   }
 
-  .platform p:last-of-type {
+  .platform > :nth-last-child(2) {
     margin-bottom: 10px;
   }
 
@@ -688,9 +734,12 @@ sudo pacman -S webkitgtk-6.0</code></pre>
   }
 
   .command pre {
-    padding-right: 96px;
     white-space: pre-wrap;
-    word-break: break-all;
+    overflow-wrap: anywhere;
+  }
+
+  .command:has(.copy:not([hidden])) pre {
+    padding-right: 96px;
   }
 
   .copy {
@@ -710,11 +759,15 @@ sudo pacman -S webkitgtk-6.0</code></pre>
     cursor: pointer;
   }
 
+  .copy[hidden] {
+    display: none;
+  }
+
   .copy:hover {
     border-color: var(--sapwood);
   }
 
-  .copy svg {
+  .copy :global(svg) {
     width: 16px;
     height: 16px;
   }
@@ -757,7 +810,7 @@ sudo pacman -S webkitgtk-6.0</code></pre>
     text-decoration: underline;
   }
 
-  .foot-link svg {
+  .foot-link :global(svg) {
     width: 18px;
     height: 18px;
   }
@@ -792,6 +845,10 @@ sudo pacman -S webkitgtk-6.0</code></pre>
 
     .top .brand {
       font-size: 20px;
+    }
+
+    .command:has(.copy:not([hidden])) pre {
+      padding: 50px 16px 14px;
     }
 
     .knot :global(.hero-grain) {
@@ -840,7 +897,38 @@ sudo pacman -S webkitgtk-6.0</code></pre>
 </style>
 
 <script>
+  function visitorPlatform(): string | null {
+    const ua = navigator.userAgent.toLowerCase();
+    if (/android|iphone|ipad|ipod/.test(ua)) {
+      return null;
+    }
+    const platform = (
+      (navigator as Navigator & { userAgentData?: { platform: string } }).userAgentData?.platform ??
+      navigator.platform ??
+      ''
+    ).toLowerCase();
+    if (platform.startsWith('mac')) {
+      // iPadOS reports itself as a Mac; only a real one has no touch screen.
+      return navigator.maxTouchPoints > 1 ? null : 'mac';
+    }
+    if (platform.startsWith('win')) {
+      return 'windows';
+    }
+    if (platform.includes('linux') || platform.includes('x11')) {
+      return 'linux';
+    }
+    return null;
+  }
+
+  const yours = document.querySelector<HTMLElement>(`.platform[data-platform="${visitorPlatform()}"]`);
+  if (yours) {
+    yours.querySelector<HTMLElement>('.yours')!.hidden = false;
+    // Moving the panel itself keeps the reading order and the tab order the same.
+    yours.parentElement!.prepend(yours);
+  }
+
   for (const button of document.querySelectorAll<HTMLButtonElement>('button[data-copy]')) {
+    button.hidden = false;
     const label = button.querySelector('span')!;
     button.addEventListener('click', async () => {
       try {

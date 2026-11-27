@@ -155,7 +155,7 @@ The palette is one piece of wood, from the dark core through the light rim, with
 
 ### Secondary
 - **Amber Crown** (amber-crown): the top of the hero veneer and the nav strip's ground, which fades out over 28% of its height. It appears only where the hero gradient starts.
-- **Amber** (amber) and **Amber Low** (amber-low): the veneer gradient. The install leaf runs from amber to amber-low. The hero reaches amber-low at 640px and continues to burl.
+- **Amber** (amber) and **Amber Low** (amber-low): the veneer gradient. The install leaf runs from amber to amber-low. The hero reaches amber-low at 680px and continues to burl.
 - **Burl** (burl): the deepest veneer tone. It ends the hero gradient, is the darkest step of the burl figure, and colours the scrollbar thumb.
 
 ### Tertiary
@@ -168,7 +168,7 @@ The palette is one piece of wood, from the dark core through the light rim, with
 - Hairlines are derived from these colours, not separate tokens. A leaf divider is sapwood at 12%. Table rows are heartwood at 22%, the "Not yet" divider is heartwood at 45% dashed, and kbd and copy-button borders are sapwood at 35%.
 
 ### Named Rules
-**The Burl Carries Sapwood Rule.** The burl and the burl figure are a ground for sapwood display type only. Heartwood text never sits on burl (2.66:1). It belongs on amber-crown, amber, amber-low (4.73:1 or better) and sapwood (12.64:1). In the hero, all heartwood copy ends above the 640px gradient stop.
+**The Burl Carries Sapwood Rule.** The burl and the burl figure are a ground for sapwood display type only. Heartwood text never sits on burl (2.66:1). It belongs on amber-crown, amber, amber-low (4.73:1 or better) and sapwood (12.64:1). In the hero, all heartwood copy ends above the 680px gradient stop.
 
 **The One Log Rule.** Every colour on the page is a tone of the same wood. Git meaning appears only inside the screenshots.
 
@@ -187,6 +187,7 @@ The palette is one piece of wood, from the dark core through the light rim, with
 - **Body** (400, 18px, 1.55): leaf copy, capped at the 34em measure. The hero sub uses clamp(17px, 1.4vw, 19px) at a 46em cap.
 - **Body Dense** (17px, 1.45): the cutting list and the platform panels. The cutting-list part names are 19px 700, and its column heads are 14px 600.
 - **UI weights**: buttons are 18px 650, nav links 16px 650, the brand wordmark 22px 700 at -0.03em (20px under 720px).
+- **Note** (15px): the hero's first-launch note under the meta line, the reassurance line under the macOS command, and the "Your system" label (650) beside a platform name.
 - **Label** (mono 600, 13px): stamps, plus the hero meta line in mono 13px. **Code** (mono, 13.5px, 1.6) is used in command blocks.
 
 ### Named Rules
@@ -196,7 +197,7 @@ The palette is one piece of wood, from the dark core through the light rim, with
 
 The page is one centred column of full-bleed leaves. Content inside a leaf sits on a sheet of at most 1248px, inset by the fluid gutter. Leaves have the leaf-block padding top and bottom. Consecutive heartwood leaves are split by a sapwood hairline at 12%.
 
-- **Hero:** centred. The nav strip (brand on the left, three links on the right, 22px block padding) is followed by mirrored stamps at both top corners (82px from the top), then the wordmark grid (1fr auto 1fr around the knot, shifted 0.38em left so the letters' ink is centred; the wider "wood" would otherwise pull the word right, so the knot sits 0.38em left of the page centre), then the line, the sub, the CTA pair (12px gap, wraps), the mono meta line, and the commit-graph inlay rising into the bottom third.
+- **Hero:** centred. The nav strip (brand on the left, three links on the right, 22px block padding) is followed by mirrored stamps at both top corners (82px from the top), then the wordmark grid (1fr auto 1fr around the knot, shifted 0.38em left so the letters' ink is centred; the wider "wood" would otherwise pull the word right, so the knot sits 0.38em left of the page centre), then the line, the sub, the CTA pair (12px gap, wraps), the mono meta line, a one-line note that the app isn't notarized yet (linking to the macOS panel), and the commit-graph inlay rising into the bottom third.
 - **Content leaves:** a 5fr/7fr grid (gap clamp(32px, 4.5vw, 64px)). Copy is on the left and the native-size framed screenshot is pushed to the right edge. A leaf can also put the headline and copy side by side at the top, with a wide frame below aligned to the sheet's left edge.
 - **Cutting list and install:** the headline, then an intro (18px above, 44px below), then a full-width table or panel row.
 - Screenshots are shown at their native pixel size (`fit-content`, max 100%), never scaled up to fill.
@@ -243,13 +244,14 @@ The form language is square cut. Inlays, frames, stamps, the cutting list and th
 ### Platform Panels
 - Three equal panels share one sapwood plate inside a 2px heartwood rule, divided by 2px heartwood rules (horizontal when stacked).
 - Each panel is a column with a 14px gap: a 30px name, short instructions, command blocks, then a solid download button pinned to the bottom (`margin-top: auto`), so the buttons align across panels.
+- The visitor's own platform (detected client-side; phones and tablets get none) moves to the front of the plate in the DOM, so the reading and tab order follow it, and shows a plain-text "Your system" label beside its name. Without JS the order stays macOS, Linux, Windows. The label is not a stamp: stamps carry leaf numbers only.
 
 ### Command Block
 - Heartwood `pre` with sapwood mono 13.5/1.6, 4px radius, and 14px 16px padding. Shell comments are in sapwood-dim.
-- A single command gets a copy button pinned top-right: heartwood-raised, a 1px sapwood rule at 35% that turns full sapwood on hover, 32px tall, a 16px icon and a 13px 600 label. The label changes to "Copied", or to "Select and copy" if the clipboard write fails, then resets after 2s.
+- A single command gets a copy button pinned top-right (rendered `hidden` and shown by the script, so it never appears without JS; under 720px the code drops below it instead of beside it): heartwood-raised, a 1px sapwood rule at 35% that turns full sapwood on hover, 32px tall, a 16px icon and a 13px 600 label. The label changes to "Copied", or to "Select and copy" if the clipboard write fails, then resets after 2s.
 
 ### Navigation
-- The nav strip sits on amber-crown, with brand text at 22px 700 and links at 16px 650 in heartwood. Links have no underline and gain one on hover. Link underlines are 1.5px thick at a 0.2em offset.
+- The nav strip sits on amber-crown, with brand text at 22px 700 and links at 16px 650 in heartwood. Links have no underline and gain one on hover; 6px block padding (cancelled by a negative margin) makes them 37px tap targets without moving the strip. Link underlines are 1.5px thick at a 0.2em offset.
 - The footer is on heartwood: the sapwood brand, sapwood-dim text at 15px, and a sapwood "Source on GitHub" link with an 18px icon.
 
 ### Grain Field (signature)
