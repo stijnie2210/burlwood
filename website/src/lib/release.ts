@@ -2,7 +2,7 @@ declare const process: { env: Record<string, string | undefined> };
 
 export const repo = 'https://github.com/stijnie2210/burlwood';
 
-const fallbackVersion = 'v0.7.0';
+const fallbackVersion = 'v1.0.0';
 
 export const downloads = {
   mac: `${repo}/releases/latest/download/burlwood-mac-universal.dmg`,
