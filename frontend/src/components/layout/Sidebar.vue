@@ -557,10 +557,8 @@ async function rebaseOnto(target: string) {
     await staging.load(repoPath);
     if (staging.isInRebase) {
       await Promise.all([branches.load(repoPath), commits.load(repoPath)]);
-      toast.push(
-        `Rebasing ${branch} onto ${target} stopped on a conflict. Resolve it in the Working Tree (${shortcut('2')}), then continue.`,
-        'info',
-        0
+      toast.workingTreeHint(
+        `Rebasing ${branch} onto ${target} stopped on a conflict. Resolve it in the Working Tree (${shortcut('2')}), then continue.`
       );
     } else {
       toast.error(e);
@@ -601,10 +599,8 @@ async function mergeIntoCurrent(target: string) {
     await staging.load(repoPath);
     if (staging.isInMerge) {
       await Promise.all([branches.load(repoPath), commits.load(repoPath)]);
-      toast.push(
-        `Merging ${target} into ${into} stopped on a conflict. Resolve it in the Working Tree (${shortcut('2')}), then commit.`,
-        'info',
-        0
+      toast.workingTreeHint(
+        `Merging ${target} into ${into} stopped on a conflict. Resolve it in the Working Tree (${shortcut('2')}), then commit.`
       );
     } else {
       toast.error(e);

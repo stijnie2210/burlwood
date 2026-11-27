@@ -3,6 +3,7 @@
 
 export {
     CherryPickOutcome,
+    InteractiveRebaseOutcome,
     MergeKind,
     MergeOutcome
 } from "./models.js";
@@ -20,10 +21,14 @@ export type {
     FileStatus,
     Hunk,
     HunkLine,
+    InteractiveRebaseResult,
     MergeResult,
     RebasePreview,
     RebaseResult,
     RebaseState,
+    RebaseStep,
+    RebaseTodo,
+    RebaseTodoCommit,
     Session,
     SessionTab,
     SwitchResult,

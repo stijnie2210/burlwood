@@ -141,6 +141,22 @@ export interface HunkLine {
     "noNewline"?: boolean;
 }
 
+export enum InteractiveRebaseOutcome {
+    /**
+     * The Go zero value for the underlying type of the enum.
+     */
+    $zero = "",
+
+    InteractiveRebaseDone = "done",
+    InteractiveRebaseStopped = "stopped",
+};
+
+export interface InteractiveRebaseResult {
+    "outcome": InteractiveRebaseOutcome;
+    "previousHead": string;
+    "newHead": string;
+}
+
 export enum MergeKind {
     /**
      * The Go zero value for the underlying type of the enum.
@@ -182,6 +198,30 @@ export interface RebaseState {
     "total": number;
     "message": string;
     "onto": string;
+}
+
+export interface RebaseStep {
+    "hash": string;
+
+    /**
+     * "pick" | "reword" | "squash" | "fixup" | "drop"
+     */
+    "action": string;
+    "message": string;
+}
+
+export interface RebaseTodo {
+    "commits": RebaseTodoCommit[] | null;
+    "upstream": string;
+}
+
+export interface RebaseTodoCommit {
+    "hash": string;
+    "shortHash": string;
+    "subject": string;
+    "message": string;
+    "author": string;
+    "pushed": boolean;
 }
 
 export interface Session {

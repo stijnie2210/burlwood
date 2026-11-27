@@ -12,6 +12,7 @@ import { useCommitsStore } from '../../stores/commits';
 import { useBranchesStore } from '../../stores/branches';
 import { useStagingStore } from '../../stores/staging';
 import { useReposStore } from '../../stores/repos';
+import { useInteractiveRebaseStore } from '../../stores/interactiveRebase';
 import { shortcut } from '../../utils/platform';
 import {
   CheckoutRef,
@@ -193,6 +194,34 @@ const cherryPickBlockedReason = computed(() => {
   return '';
 });
 
+const rebaseBlockedReason = computed(() => {
+  if (staging.isInMerge) {
+    return 'Finish the merge in progress first';
+  }
+  if (staging.isInRebase) {
+    return 'Finish the rebase in progress first';
+  }
+  if ((props.row.parentHashes?.length ?? 0) > 1) {
+    return "A rebase can't start at a merge commit";
+  }
+  return '';
+});
+
+async function openInteractiveRebase() {
+  if (rebaseBlockedReason.value) {
+    return;
+  }
+  const repo = props.repoPath;
+  const hash = props.row.hash;
+  const branch = currentBranch.value;
+  emit('close');
+  try {
+    await useInteractiveRebaseStore().show(repo, hash, branch);
+  } catch (e) {
+    toast.error(e);
+  }
+}
+
 function openCherryPickConfirm() {
   if (cherryPickBlockedReason.value) {
     return;
@@ -215,10 +244,8 @@ async function cherryPick(commitImmediately: boolean) {
     } else if (outcome === CherryPickOutcome.CherryPickEmpty) {
       toast.success(`${onto} already has the changes from ${short}`);
     } else {
-      toast.push(
-        `Cherry-picking ${short} stopped on a conflict. Resolve it in the Working Tree (${shortcut('2')}), then commit.`,
-        'info',
-        0
+      toast.workingTreeHint(
+        `Cherry-picking ${short} stopped on a conflict. Resolve it in the Working Tree (${shortcut('2')}), then commit.`
       );
     }
   } catch (e) {
@@ -491,6 +518,16 @@ async function pushTag(name: string) {
           <span v-if="cherryPickBlockedReason" class="ctx-item-reason">{{
             cherryPickBlockedReason
           }}</span>
+        </button>
+        <button
+          v-if="!isStash"
+          role="menuitem"
+          class="ctx-item"
+          :aria-disabled="rebaseBlockedReason ? 'true' : undefined"
+          @click="openInteractiveRebase"
+        >
+          Interactive rebase from here…
+          <span v-if="rebaseBlockedReason" class="ctx-item-reason">{{ rebaseBlockedReason }}</span>
         </button>
 
         <div class="ctx-divider" />

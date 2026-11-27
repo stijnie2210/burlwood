@@ -23,6 +23,35 @@ describe('toast store', () => {
     expect(toast.toasts).toHaveLength(0);
   });
 
+  it('keeps a sticky Undo until it is dismissed', () => {
+    const toast = useToastStore();
+    const id = toast.withUndo('Rebased main', () => {}, true);
+    vi.advanceTimersByTime(3600000);
+    expect(toast.toasts).toHaveLength(1);
+    toast.dismiss(id);
+    expect(toast.toasts).toHaveLength(0);
+  });
+
+  it('keeps a Working Tree hint until the Working Tree opens', () => {
+    const toast = useToastStore();
+    toast.workingTreeHint('Stopped on a conflict');
+    toast.success('Something else');
+    vi.advanceTimersByTime(60000);
+    expect(toast.toasts.map((t) => t.message)).toEqual(['Stopped on a conflict']);
+
+    toast.setWorkingTreeOpen(true);
+    expect(toast.toasts).toHaveLength(0);
+  });
+
+  it('lets a hint expire by itself when the Working Tree is already open', () => {
+    const toast = useToastStore();
+    toast.setWorkingTreeOpen(true);
+    toast.workingTreeHint('Stopped on a conflict');
+    expect(toast.toasts).toHaveLength(1);
+    vi.advanceTimersByTime(6100);
+    expect(toast.toasts).toHaveLength(0);
+  });
+
   it('undoLatest runs the newest undo and dismisses it', () => {
     const toast = useToastStore();
     const calls: string[] = [];

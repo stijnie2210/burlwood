@@ -13,6 +13,7 @@ import StagingView from './components/staging/StagingView.vue';
 import ToastStack from './components/layout/ToastStack.vue';
 import PreferencesModal from './components/layout/PreferencesModal.vue';
 import LogViewerModal from './components/layout/LogViewerModal.vue';
+import InteractiveRebaseModal from './components/graph/InteractiveRebaseModal.vue';
 import RepoPicker from './components/layout/RepoPicker.vue';
 import { useReposStore } from './stores/repos';
 import { useCommitsStore } from './stores/commits';
@@ -105,6 +106,7 @@ onUnmounted(() => {
 });
 
 const viewMode = ref<'commits' | 'staging'>('commits');
+watch(viewMode, (mode) => toast.setWorkingTreeOpen(mode === 'staging'), { immediate: true });
 
 // Switching repos always lands on the graph: an open diff or working-tree file belongs to the
 // repo you left. App owns this load because the graph isn't mounted while a file diff is open.
@@ -257,6 +259,7 @@ onUnmounted(() => {
     <ToastStack />
     <PreferencesModal />
     <LogViewerModal />
+    <InteractiveRebaseModal />
     <div class="workspace">
       <template v-if="repos.activeRepo">
         <Sidebar :style="{ width: sidebarWidth + 'px' }" />

@@ -163,6 +163,10 @@ export function GetRebaseState(repoPath: string): $CancellablePromise<repo$0.Reb
     return $Call.ByID(631370252, repoPath);
 }
 
+export function GetRebaseTodo(repoPath: string, fromHash: string): $CancellablePromise<repo$0.RebaseTodo> {
+    return $Call.ByID(2528990091, repoPath, fromHash);
+}
+
 export function GetStatus(repoPath: string): $CancellablePromise<repo$0.FileStatus[] | null> {
     return $Call.ByID(1043986649, repoPath);
 }
@@ -342,6 +346,10 @@ export function StageHunk(repoPath: string, patch: string): $CancellablePromise<
     return $Call.ByID(2011609865, repoPath, patch);
 }
 
+export function StartInteractiveRebase(repoPath: string, fromHash: string, steps: repo$0.RebaseStep[] | null): $CancellablePromise<repo$0.InteractiveRebaseResult> {
+    return $Call.ByID(1035862881, repoPath, fromHash, steps);
+}
+
 export function StartRebase(repoPath: string, onto: string): $CancellablePromise<repo$0.RebaseResult> {
     return $Call.ByID(2258134579, repoPath, onto);
 }
@@ -376,6 +384,10 @@ export function UndoDiscards(repoPath: string, snaps: gitcli$0.DiscardSnapshot[]
 
 export function UndoHardReset(repoPath: string, undo: gitcli$0.ResetUndo): $CancellablePromise<void> {
     return $Call.ByID(2791439269, repoPath, undo);
+}
+
+export function UndoInteractiveRebase(repoPath: string, result: repo$0.InteractiveRebaseResult): $CancellablePromise<void> {
+    return $Call.ByID(4081488897, repoPath, result);
 }
 
 export function UnsetUpstream(repoPath: string, branch: string): $CancellablePromise<void> {
