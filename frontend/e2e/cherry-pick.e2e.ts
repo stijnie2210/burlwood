@@ -1,4 +1,4 @@
-import { test, expect } from './harness';
+import { test, expect, type Sandbox } from './harness';
 import type { Page } from '@playwright/test';
 
 async function openCommitMenu(page: Page, subject: string) {
@@ -12,12 +12,20 @@ function toast(page: Page) {
   return page.locator('.toast-stack');
 }
 
+// Without a commit of main's own, a pick made in the same second as the original comes out
+// byte-identical to it, with the same hash.
+function featureWithFix(sandbox: Sandbox) {
+  const repo = sandbox.repo();
+  sandbox.git(repo, 'checkout', '-q', '-b', 'feature');
+  sandbox.commit(repo, 'fix.txt', 'fix\n', 'the fix');
+  sandbox.git(repo, 'checkout', '-q', 'main');
+  sandbox.commit(repo, 'main.txt', 'main\n', 'main work');
+  return repo;
+}
+
 test.describe('Cherry-pick', () => {
   test('copies a commit from another branch onto the current one', async ({ sandbox, launch }) => {
-    const repo = sandbox.repo();
-    sandbox.git(repo, 'checkout', '-q', '-b', 'feature');
-    sandbox.commit(repo, 'fix.txt', 'fix\n', 'the fix');
-    sandbox.git(repo, 'checkout', '-q', 'main');
+    const repo = featureWithFix(sandbox);
     const page = await launch([repo]);
 
     const menu = await openCommitMenu(page, 'the fix');
@@ -25,19 +33,11 @@ test.describe('Cherry-pick', () => {
     await menu.getByRole('button', { name: /^Cherry-pick and commit/ }).click();
 
     await expect(toast(page)).toContainText('onto main');
-    expect(sandbox.git(repo, 'log', '-1', '--format=%s', 'main')).toBe('the fix');
-    expect(sandbox.git(repo, 'rev-parse', 'main')).not.toBe(
-      sandbox.git(repo, 'rev-parse', 'feature')
-    );
+    expect(sandbox.git(repo, 'log', '-2', '--format=%s', 'main')).toBe('the fix\nmain work');
   });
 
   test('says so when the branch already has the changes', async ({ sandbox, launch }) => {
-    const repo = sandbox.repo();
-    sandbox.git(repo, 'checkout', '-q', '-b', 'feature');
-    sandbox.commit(repo, 'fix.txt', 'fix\n', 'the fix');
-    sandbox.git(repo, 'checkout', '-q', 'main');
-    // Without a commit of main's own, the pick can come out byte-identical to the original.
-    sandbox.commit(repo, 'main.txt', 'main\n', 'main work');
+    const repo = featureWithFix(sandbox);
     sandbox.git(repo, 'cherry-pick', 'feature');
     const before = sandbox.git(repo, 'rev-parse', 'HEAD');
     const page = await launch([repo]);
