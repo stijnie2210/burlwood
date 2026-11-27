@@ -139,6 +139,12 @@ func parseUnifiedDiff(output string) []FileDiff {
 			curHeader = line
 
 		case cur == nil:
+		case curHunk == nil && strings.HasPrefix(line, "rename from "):
+			cur.OldPath = strings.TrimPrefix(line, "rename from ")
+
+		case curHunk == nil && strings.HasPrefix(line, "rename to "):
+			cur.NewPath = strings.TrimPrefix(line, "rename to ")
+
 		case strings.HasPrefix(line, "--- "):
 			p := line[4:]
 			if p != "/dev/null" {

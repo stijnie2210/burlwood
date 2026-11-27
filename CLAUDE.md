@@ -38,6 +38,7 @@ serves the app over HTTP with bindings and events working, without a window, and
 engine closest to WKWebView). Global setup builds the frontend and `e2e/.server/burlwood-server` first;
 `BURLWOOD_E2E_SKIP_BUILD=1` reuses the last build.
 
+- `launch` returns once the first commit row is visible: until the session is restored the app resets the view and ignores shortcuts
 - `e2e/harness.ts`: each test gets a `sandbox` (a temp `HOME`, so settings and git config never touch the machine's own)
   with git helpers for repos, commits and bare remotes, and `launch(repos)`, which writes `session.json` (those repos as
   tabs; auto-fetch off), starts the server on a free port and opens the page
@@ -134,6 +135,9 @@ internal/repo/
                                     PreviewRebase counts pushed commits a rebase would rewrite; StartRebase reports up-to-date
   interactive_rebase.go             GetRebaseTodo (commit..HEAD, oldest first; refuses merges in the range), StartInteractiveRebase,
                                     UndoInteractiveRebase (reset --keep) — see Rebase flow
+  file_history.go                   GetFileHistory (log --follow: each entry has the file's name in that commit),
+                                    GetFileDiffAtCommit (that file only), GetBlame (porcelain → chunks per commit; rev ""
+                                    blames the working tree)
   cherrypick.go                     CherryPick: outcome committed / staged / empty / conflict; an empty pick (changes
                                     already on the branch) is skipped instead of left in progress
   conflict.go                       GetMergeKind (merge / cherry-pick / revert), IsInMerge, GetMergeMessage,
@@ -214,6 +218,9 @@ frontend/src/
     graph/CommitContextMenu.vue     Right-click menu for commits; self-clamps via clampMenuPosition in onMounted
     graph/graphRenderer.ts          drawGraphCell() — CELL_W=14, bezier curves for diagonals; the HEAD commit is
                                     drawn as the icon's knot (--brand-sapwood ring, --brand-heartwood core)
+    history/FileHistoryModal.vue    File viewer (stores/fileHistory.ts): History tab (commits that touched the file + that
+                                    commit's diff of it) and Blame tab; opened from FileDiffView's header and the Working
+                                    Tree file menu; 'burlwood:show-commit' selects a commit in the graph
     staging/StagingView.vue         File list (unstaged/staged/conflicts) + merge banner + ConflictView/HunkSelector
                                     Arrow key navigation across all three file sections
                                     Right-click context menu (teleported); image preview for image file types
@@ -241,7 +248,7 @@ Uses `useVirtualizer(computed(() => ({ count, getScrollElement, estimateSize, ov
 Frontend builds the patch (not backend) so the applied patch exactly matches what the user saw.
 
 ### Unified diff parsing (`internal/repo/diff.go`)
-`parseUnifiedDiff()` handles: `diff --git` headers, `--- /dev/null` / `+++ /dev/null` (new/deleted files), `Binary files` lines, `\ No newline at end of file` (sets `noNewline` on the line before; both patch builders write the marker back, or a hunk at a file's end won't apply), hunk headers `@@ -n,m +n,m @@`. Untracked files use `git diff --no-index /dev/null <path>` (exit code 1 = differences found, not an error).
+`parseUnifiedDiff()` handles: `diff --git` headers, `rename from` / `rename to` (a pure rename has no ---/+++ lines), `--- /dev/null` / `+++ /dev/null` (new/deleted files), `Binary files` lines, `\ No newline at end of file` (sets `noNewline` on the line before; both patch builders write the marker back, or a hunk at a file's end won't apply), hunk headers `@@ -n,m +n,m @@`. Untracked files use `git diff --no-index /dev/null <path>` (exit code 1 = differences found, not an error).
 
 ### Resizable panels
 `makeResizer(width: Ref<number>, min, max, direction)` in `App.vue` — returns a mousedown handler. Direction `'right'` = delta is +x; `'left'` = delta is −x (for right-edge panels). Each component that needs local resize (e.g. `StagingView`) defines its own inline version.

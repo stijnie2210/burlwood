@@ -11,6 +11,7 @@ export {
 export type {
     AheadBehind,
     AppPrefs,
+    BlameChunk,
     BranchInfo,
     CherryPickResult,
     ConflictContent,
@@ -18,6 +19,7 @@ export type {
     DeletedRemoteBranch,
     DeletedTag,
     FileDiff,
+    FileHistoryEntry,
     FileStatus,
     Hunk,
     HunkLine,

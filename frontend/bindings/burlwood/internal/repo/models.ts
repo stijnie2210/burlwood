@@ -26,6 +26,17 @@ export interface AppPrefs {
     "stashIncludeUntracked": boolean;
 }
 
+export interface BlameChunk {
+    "hash": string;
+    "shortHash": string;
+    "author": string;
+    "timestamp": number;
+    "summary": string;
+    "startLine": number;
+    "lines": string[] | null;
+    "uncommitted": boolean;
+}
+
 export interface BranchInfo {
     "name": string;
     "isRemote": boolean;
@@ -96,6 +107,21 @@ export interface FileDiff {
     "newPath": string;
     "hunks": Hunk[] | null;
     "isBinary": boolean;
+}
+
+export interface FileHistoryEntry {
+    "hash": string;
+    "shortHash": string;
+    "subject": string;
+    "author": string;
+    "timestamp": number;
+
+    /**
+     * "A" | "M" | "D" | "R" | "C"
+     */
+    "status": string;
+    "path": string;
+    "oldPath": string;
 }
 
 export interface FileStatus {

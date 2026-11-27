@@ -25,6 +25,7 @@ function startFileListResize(e: MouseEvent) {
 }
 import { useCommitsStore } from '../../stores/commits';
 import { useReposStore } from '../../stores/repos';
+import { useFileHistoryStore } from '../../stores/fileHistory';
 import { GetFileAtCommitBase64 } from '../../../bindings/burlwood/app';
 import CommitFileList from './CommitFileList.vue';
 
@@ -97,6 +98,15 @@ function close() {
   commits.clearFileSelection();
 }
 
+function openHistory(tab: 'history' | 'blame') {
+  const f = file.value;
+  const repo = repos.activeRepo?.path;
+  if (!f || !repo || !commits.selectedHash) {
+    return;
+  }
+  useFileHistoryStore().show(repo, filePath(f), tab, commits.selectedHash);
+}
+
 function navigateTo(delta: number) {
   if (commits.selectedFileIndex === null) {
     return;
@@ -140,6 +150,14 @@ onUnmounted(() => document.removeEventListener('keydown', onKeyDown));
       <div v-if="file" class="fdv-title">
         <span class="fdv-filepath">{{ filePath(file) }}</span>
       </div>
+      <button v-if="file" class="fdv-action" @click="openHistory('history')">File history</button>
+      <button
+        v-if="file?.newPath && !file.isBinary"
+        class="fdv-action"
+        @click="openHistory('blame')"
+      >
+        Blame
+      </button>
       <DiffLayoutControls v-if="file && !file.isBinary" />
       <div v-if="selectedRow" class="fdv-commit-chip">
         <span class="fdv-chip-hash">{{ selectedRow.shortHash }}</span>
@@ -245,6 +263,21 @@ onUnmounted(() => document.removeEventListener('keydown', onKeyDown));
   overflow: hidden;
   text-overflow: ellipsis;
   display: block;
+}
+
+.fdv-action {
+  flex-shrink: 0;
+  padding: 3px 10px;
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  color: var(--text-secondary);
+  font-size: var(--text-meta);
+  cursor: default;
+}
+.fdv-action:hover {
+  border-color: var(--border-strong);
+  color: var(--text-primary);
 }
 
 .fdv-commit-chip {

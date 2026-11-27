@@ -3,6 +3,7 @@ import { parentDir } from '../../utils/folders';
 import { ref, watch, computed, onMounted, onUnmounted, nextTick } from 'vue';
 import type { Ref } from 'vue';
 import { isImageFile, imageDataUrl } from '../../utils/imageUtils';
+import { useFileHistoryStore } from '../../stores/fileHistory';
 import { platform, shortcut } from '../../utils/platform';
 import { useReposStore } from '../../stores/repos';
 import { useBranchesStore } from '../../stores/branches';
@@ -539,6 +540,19 @@ async function ctxOpenInEditor() {
   } catch (e) {
     toast.error(e);
   }
+}
+
+const ctxFileIsUntracked = computed(
+  () => staging.files.find((f) => f.path === fileCtxMenu.value?.path)?.unstaged === '?'
+);
+
+function ctxFileHistory(tab: 'history' | 'blame') {
+  const m = fileCtxMenu.value;
+  if (!m) {
+    return;
+  }
+  closeFileCtxMenu();
+  useFileHistoryStore().show(repoPath(), m.path, tab);
 }
 
 function ctxCopyPath() {
@@ -1214,6 +1228,15 @@ async function doAbortRebase() {
         <button role="menuitem" class="ctx-menu-item" @click="ctxOpenInEditor">
           Open in editor
         </button>
+        <template v-if="!ctxFileIsUntracked">
+          <div class="ctx-menu-divider" />
+          <button role="menuitem" class="ctx-menu-item" @click="ctxFileHistory('history')">
+            File history
+          </button>
+          <button role="menuitem" class="ctx-menu-item" @click="ctxFileHistory('blame')">
+            Blame
+          </button>
+        </template>
         <div class="ctx-menu-divider" />
         <button role="menuitem" class="ctx-menu-item" @click="ctxCopyPath">Copy path</button>
         <button
