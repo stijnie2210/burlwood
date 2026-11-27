@@ -23,6 +23,15 @@ describe('toast store', () => {
     expect(toast.toasts).toHaveLength(0);
   });
 
+  it('keeps a sticky Undo until it is dismissed', () => {
+    const toast = useToastStore();
+    const id = toast.withUndo('Rebased main', () => {}, true);
+    vi.advanceTimersByTime(3600000);
+    expect(toast.toasts).toHaveLength(1);
+    toast.dismiss(id);
+    expect(toast.toasts).toHaveLength(0);
+  });
+
   it('keeps a Working Tree hint until the Working Tree opens', () => {
     const toast = useToastStore();
     toast.workingTreeHint('Stopped on a conflict');

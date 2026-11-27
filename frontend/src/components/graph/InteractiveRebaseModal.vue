@@ -75,6 +75,9 @@ async function reloadRepo(repo: string) {
   ]);
 }
 
+// Only the latest rebase can be undone, so an earlier Undo toast is taken down.
+let undoToast: number | null = null;
+
 async function start() {
   if (rebase.problem || !rebase.changed || rebase.starting) {
     return;
@@ -91,15 +94,22 @@ async function start() {
       );
       return;
     }
-    toast.withUndo(`Rebased ${branch}`, async () => {
-      try {
-        await UndoInteractiveRebase(repo, result);
-        toast.success(`Rebase undone, ${branch} is back at ${result.previousHead.slice(0, 7)}`);
-      } catch (e) {
-        toast.error(e);
-      }
-      await reloadRepo(repo);
-    });
+    if (undoToast !== null) {
+      toast.dismiss(undoToast);
+    }
+    undoToast = toast.withUndo(
+      `Rebased ${branch}`,
+      async () => {
+        try {
+          await UndoInteractiveRebase(repo, result);
+          toast.success(`Rebase undone, ${branch} is back at ${result.previousHead.slice(0, 7)}`);
+        } catch (e) {
+          toast.error(e);
+        }
+        await reloadRepo(repo);
+      },
+      true
+    );
   } catch (e) {
     toast.error(e);
   }

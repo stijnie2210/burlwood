@@ -109,8 +109,9 @@ export const useToastStore = defineStore('toast', () => {
     const { message, detail } = describeGitError(err);
     return push(message, 'error', undefined, undefined, detail);
   }
-  function withUndo(message: string, undo: () => void | Promise<void>) {
-    return push(message, 'info', UNDO_WINDOW_MS, { label: 'Undo', run: undo });
+  // sticky: for an undo too costly to lose to a timer (a rewritten branch); it stays until dismissed.
+  function withUndo(message: string, undo: () => void | Promise<void>, sticky = false) {
+    return push(message, 'info', sticky ? 0 : UNDO_WINDOW_MS, { label: 'Undo', run: undo });
   }
 
   // A hint that sends the user to the Working Tree stays until they get there: left up, it
