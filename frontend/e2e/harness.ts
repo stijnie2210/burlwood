@@ -112,6 +112,11 @@ export const test = base.extend<Fixtures>({
       await page.goto(url);
       // The macOS sidebar is see-through to show the window's vibrancy; a browser has none behind it.
       await page.addStyleTag({ content: 'html:root { --surface-sidebar: #211d1a; }' });
+      // Restoring the session resets the view and ignores shortcuts until the tab is open; a test
+      // that acts before then loses its first click now and then.
+      if (repos.length) {
+        await page.locator('.row-inner').first().waitFor();
+      }
       return page;
     });
     server?.kill();

@@ -6,11 +6,6 @@ function toast(page: import('@playwright/test').Page) {
   return page.locator('.toast-stack');
 }
 
-// Shortcuts do nothing until the session's repo tab is restored.
-async function ready(page: import('@playwright/test').Page) {
-  await expect(page.locator('.row-inner').first()).toBeVisible();
-}
-
 function pushedRepo(sandbox: Sandbox) {
   const repo = sandbox.repo();
   const remote = sandbox.bareRemote(repo);
@@ -23,7 +18,6 @@ test.describe('Keyboard shortcuts', () => {
     const { repo, remote } = pushedRepo(sandbox);
     sandbox.commit(repo, 'a.txt', 'a\n', 'local work');
     const page = await launch([repo]);
-    await ready(page);
 
     await page.keyboard.press('ControlOrMeta+KeyP');
     await expect(toast(page)).toContainText('Pushed');
@@ -44,7 +38,6 @@ test.describe('Keyboard shortcuts', () => {
     const repo = sandbox.repo();
     writeFileSync(join(repo, 'README.md'), '# changed\n');
     const page = await launch([repo]);
-    await ready(page);
 
     await page.keyboard.press('ControlOrMeta+Shift+KeyS');
     await expect(toast(page)).toContainText('Changes stashed');
