@@ -86,11 +86,11 @@ internal/gitcli/
   commits.go                        CheckoutRef, CreateBranchAt, RevertCommit, CherryPick, CreateTag, MoveTag, ResetBranch(mode)
   branches.go                       DeleteBranch, RenameBranch, SetUpstream/UnsetUpstream, Merge (--no-edit)
   worktree.go                       RemoveWorktree (optionally --force), PruneWorktrees
-  stash.go                          ListStashes, Apply/Pop/Drop/RenameStash, Stash/StashPop, StashPushNamed, CreateBranch
+  stash.go                          ListStashes, Apply/Pop/Drop/RenameStash, Stash (--include-untracked per prefs)/StashPop, StashPushNamed, CreateBranch
   rebase.go                         StartRebase, ContinueRebase, AbortRebase
   staging.go                        StageFile, UnstageFile, StageFiles/UnstageFiles (one call, paths via stdin),
                                     ApplyPatch, ReverseApplyToWorkingTree, DiscardFile
-  remote.go                         FetchAll, Pull, PushTag/ForcePushTag, RemoteHasRef (ls-remote --exit-code), DeleteRemoteRef
+  remote.go                         FetchAll / FetchRemote (--prune per prefs), Pull, PushTag/ForcePushTag, RemoteHasRef (ls-remote --exit-code), DeleteRemoteRef
   push.go                           PushBranch(branch, force): upstream from config or -u on the default remote;
                                     non-fast-forward → Rejected result (not an error); force = --force-with-lease --force-if-includes
                                     (the bare lease is defeated by background auto-fetch)
@@ -105,7 +105,7 @@ internal/gitcli/
 internal/repo/
   manager.go                        Manager{map[string]*git.Repository}; Open/Close/Get
                                     RecentEntry → ~/Library/Application Support/burlwood/repos.json; ListRecentRepos drops repos that are gone
-  prefs.go / session.go /           AppPrefs (editor, auto-fetch, graph limit, diff context, date format, pull mode),
+  prefs.go / session.go /           AppPrefs (editor, auto-fetch, prune on fetch, stash untracked, graph limit, diff context, date format, pull mode),
     windowprefs.go                  open tabs + active tab, window frame — JSON files next to repos.json
   configdir.go                      configPath(): the settings folder; moves the pre-rename `gitgood` folder once
   branches.go                       ListBranches (for-each-ref), GetAheadBehind; BranchInfo.worktree names another
@@ -113,6 +113,7 @@ internal/repo/
                                     DeleteBranch returns name/hash/upstream so RestoreBranch can undo it
   merge.go                          MergeBranch: outcome (up-to-date / fast-forward / merged) from HEAD before and after,
                                     not git's (translated) output; a conflict returns an error and leaves MERGE_HEAD
+  remotes.go                        FetchRemote, PruneRemote (names from comparing refs before/after, not git's output)
   remote_branches.go                DeleteRemoteBranch (push --delete; a branch the remote no longer has only drops the stale
                                     remote-tracking ref), RestoreRemoteBranch pushes the old hash back for Undo
   worktrees.go                      ListWorktrees (git worktree list --porcelain): main first, isCurrent per repoPath
@@ -137,6 +138,7 @@ internal/repo/
                                     GetConflictContent, ResolveConflict, AbortMerge (the --abort for that kind)
   stash.go                          stash list/apply/pop/drop/rename
   staging.go                        StageHunk/UnstageHunk/DiscardHunk (accept patch string from frontend), UndoDiscard,
+                                    DiscardFiles/UndoDiscards (Discard All: snapshots every file before touching any),
                                     FetchAll, Commit, GetAmendInfo; BuildHunkPatch (test reference for the TS version)
 internal/desktop/
   appimage.go                       Run as an AppImage on Linux ($APPIMAGE): writes ~/.local/share/applications/burlwood.desktop
@@ -184,6 +186,8 @@ frontend/src/
     logModal.ts                     title/content for LogViewerModal (full git output)
   components/
     layout/ToolBar.vue              Title-bar row (hidden-inset, --wails-draggable): repo button, current-branch chip,
+                                    (menu bar and App.vue's ⌘ shortcuts reach Pull/Push/New Branch/Stash/Pop via the
+                                    'burlwood:toolbar' event; main.go's buildMenu lists every shortcut)
                                     Commits|Working Tree segmented control, icon-only git actions (tooltips +
                                     aria-labels), Find commit field (⌘F via the 'burlwood:find' event), Settings
     layout/TabBar.vue               Repo tabs (open/close/switch); only rendered with 2+ repos
@@ -288,6 +292,8 @@ All context menus are teleported to `<body>` to escape overflow clipping. Positi
 
 The stash section of the sidebar has its own menu: Apply, Pop, Rename, Drop.
 
+Right-clicking a remote's group header: Fetch <remote>, Remove branches deleted on <remote> (`git remote prune`).
+
 The tag menu: Push to origin, Copy tag name, Delete… (confirm, Cancel focused; "Also delete it from origin" when
 origin exists, off by default). Undo restores the local tag, annotated ones with their message.
 
@@ -300,7 +306,7 @@ closes its tab). Remove is disabled for the main worktree, the one you're in and
 (`prunable`) offers Prune instead.
 
 ### Commit context menu (`CommitContextMenu.vue` + `internal/gitcli/commits.go`)
-Checkout, Create branch here (`checkout -b <name> <hash>`), Create tag (then optionally push it), Move tag, Push/Force-push tag, Revert (confirm mode), Cherry-pick (commit or stage; unavailable on merge commits, the current commit and mid-merge/rebase; hidden on stashes), Reset branch soft/mixed, hard reset via `HardResetBranch` (undoable with `UndoHardReset`), Copy hash. Name inputs and confirmations are `mode` states (`'branch'`, `'tag'`, `'move-tag'`, `'revert-confirm'`, `'cherry-pick-confirm'`, `'tag-created'`).
+Copy short/full SHA, Copy commit message (`GetCommitMessage`, %B), Checkout, Create branch here (`checkout -b <name> <hash>`), Create tag (then optionally push it), Move tag, Push/Force-push tag, Delete tag (hands over to the sidebar's confirmation via the 'burlwood:delete-tag' event), Revert (confirm mode), Cherry-pick (commit or stage; unavailable on merge commits, the current commit and mid-merge/rebase; hidden on stashes), Reset branch soft/mixed, hard reset via `HardResetBranch` (undoable with `UndoHardReset`), Copy hash. Name inputs and confirmations are `mode` states (`'branch'`, `'tag'`, `'move-tag'`, `'revert-confirm'`, `'cherry-pick-confirm'`, `'tag-created'`).
 
 ### Working tree file context menu (`StagingView.vue` + `internal/gitcli/fileops.go`)
 Right-click on any file item (conflicts, unstaged, staged). Items are contextual per section:

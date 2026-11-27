@@ -65,7 +65,8 @@ const PULL_MODES: { value: string; label: string }[] = [
 
 const pullMode = computed(() => prefsStore.prefs.pullMode || 'ff');
 const pullTitle = computed(
-  () => PULL_MODES.find((m) => m.value === pullMode.value)?.label ?? 'Pull'
+  () =>
+    `${PULL_MODES.find((m) => m.value === pullMode.value)?.label ?? 'Pull'} (${shortcut('P', true)})`
 );
 const showPullMenu = ref(false);
 const pullMenuEl = ref<HTMLElement | null>(null);
@@ -104,13 +105,30 @@ function onSearchEscape() {
   searchInputEl.value?.blur();
 }
 
+const MENU_ACTIONS: Record<string, () => unknown> = {
+  pull: () => onPull(),
+  push: () => onPush(),
+  'new-branch': () => openBranchInput(),
+  stash: () => onStash(),
+  'pop-stash': () => onPop(),
+};
+
+function onMenuAction(e: Event) {
+  const action = MENU_ACTIONS[(e as CustomEvent<string>).detail];
+  if (action && !disabled.value) {
+    action();
+  }
+}
+
 onMounted(() => {
   window.addEventListener('mousedown', onPullMenuMouseDown);
   window.addEventListener('burlwood:find', focusSearch);
+  window.addEventListener('burlwood:toolbar', onMenuAction);
 });
 onUnmounted(() => {
   window.removeEventListener('mousedown', onPullMenuMouseDown);
   window.removeEventListener('burlwood:find', focusSearch);
+  window.removeEventListener('burlwood:toolbar', onMenuAction);
 });
 
 async function onPull() {
@@ -384,7 +402,7 @@ async function confirmBranch() {
         </div>
         <button
           class="tbtn"
-          title="Push"
+          :title="`Push (${shortcut('P')})`"
           aria-label="Push"
           :disabled="disabled"
           :class="{ loading: busy === 'push' }"
@@ -412,7 +430,7 @@ async function confirmBranch() {
       <div class="btn-group branch-group">
         <button
           class="tbtn"
-          title="New branch"
+          :title="`New branch (${shortcut('N', true)})`"
           aria-label="New branch"
           :disabled="disabled"
           :class="{ loading: busy === 'branch', active: showBranchInput }"
@@ -456,7 +474,7 @@ async function confirmBranch() {
       <div class="btn-group">
         <button
           class="tbtn"
-          title="Stash changes"
+          :title="`Stash changes (${shortcut('S', true)})`"
           aria-label="Stash changes"
           :disabled="disabled"
           :class="{ loading: busy === 'stash' }"

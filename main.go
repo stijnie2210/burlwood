@@ -81,12 +81,20 @@ func main() {
 	}
 }
 
+const repoURL = "https://github.com/stijnie2210/burlwood"
+
 func buildMenu(app *application.App) *application.Menu {
 	appMenu := app.NewMenu()
 	appNameMenu := appMenu.AddSubmenu("Burlwood")
+	appNameMenu.AddRole(application.About)
+	appNameMenu.AddSeparator()
 	appNameMenu.Add("Settings…").SetAccelerator("CmdOrCtrl+,").OnClick(func(_ *application.Context) {
 		app.Event.Emit("open-preferences")
 	})
+	appNameMenu.AddSeparator()
+	appNameMenu.AddRole(application.Hide)
+	appNameMenu.AddRole(application.HideOthers)
+	appNameMenu.AddRole(application.ShowAll)
 	appNameMenu.AddSeparator()
 	appNameMenu.Add("Quit Burlwood").SetAccelerator("CmdOrCtrl+q").OnClick(func(_ *application.Context) {
 		app.Quit()
@@ -104,6 +112,12 @@ func buildMenu(app *application.App) *application.Menu {
 	repoMenu.Add("Close Tab").SetAccelerator("CmdOrCtrl+w").OnClick(emit("close-tab"))
 	repoMenu.AddSeparator()
 	repoMenu.Add("Fetch All").SetAccelerator("CmdOrCtrl+r").OnClick(emit("fetch"))
+	repoMenu.Add("Pull").SetAccelerator("CmdOrCtrl+Shift+p").OnClick(emit("pull"))
+	repoMenu.Add("Push").SetAccelerator("CmdOrCtrl+p").OnClick(emit("push"))
+	repoMenu.AddSeparator()
+	repoMenu.Add("New Branch…").SetAccelerator("CmdOrCtrl+Shift+n").OnClick(emit("new-branch"))
+	repoMenu.Add("Stash Changes").SetAccelerator("CmdOrCtrl+Shift+s").OnClick(emit("stash"))
+	repoMenu.Add("Pop Latest Stash").OnClick(emit("pop-stash"))
 	repoMenu.AddSeparator()
 	repoMenu.Add("Previous Tab").SetAccelerator("CmdOrCtrl+[").OnClick(emit("prev-tab"))
 	repoMenu.Add("Next Tab").SetAccelerator("CmdOrCtrl+]").OnClick(emit("next-tab"))
@@ -115,6 +129,18 @@ func buildMenu(app *application.App) *application.Menu {
 	viewMenu.Add("Working Tree").SetAccelerator("CmdOrCtrl+2").OnClick(emit("view-staging"))
 	viewMenu.AddSeparator()
 	viewMenu.Add("Find Commit…").SetAccelerator("CmdOrCtrl+f").OnClick(emit("find"))
+
+	appMenu.AddRole(application.WindowMenu)
+
+	open := func(url string) func(*application.Context) {
+		return func(_ *application.Context) {
+			_ = app.Browser.OpenURL(url)
+		}
+	}
+	helpMenu := appMenu.AddSubmenu("Help")
+	helpMenu.Add("Burlwood on GitHub").OnClick(open(repoURL))
+	helpMenu.Add("Release Notes").OnClick(open(repoURL + "/releases"))
+	helpMenu.Add("Report an Issue…").OnClick(open(repoURL + "/issues/new"))
 
 	return appMenu
 }

@@ -15,6 +15,8 @@ type AppPrefs struct {
 	DiffContextLines      int    `json:"diffContextLines"`
 	DateFormat            string `json:"dateFormat"` // "relative" | "absolute"
 	PullMode              string `json:"pullMode"`   // "fetch" | "ff" | "ff-only" | "rebase" — default action for the toolbar Pull button
+	PruneOnFetch          bool   `json:"pruneOnFetch"`
+	StashIncludeUntracked bool   `json:"stashIncludeUntracked"`
 }
 
 var (
@@ -31,6 +33,7 @@ func DefaultPrefs() AppPrefs {
 		DiffContextLines:      3,
 		DateFormat:            "relative",
 		PullMode:              "ff",
+		PruneOnFetch:          false,
 	}
 }
 

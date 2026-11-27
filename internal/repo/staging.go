@@ -39,6 +39,34 @@ func (m *Manager) DiscardHunk(repoPath, path, patch string) (gitcli.DiscardSnaps
 	return snap, gitcli.ReverseApplyToWorkingTree(repoPath, []byte(patch))
 }
 
+// Every file is snapshotted before any is touched, so Undo covers the whole batch even when
+// a later discard fails.
+func (m *Manager) DiscardFiles(repoPath string, paths []string) ([]gitcli.DiscardSnapshot, error) {
+	snaps := make([]gitcli.DiscardSnapshot, 0, len(paths))
+	for _, path := range paths {
+		snap, err := gitcli.SnapshotWorkingFile(repoPath, path)
+		if err != nil {
+			return nil, err
+		}
+		snaps = append(snaps, snap)
+	}
+	for _, path := range paths {
+		if err := gitcli.DiscardFile(repoPath, path); err != nil {
+			return snaps, err
+		}
+	}
+	return snaps, nil
+}
+
+func (m *Manager) UndoDiscards(repoPath string, snaps []gitcli.DiscardSnapshot) error {
+	for _, snap := range snaps {
+		if err := gitcli.RestoreWorkingFile(repoPath, snap); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 func (m *Manager) UndoDiscard(repoPath string, snap gitcli.DiscardSnapshot) error {
 	return gitcli.RestoreWorkingFile(repoPath, snap)
 }
@@ -53,11 +81,13 @@ func (m *Manager) UnstageHunk(repoPath, patch string) error {
 }
 
 func (m *Manager) FetchAll(repoPath string) error {
-	return gitcli.FetchAll(repoPath)
+	prefs, _ := LoadPrefs()
+	return gitcli.FetchAll(repoPath, prefs.PruneOnFetch)
 }
 
 func (m *Manager) Stash(repoPath string) error {
-	return gitcli.Stash(repoPath)
+	prefs, _ := LoadPrefs()
+	return gitcli.Stash(repoPath, prefs.StashIncludeUntracked)
 }
 
 func (m *Manager) StashPop(repoPath string) error {

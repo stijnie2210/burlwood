@@ -8,6 +8,7 @@ import {
   GetAheadBehind,
   SwitchBranch,
   FetchAll,
+  FetchRemote,
 } from '../../bindings/burlwood/app';
 
 export interface BranchInfo {
@@ -126,6 +127,12 @@ export const useBranchesStore = defineStore('branches', () => {
     await load(repoPath);
   }
 
+  async function fetchRemote(repoPath: string, remoteName: string) {
+    await FetchRemote(repoPath, remoteName);
+    markFetched(repoPath);
+    await load(repoPath);
+  }
+
   function markFetched(repoPath: string) {
     const now = Date.now();
     fetchedAt.set(repoPath, now);
@@ -156,6 +163,7 @@ export const useBranchesStore = defineStore('branches', () => {
     loading,
     aheadBehind,
     lastFetchedAt,
+    fetchRemote,
     load,
     silentFetchAndRefresh,
     markFetched,

@@ -12,6 +12,8 @@ import {
   UnstageFiles,
   UndoDiscard,
   DiscardHunk,
+  DiscardFiles,
+  UndoDiscards,
   FetchAll,
   PullBranch,
   Commit,
@@ -242,6 +244,19 @@ export const useStagingStore = defineStore('staging', () => {
     return snapshot;
   }
 
+  async function discardFiles(
+    repoPath: string,
+    paths: string[]
+  ): Promise<gitcli.DiscardSnapshot[]> {
+    const snapshots = (await DiscardFiles(repoPath, paths)) ?? [];
+    await refresh(repoPath);
+    return snapshots;
+  }
+
+  async function undoDiscards(repoPath: string, snapshots: gitcli.DiscardSnapshot[]) {
+    await UndoDiscards(repoPath, snapshots);
+  }
+
   async function undoDiscard(repoPath: string, snapshot: gitcli.DiscardSnapshot) {
     await UndoDiscard(repoPath, snapshot);
   }
@@ -319,6 +334,8 @@ export const useStagingStore = defineStore('staging', () => {
     unstageHunk,
     discardFile,
     discardHunk,
+    discardFiles,
+    undoDiscards,
     undoDiscard,
     fetchAll,
     pullBranch,

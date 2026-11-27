@@ -3,7 +3,7 @@ import { parentDir } from '../../utils/folders';
 import { ref, watch, computed, onMounted, onUnmounted, nextTick } from 'vue';
 import type { Ref } from 'vue';
 import { isImageFile, imageDataUrl } from '../../utils/imageUtils';
-import { platform } from '../../utils/platform';
+import { platform, shortcut } from '../../utils/platform';
 import { useReposStore } from '../../stores/repos';
 import { useBranchesStore } from '../../stores/branches';
 import { useCommitsStore } from '../../stores/commits';
@@ -204,6 +204,38 @@ async function onStageAll() {
     toast.error(e);
   }
 }
+const confirmingDiscardAll = ref(false);
+const discardAllCancelEl = ref<HTMLButtonElement | null>(null);
+
+async function startDiscardAll() {
+  confirmingDiscardAll.value = true;
+  await nextTick();
+  discardAllCancelEl.value?.focus();
+}
+
+async function onDiscardAll() {
+  confirmingDiscardAll.value = false;
+  const repo = repoPath();
+  const paths = staging.unstagedFiles.map((f) => f.path);
+  try {
+    const snapshots = await staging.discardFiles(repo, paths);
+    const what = paths.length === 1 ? '1 file' : `${paths.length} files`;
+    toast.withUndo(`Discarded changes to ${what}`, async () => {
+      try {
+        await staging.undoDiscards(repo, snapshots);
+        if (repoPath() === repo) {
+          await staging.refresh(repo);
+        }
+        toast.success(`Restored ${what}`);
+      } catch (e) {
+        toast.error(e);
+      }
+    });
+  } catch (e) {
+    toast.error(e);
+  }
+}
+
 async function onUnstageAll() {
   try {
     await staging.unstageFiles(
@@ -868,8 +900,38 @@ async function doAbortRebase() {
                     />
                   </svg>
                 </button>
+                <button
+                  v-if="staging.unstagedFiles.length"
+                  class="section-btn section-btn--danger"
+                  @click="startDiscardAll"
+                >
+                  Discard All
+                </button>
                 <button v-if="staging.unstagedFiles.length" class="section-btn" @click="onStageAll">
                   Stage All
+                </button>
+              </div>
+            </div>
+            <div
+              v-if="confirmingDiscardAll && staging.unstagedFiles.length"
+              class="discard-all-confirm"
+              role="alertdialog"
+              aria-labelledby="discard-all-text"
+              @keydown.esc="confirmingDiscardAll = false"
+            >
+              <span id="discard-all-text">
+                Discard all unstaged changes, untracked files included? Staged changes stay.
+              </span>
+              <div class="discard-all-actions">
+                <button class="merge-abort-btn merge-abort-btn--confirm" @click="onDiscardAll">
+                  Discard
+                </button>
+                <button
+                  ref="discardAllCancelEl"
+                  class="merge-abort-btn merge-abort-btn--cancel"
+                  @click="confirmingDiscardAll = false"
+                >
+                  Cancel
                 </button>
               </div>
             </div>
@@ -1003,6 +1065,7 @@ async function doAbortRebase() {
                 spellcheck="true"
                 @keydown.enter.exact.prevent="descInputRef?.focus()"
                 @keydown.meta.enter="onCommit"
+                @keydown.ctrl.enter="onCommit"
               />
               <span
                 class="char-count"
@@ -1024,6 +1087,7 @@ async function doAbortRebase() {
               aria-label="Commit description"
               rows="3"
               @keydown.meta.enter="onCommit"
+              @keydown.ctrl.enter="onCommit"
             />
 
             <label class="amend-row">
@@ -1039,6 +1103,7 @@ async function doAbortRebase() {
               class="commit-btn"
               :class="{ ready: canCommit && commitSummary.trim() }"
               :disabled="!canCommit"
+              :title="`Commit (${shortcut(platform === 'mac' ? '↩' : 'Enter')})`"
               @click="onCommit"
             >
               <span v-if="committing">Committing…</span>
@@ -1438,6 +1503,28 @@ async function doAbortRebase() {
 .section-btn:hover {
   border-color: var(--border-strong);
   color: var(--text-primary);
+}
+.section-btn--danger:hover {
+  color: var(--danger);
+  border-color: var(--danger-border);
+}
+
+.discard-all-confirm {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin: 0 var(--inset-panel) var(--space-2);
+  padding: var(--space-2);
+  border: 1px solid var(--danger-border);
+  border-radius: 5px;
+  background: var(--danger-soft);
+  font-size: var(--text-meta);
+  color: var(--text-primary);
+  line-height: 1.4;
+}
+.discard-all-actions {
+  display: flex;
+  gap: 6px;
 }
 
 .empty-section {

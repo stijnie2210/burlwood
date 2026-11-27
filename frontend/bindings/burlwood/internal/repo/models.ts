@@ -22,6 +22,8 @@ export interface AppPrefs {
      * "fetch" | "ff" | "ff-only" | "rebase" — default action for the toolbar Pull button
      */
     "pullMode": string;
+    "pruneOnFetch": boolean;
+    "stashIncludeUntracked": boolean;
 }
 
 export interface BranchInfo {

@@ -138,12 +138,32 @@ func (a *App) DiscardHunk(repoPath, path, patch string) (gitcli.DiscardSnapshot,
 	return a.manager.DiscardHunk(repoPath, path, patch)
 }
 
+func (a *App) DiscardFiles(repoPath string, paths []string) ([]gitcli.DiscardSnapshot, error) {
+	return a.manager.DiscardFiles(repoPath, paths)
+}
+
+func (a *App) UndoDiscards(repoPath string, snaps []gitcli.DiscardSnapshot) error {
+	return a.manager.UndoDiscards(repoPath, snaps)
+}
+
+func (a *App) GetCommitMessage(repoPath, hash string) (string, error) {
+	return gitcli.CommitMessage(repoPath, hash)
+}
+
 func (a *App) UndoDiscard(repoPath string, snap gitcli.DiscardSnapshot) error {
 	return a.manager.UndoDiscard(repoPath, snap)
 }
 
 func (a *App) FetchAll(repoPath string) error {
 	return a.manager.FetchAll(repoPath)
+}
+
+func (a *App) FetchRemote(repoPath, remote string) error {
+	return a.manager.FetchRemote(repoPath, remote)
+}
+
+func (a *App) PruneRemote(repoPath, remote string) ([]string, error) {
+	return a.manager.PruneRemote(repoPath, remote)
 }
 
 func (a *App) PullBranch(repoPath, mode string) error {

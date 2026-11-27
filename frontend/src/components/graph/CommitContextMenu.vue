@@ -15,6 +15,7 @@ import { useReposStore } from '../../stores/repos';
 import { shortcut } from '../../utils/platform';
 import {
   CheckoutRef,
+  GetCommitMessage,
   CreateBranchAt,
   RevertCommit,
   CherryPick,
@@ -98,6 +99,26 @@ async function copyHash(full: boolean) {
   await navigator.clipboard.writeText(full ? props.row.hash : props.row.shortHash);
   toast.success(full ? 'Copied full SHA' : 'Copied short SHA');
   emit('close');
+}
+
+async function copyMessage() {
+  try {
+    const message = await GetCommitMessage(props.repoPath, props.row.hash);
+    await navigator.clipboard.writeText(message);
+    toast.success('Copied commit message');
+  } catch (e) {
+    toast.error(e);
+  }
+  emit('close');
+}
+
+// The sidebar owns tag deletion (the origin option and Undo), so the commit menu hands over to it.
+function deleteTag(name: string) {
+  const { left, top } = menuEl.value?.getBoundingClientRect() ?? { left: props.x, top: props.y };
+  emit('close');
+  window.dispatchEvent(
+    new CustomEvent('burlwood:delete-tag', { detail: { name, x: left, y: top } })
+  );
 }
 
 async function checkout() {
@@ -447,6 +468,7 @@ async function pushTag(name: string) {
 
         <button role="menuitem" class="ctx-item" @click="copyHash(false)">Copy short SHA</button>
         <button role="menuitem" class="ctx-item" @click="copyHash(true)">Copy full SHA</button>
+        <button role="menuitem" class="ctx-item" @click="copyMessage">Copy commit message</button>
 
         <div class="ctx-divider" />
 
@@ -495,14 +517,14 @@ async function pushTag(name: string) {
 
         <template v-if="row.labels?.some((l) => l.type === 'tag')">
           <div class="ctx-divider" />
-          <button
-            v-for="l in (row.labels ?? []).filter((l) => l.type === 'tag')"
-            :key="l.name"
-            class="ctx-item"
-            @click="pushTag(l.name)"
-          >
-            Push tag '{{ l.name }}'
-          </button>
+          <template v-for="l in (row.labels ?? []).filter((l) => l.type === 'tag')" :key="l.name">
+            <button role="menuitem" class="ctx-item" @click="pushTag(l.name)">
+              Push tag '{{ l.name }}'
+            </button>
+            <button role="menuitem" class="ctx-item ctx-item--danger" @click="deleteTag(l.name)">
+              Delete tag '{{ l.name }}'…
+            </button>
+          </template>
         </template>
       </template>
     </div>
