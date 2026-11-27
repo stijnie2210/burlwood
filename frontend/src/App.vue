@@ -14,6 +14,7 @@ import ToastStack from './components/layout/ToastStack.vue';
 import PreferencesModal from './components/layout/PreferencesModal.vue';
 import LogViewerModal from './components/layout/LogViewerModal.vue';
 import InteractiveRebaseModal from './components/graph/InteractiveRebaseModal.vue';
+import FileHistoryModal from './components/history/FileHistoryModal.vue';
 import RepoPicker from './components/layout/RepoPicker.vue';
 import { useReposStore } from './stores/repos';
 import { useCommitsStore } from './stores/commits';
@@ -213,6 +214,14 @@ const SHORTCUTS: Record<string, string> = {
   ',': 'preferences',
 };
 
+function onShowCommit(e: Event) {
+  const path = repoPath.value;
+  if (path) {
+    viewMode.value = 'commits';
+    commits.selectCommit(path, (e as CustomEvent<string>).detail);
+  }
+}
+
 function onGlobalKeyDown(e: KeyboardEvent) {
   if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) {
     return;
@@ -234,6 +243,7 @@ function onGlobalKeyDown(e: KeyboardEvent) {
 
 onMounted(() => {
   window.addEventListener('keydown', onGlobalKeyDown);
+  window.addEventListener('burlwood:show-commit', onShowCommit);
   window.addEventListener('focus', refreshOnFocus);
   window.addEventListener('focus', onWindowFocusChange);
   window.addEventListener('blur', onWindowFocusChange);
@@ -243,6 +253,7 @@ onMounted(() => {
 });
 onUnmounted(() => {
   window.removeEventListener('keydown', onGlobalKeyDown);
+  window.removeEventListener('burlwood:show-commit', onShowCommit);
   window.removeEventListener('focus', refreshOnFocus);
   window.removeEventListener('focus', onWindowFocusChange);
   window.removeEventListener('blur', onWindowFocusChange);
@@ -260,6 +271,7 @@ onUnmounted(() => {
     <PreferencesModal />
     <LogViewerModal />
     <InteractiveRebaseModal />
+    <FileHistoryModal />
     <div class="workspace">
       <template v-if="repos.activeRepo">
         <Sidebar :style="{ width: sidebarWidth + 'px' }" />

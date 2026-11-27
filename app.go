@@ -146,6 +146,18 @@ func (a *App) UndoDiscards(repoPath string, snaps []gitcli.DiscardSnapshot) erro
 	return a.manager.UndoDiscards(repoPath, snaps)
 }
 
+func (a *App) GetFileHistory(repoPath, path string) ([]repo.FileHistoryEntry, error) {
+	return a.manager.GetFileHistory(repoPath, path)
+}
+
+func (a *App) GetFileDiffAtCommit(repoPath, hash, path, oldPath string) ([]repo.FileDiff, error) {
+	return a.manager.GetFileDiffAtCommit(repoPath, hash, path, oldPath)
+}
+
+func (a *App) GetBlame(repoPath, path, rev string) ([]repo.BlameChunk, error) {
+	return a.manager.GetBlame(repoPath, path, rev)
+}
+
 func (a *App) GetCommitMessage(repoPath, hash string) (string, error) {
 	return gitcli.CommitMessage(repoPath, hash)
 }

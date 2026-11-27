@@ -123,6 +123,10 @@ export function GetAmendInfo(repoPath: string): $CancellablePromise<gitcli$0.Ame
     return $Call.ByID(1834606034, repoPath);
 }
 
+export function GetBlame(repoPath: string, path: string, rev: string): $CancellablePromise<repo$0.BlameChunk[] | null> {
+    return $Call.ByID(199305334, repoPath, path, rev);
+}
+
 export function GetCommitDiff(repoPath: string, hash: string): $CancellablePromise<repo$0.FileDiff[] | null> {
     return $Call.ByID(3399370629, repoPath, hash);
 }
@@ -145,6 +149,14 @@ export function GetFileAtCommitBase64(repoPath: string, hash: string, filePath: 
 
 export function GetFileBase64(repoPath: string, filePath: string): $CancellablePromise<string> {
     return $Call.ByID(4156105134, repoPath, filePath);
+}
+
+export function GetFileDiffAtCommit(repoPath: string, hash: string, path: string, oldPath: string): $CancellablePromise<repo$0.FileDiff[] | null> {
+    return $Call.ByID(3144784338, repoPath, hash, path, oldPath);
+}
+
+export function GetFileHistory(repoPath: string, path: string): $CancellablePromise<repo$0.FileHistoryEntry[] | null> {
+    return $Call.ByID(3742548899, repoPath, path);
 }
 
 export function GetMergeKind(repoPath: string): $CancellablePromise<repo$0.MergeKind> {
