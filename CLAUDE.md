@@ -90,7 +90,7 @@ internal/gitcli/
   rebase.go                         StartRebase, ContinueRebase, AbortRebase
   staging.go                        StageFile, UnstageFile, StageFiles/UnstageFiles (one call, paths via stdin),
                                     ApplyPatch, ReverseApplyToWorkingTree, DiscardFile
-  remote.go                         FetchAll, Pull, PushTag/ForcePushTag
+  remote.go                         FetchAll, Pull, PushTag/ForcePushTag, RemoteHasRef (ls-remote --exit-code), DeleteRemoteRef
   push.go                           PushBranch(branch, force): upstream from config or -u on the default remote;
                                     non-fast-forward → Rejected result (not an error); force = --force-with-lease --force-if-includes
                                     (the bare lease is defeated by background auto-fetch)
@@ -114,7 +114,8 @@ internal/repo/
   merge.go                          MergeBranch: outcome (up-to-date / fast-forward / merged) from HEAD before and after,
                                     not git's (translated) output; a conflict returns an error and leaves MERGE_HEAD
   worktrees.go                      ListWorktrees (git worktree list --porcelain): main first, isCurrent per repoPath
-  tags.go                           ListTags: newest first, annotated tags peeled to their commit
+  tags.go                           ListTags: newest first, annotated tags peeled to their commit; DeleteTag (optionally
+                                    from a remote too, remote first so a failure keeps the local tag), RestoreTag for Undo
   commits.go                        GetCommitGraph (git log --all --date-order + stashes + ref labels), GetCommitDiff
                                     buildHunks() — context lines from prefs.DiffContextLines
   diff.go                           GetStatus (git status --porcelain), GetWorkingDiff
@@ -283,6 +284,9 @@ All context menus are teleported to `<body>` to escape overflow clipping. Positi
   `keepFocusInMenu` focuses a `[data-autofocus]` button first: put it on the safe button of a destructive step
 
 The stash section of the sidebar has its own menu: Apply, Pop, Rename, Drop.
+
+The tag menu: Push to origin, Copy tag name, Delete… (confirm, Cancel focused; "Also delete it from origin" when
+origin exists, off by default). Undo restores the local tag, annotated ones with their message.
 
 ### Worktrees (`Sidebar.vue` + `internal/repo/worktrees.go`)
 A worktree opens as an ordinary repo tab (`repos.openRepo(path)`); everything else already works there because git does.

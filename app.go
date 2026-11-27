@@ -310,6 +310,14 @@ func (a *App) PruneWorktrees(repoPath string) error {
 	return gitcli.PruneWorktrees(repoPath)
 }
 
+func (a *App) DeleteTag(repoPath, name, remote string) (repo.DeletedTag, error) {
+	return a.manager.DeleteTag(repoPath, name, remote)
+}
+
+func (a *App) RestoreTag(repoPath string, t repo.DeletedTag) error {
+	return a.manager.RestoreTag(repoPath, t)
+}
+
 func (a *App) PushTag(repoPath, tagName string) error {
 	return gitcli.PushTag(repoPath, tagName)
 }

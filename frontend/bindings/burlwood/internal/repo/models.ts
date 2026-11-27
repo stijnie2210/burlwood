@@ -75,6 +75,13 @@ export interface DeletedBranch {
     "upstream": string;
 }
 
+export interface DeletedTag {
+    "name": string;
+    "target": string;
+    "remote": string;
+    "remoteDeleted": boolean;
+}
+
 export interface FileDiff {
     "oldPath": string;
     "newPath": string;

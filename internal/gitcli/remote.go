@@ -33,3 +33,16 @@ func ForcePushTag(repoPath, tagName string) error {
 	_, err := Run(repoPath, "push", "--force", "origin", "refs/tags/"+tagName)
 	return err
 }
+
+func RemoteHasRef(repoPath, remote, ref string) (bool, error) {
+	_, err := Run(repoPath, "ls-remote", "--exit-code", remote, ref)
+	if exitErr, ok := err.(*ExitError); ok && exitErr.Code == 2 {
+		return false, nil
+	}
+	return err == nil, err
+}
+
+func DeleteRemoteRef(repoPath, remote, ref string) error {
+	_, err := Run(repoPath, "push", remote, "--delete", ref)
+	return err
+}
