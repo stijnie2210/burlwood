@@ -122,6 +122,7 @@ export interface HunkLine {
      * 0 for deleted lines
      */
     "newLine": number;
+    "noNewline"?: boolean;
 }
 
 export enum MergeKind {

@@ -190,10 +190,11 @@ func buildLabelMapShell(repoPath string) map[string][]graph.Label {
 const diffContextLines = 3
 
 type HunkLine struct {
-	Type    string `json:"type"` // "add", "del", "context"
-	Content string `json:"content"`
-	OldLine int    `json:"oldLine"` // 0 for added lines
-	NewLine int    `json:"newLine"` // 0 for deleted lines
+	Type      string `json:"type"` // "add", "del", "context"
+	Content   string `json:"content"`
+	OldLine   int    `json:"oldLine"` // 0 for added lines
+	NewLine   int    `json:"newLine"` // 0 for deleted lines
+	NoNewline bool   `json:"noNewline,omitempty"`
 }
 
 type Hunk struct {

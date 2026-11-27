@@ -89,7 +89,7 @@ internal/gitcli/
   stash.go                          ListStashes, Apply/Pop/Drop/RenameStash, Stash/StashPop, StashPushNamed, CreateBranch
   rebase.go                         StartRebase, ContinueRebase, AbortRebase
   staging.go                        StageFile, UnstageFile, StageFiles/UnstageFiles (one call, paths via stdin),
-                                    ApplyPatch, DiscardFile
+                                    ApplyPatch, ReverseApplyToWorkingTree, DiscardFile
   remote.go                         FetchAll, Pull, PushTag/ForcePushTag
   push.go                           PushBranch(branch, force): upstream from config or -u on the default remote;
                                     non-fast-forward → Rejected result (not an error); force = --force-with-lease --force-if-includes
@@ -133,7 +133,7 @@ internal/repo/
   conflict.go                       GetMergeKind (merge / cherry-pick / revert), IsInMerge, GetMergeMessage,
                                     GetConflictContent, ResolveConflict, AbortMerge (the --abort for that kind)
   stash.go                          stash list/apply/pop/drop/rename
-  staging.go                        StageHunk/UnstageHunk (accept patch string from frontend), UndoDiscard,
+  staging.go                        StageHunk/UnstageHunk/DiscardHunk (accept patch string from frontend), UndoDiscard,
                                     FetchAll, Commit, GetAmendInfo; BuildHunkPatch (test reference for the TS version)
 internal/desktop/
   appimage.go                       Run as an AppImage on Linux ($APPIMAGE): writes ~/.local/share/applications/burlwood.desktop
@@ -225,10 +225,11 @@ Uses `useVirtualizer(computed(() => ({ count, getScrollElement, estimateSize, ov
 2. User clicks "Stage Hunk" — frontend calls `buildHunkPatch(path, hunk)` in `stores/staging.ts`
 3. `StageHunk(repoPath, patchString)` → `git apply --cached`
 4. For unstage: `UnstageHunk` → `git apply --cached --reverse`
+5. Discard Hunk (unstaged, tracked files only): `DiscardHunk` snapshots the file like Discard does, then `git apply --reverse` on the working tree; the Undo toast restores the snapshot via `UndoDiscard`
 Frontend builds the patch (not backend) so the applied patch exactly matches what the user saw.
 
 ### Unified diff parsing (`internal/repo/diff.go`)
-`parseUnifiedDiff()` handles: `diff --git` headers, `--- /dev/null` / `+++ /dev/null` (new/deleted files), `Binary files` lines, `\ No newline at end of file`, hunk headers `@@ -n,m +n,m @@`. Untracked files use `git diff --no-index /dev/null <path>` (exit code 1 = differences found, not an error).
+`parseUnifiedDiff()` handles: `diff --git` headers, `--- /dev/null` / `+++ /dev/null` (new/deleted files), `Binary files` lines, `\ No newline at end of file` (sets `noNewline` on the line before; both patch builders write the marker back, or a hunk at a file's end won't apply), hunk headers `@@ -n,m +n,m @@`. Untracked files use `git diff --no-index /dev/null <path>` (exit code 1 = differences found, not an error).
 
 ### Resizable panels
 `makeResizer(width: Ref<number>, min, max, direction)` in `App.vue` — returns a mousedown handler. Direction `'right'` = delta is +x; `'left'` = delta is −x (for right-edge panels). Each component that needs local resize (e.g. `StagingView`) defines its own inline version.

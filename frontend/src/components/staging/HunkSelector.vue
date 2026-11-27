@@ -13,6 +13,7 @@ const props = defineProps<{
   path: string;
   diffLoading: boolean;
   diffError?: string | null;
+  untracked?: boolean;
 }>();
 
 const lang = computed(() => languageForPath(props.path));
@@ -24,6 +25,7 @@ const emit = defineEmits<{
   'discard-file': [];
   'stage-hunk': [hunk: Hunk];
   'unstage-hunk': [hunk: Hunk];
+  'discard-hunk': [hunk: Hunk];
 }>();
 
 // Flatten hunks across all FileDiffs (usually just one for a single file)
@@ -108,6 +110,13 @@ const { visible, hiddenLines, revealAll } = useLineBudget(
         <div class="hunk-header-row">
           <span class="hunk-header-text">{{ entry.hunk.header }}</span>
           <template v-if="!entry.truncated">
+            <button
+              v-if="mode === 'stage' && !untracked"
+              class="hunk-btn discard-btn"
+              @click="emit('discard-hunk', entry.hunk)"
+            >
+              Discard Hunk
+            </button>
             <button
               v-if="mode === 'stage'"
               class="hunk-btn stage-btn"
@@ -264,6 +273,14 @@ const { visible, hiddenLines, revealAll } = useLineBudget(
   cursor: default;
   flex-shrink: 0;
   font-weight: 500;
+}
+.hunk-btn.discard-btn {
+  background: var(--danger-soft);
+  border-color: var(--danger-border);
+  color: var(--danger);
+}
+.hunk-btn.discard-btn:hover {
+  background: var(--danger-soft-hover);
 }
 .hunk-btn.stage-btn {
   background: var(--add-soft);

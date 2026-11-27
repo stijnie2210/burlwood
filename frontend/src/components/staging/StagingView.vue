@@ -155,6 +155,35 @@ async function onStageHunk(hunk: Hunk) {
   }
 }
 
+const selectedIsUntracked = computed(
+  () => staging.files.find((f) => f.path === staging.selectedPath)?.unstaged === '?'
+);
+
+async function onDiscardHunk(hunk: Hunk) {
+  const repo = repoPath();
+  const path = staging.selectedPath;
+  if (!path) {
+    return;
+  }
+  const name = path.split('/').pop() ?? path;
+  try {
+    const snapshot = await staging.discardHunk(repo, path, hunk);
+    toast.withUndo(`Discarded a hunk in ${name}`, async () => {
+      try {
+        await staging.undoDiscard(repo, snapshot);
+        if (repoPath() === repo) {
+          await staging.refresh(repo);
+        }
+        toast.success(`Restored the hunk in ${name}`);
+      } catch (e) {
+        toast.error(e);
+      }
+    });
+  } catch (e) {
+    toast.error(e);
+  }
+}
+
 async function onUnstageHunk(hunk: Hunk) {
   if (!staging.selectedPath) {
     return;
@@ -1052,11 +1081,13 @@ async function doAbortRebase() {
           :path="staging.selectedPath"
           :diff-loading="staging.diffLoading"
           :diff-error="staging.diffError"
+          :untracked="selectedIsUntracked"
           @stage-file="onStageFile(staging.selectedPath!)"
           @unstage-file="onUnstageFile(staging.selectedPath!)"
           @discard-file="onDiscardFile(staging.selectedPath!)"
           @stage-hunk="onStageHunk"
           @unstage-hunk="onUnstageHunk"
+          @discard-hunk="onDiscardHunk"
         />
       </div>
     </div>

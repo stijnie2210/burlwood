@@ -11,6 +11,7 @@ import {
   StageFiles,
   UnstageFiles,
   UndoDiscard,
+  DiscardHunk,
   FetchAll,
   PullBranch,
   Commit,
@@ -38,14 +39,10 @@ export function buildHunkPatch(path: string, hunk: Hunk): string {
     `--- a/${path}`,
     `+++ b/${path}`,
     hunk.header,
-    ...(hunk.lines ?? []).map((l) => {
-      if (l.type === 'add') {
-        return `+${l.content}`;
-      }
-      if (l.type === 'del') {
-        return `-${l.content}`;
-      }
-      return ` ${l.content}`;
+    ...(hunk.lines ?? []).flatMap((l) => {
+      const prefix = l.type === 'add' ? '+' : l.type === 'del' ? '-' : ' ';
+      const line = `${prefix}${l.content}`;
+      return l.noNewline ? [line, '\\ No newline at end of file'] : [line];
     }),
   ];
   return parts.join('\n') + '\n';
@@ -235,6 +232,16 @@ export const useStagingStore = defineStore('staging', () => {
     return snapshot;
   }
 
+  async function discardHunk(
+    repoPath: string,
+    path: string,
+    hunk: Hunk
+  ): Promise<gitcli.DiscardSnapshot> {
+    const snapshot = await DiscardHunk(repoPath, path, buildHunkPatch(path, hunk));
+    await refresh(repoPath);
+    return snapshot;
+  }
+
   async function undoDiscard(repoPath: string, snapshot: gitcli.DiscardSnapshot) {
     await UndoDiscard(repoPath, snapshot);
   }
@@ -311,6 +318,7 @@ export const useStagingStore = defineStore('staging', () => {
     stageHunk,
     unstageHunk,
     discardFile,
+    discardHunk,
     undoDiscard,
     fetchAll,
     pullBranch,
