@@ -6,24 +6,27 @@
 
 A fast desktop Git client, built first for macOS. One native binary made with [Wails](https://wails.io): a Go backend and a Vue 3 frontend, no Electron and no local web server.
 
-Burlwood (formerly gitgood) is a hobby project and still early (pre-1.0). Expect rough edges, and keep your usual backups of anything precious.
+Burlwood (formerly gitgood) is free and open source.
 
 ![The commit graph with a commit's changed files](assets/screenshots/commit-graph.png)
 
 ## Features
 
 - **Commit graph:** branch lanes for every ref and stash, scrolls smoothly through thousands of commits, find a commit with ⌘F; a commit's changed files are grouped by folder
-- **Commit actions:** checkout, cherry-pick onto the current branch, create a branch or tag at any commit, revert, and soft, mixed or hard reset (a hard reset can be undone)
+- **Commit actions:** checkout, cherry-pick onto the current branch, create a branch or tag at any commit, revert, copy the message, and soft, mixed or hard reset (a hard reset can be undone)
+- **Interactive rebase:** pick, reword, squash, fix up, drop and reorder commits in an editor that says what each step will do and warns before it rewrites pushed commits; a finished rebase can be undone
+- **File history and blame:** every commit that changed a file, across renames, with that commit's diff; blame shows the commit behind each line, at the working tree or at any commit
 - **Tags:** the sidebar lists them all; move, push or delete a tag, also from origin, with undo
-- **Working tree:** stage and unstage whole files or single hunks, discard a file or a single hunk with undo, image preview, syntax-highlighted diffs, unified or side by side, with the changed words highlighted
+- **Working tree:** stage and unstage whole files or single hunks, discard a file, a single hunk or everything unstaged, with undo, image preview, syntax-highlighted diffs, unified or side by side, with the changed words highlighted
 - **Committing:** commit or amend, with a warning before you rewrite commits that are already pushed
 - **Branches:** switch, rename, delete (with undo), push, set upstream, merge into the current branch and rebase from the sidebar; delete a branch from its remote, with undo; rebase warns before it rewrites commits you already pushed; checking out a remote branch reuses your local one and fast-forwards it when it's behind; switching carries your uncommitted changes along and stashes them only when git refuses
 - **Worktrees:** the sidebar lists a repository's linked worktrees; open one as a tab or in Finder, your terminal or your editor, remove it (with an extra step when it has uncommitted changes) or prune it once its folder is gone; a branch checked out in another worktree names that worktree, and double-clicking it opens the worktree
-- **Stashes:** create, apply, pop, rename and drop
+- **Stashes:** create (optionally with untracked files), apply, pop, rename and drop
 - **Conflicts:** after a merge, cherry-pick, revert or rebase, pick ours or theirs per conflict, with diff3/zdiff3 support; a banner names the operation (and shows rebase progress) and aborts it
-- **Remotes:** fetch (also automatically in the background), pull with your preferred mode and automatic stashing, push with automatic upstream, and force push with lease when a push is rejected
+- **Remotes:** fetch (also automatically in the background), pull with your preferred mode and automatic stashing, push with automatic upstream, and force push with lease when a push is rejected; fetch or prune a single remote, and optionally prune on every fetch
 - **Clear errors:** git's error output is turned into a plain sentence with a next step; the full output stays one click away
 - **Tabs:** several repositories open at once, restored on the next launch
+- **Keyboard:** menu-bar shortcuts for fetch, pull, push, stash and new branch, and ⌘Enter to commit
 
 Not supported yet: HTTPS authentication for private repositories. SSH remotes work through your SSH agent.
 

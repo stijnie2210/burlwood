@@ -17,13 +17,16 @@ const hunkSmall = await getImage({ src: hunkNarrow, widths: [450, 900], format: 
 const cuttingList = [
   ['Committing', 'Commit or amend, with a warning before you rewrite commits that are already pushed'],
   ['Branches', 'Switch, rename, merge, rebase, push and set upstream from the sidebar. Delete has Undo, also for a branch on its remote, and rebase warns before it rewrites pushed commits. Switching carries your changes along and stashes them only when git refuses'],
+  ['Interactive rebase', 'Pick, reword, squash, fix up, drop and reorder in an editor that says what each step will do. It warns before rewriting pushed commits, and a finished rebase has Undo'],
+  ['History', 'Every commit that changed a file, across renames, with its diff. Blame names the commit behind each line'],
   ['Tags', 'Create, move, push and delete, also from origin. Delete has Undo'],
   ['Worktrees', 'Listed in the sidebar and opened as tabs. Remove one, or prune it once its folder is gone. A branch checked out in another worktree names it and opens it'],
-  ['Stashes', 'Create, apply, pop, rename and drop'],
+  ['Stashes', 'Create, apply, pop, rename and drop. Untracked files can come along'],
   ['Conflicts', 'Pick ours or theirs per conflict after a merge, cherry-pick, revert or rebase, diff3 and zdiff3 aware. A banner names the operation, shows rebase progress and aborts it'],
-  ['Remotes', 'Background fetch, pull in your preferred mode with automatic stashing, push with automatic upstream, force push with lease when a push is rejected'],
+  ['Remotes', 'Background fetch, pull in your preferred mode with automatic stashing, push with automatic upstream, force push with lease when a push is rejected. Pruning deleted branches is optional'],
   ['Errors', 'git’s error output becomes a plain sentence with a next step. The full output stays one click away'],
   ['Tabs', 'Several repositories open at once, restored on the next launch'],
+  ['Keyboard', 'Shortcuts for fetch, pull, push, stash, new branch and commit, all listed in the menu bar'],
   ['Engine', 'Your system git, so your own config, hooks and SSH agent apply'],
   ['Build', 'One native binary: Go and Vue 3 in the system webview. No Electron, no local web server'],
 ];
@@ -146,7 +149,7 @@ const installKnots = [
           </p>
           <p>
             Checkout, cherry-pick onto your branch, create a branch or tag at any commit, revert, or reset soft, mixed or
-            hard. A hard reset can be undone.
+            hard. A hard reset can be undone. Open any file's history across renames, or blame it line by line.
           </p>
         </div>
         <figure class="frame frame-native">
