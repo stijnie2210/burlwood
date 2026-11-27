@@ -184,7 +184,8 @@ frontend/src/
                                     buildHunkPatch() — constructs patch string for git apply
     stash.ts                        stash list for the sidebar
     prefs.ts                        AppPrefs + Preferences modal open state
-    toast.ts                        toast queue (ToastStack)
+    toast.ts                        toast queue (ToastStack); workingTreeHint: a "stopped on a conflict" toast that stays until
+                                    the Working Tree opens (App.vue calls setWorkingTreeOpen), so it never covers Save & Stage
     logModal.ts                     title/content for LogViewerModal (full git output)
   components/
     layout/ToolBar.vue              Title-bar row (hidden-inset, --wails-draggable): repo button, current-branch chip,

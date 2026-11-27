@@ -106,6 +106,7 @@ onUnmounted(() => {
 });
 
 const viewMode = ref<'commits' | 'staging'>('commits');
+watch(viewMode, (mode) => toast.setWorkingTreeOpen(mode === 'staging'), { immediate: true });
 
 // Switching repos always lands on the graph: an open diff or working-tree file belongs to the
 // repo you left. App owns this load because the graph isn't mounted while a file diff is open.

@@ -244,10 +244,8 @@ async function cherryPick(commitImmediately: boolean) {
     } else if (outcome === CherryPickOutcome.CherryPickEmpty) {
       toast.success(`${onto} already has the changes from ${short}`);
     } else {
-      toast.push(
-        `Cherry-picking ${short} stopped on a conflict. Resolve it in the Working Tree (${shortcut('2')}), then commit.`,
-        'info',
-        0
+      toast.workingTreeHint(
+        `Cherry-picking ${short} stopped on a conflict. Resolve it in the Working Tree (${shortcut('2')}), then commit.`
       );
     }
   } catch (e) {

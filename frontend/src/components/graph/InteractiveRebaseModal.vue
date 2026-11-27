@@ -86,10 +86,8 @@ async function start() {
     rebase.close();
     await reloadRepo(repo);
     if (result.outcome === InteractiveRebaseOutcome.InteractiveRebaseStopped) {
-      toast.push(
-        `The rebase of ${branch} stopped on a conflict. Resolve it in the Working Tree (${shortcut('2')}), then continue.`,
-        'info',
-        0
+      toast.workingTreeHint(
+        `The rebase of ${branch} stopped on a conflict. Resolve it in the Working Tree (${shortcut('2')}), then continue.`
       );
       return;
     }

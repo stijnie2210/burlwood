@@ -113,7 +113,41 @@ export const useToastStore = defineStore('toast', () => {
     return push(message, 'info', UNDO_WINDOW_MS, { label: 'Undo', run: undo });
   }
 
-  return { toasts, push, dismiss, pause, resume, undoLatest, success, error, withUndo };
+  // A hint that sends the user to the Working Tree stays until they get there: left up, it
+  // would cover the conflict view's Save & Stage button.
+  const workingTreeHints = new Set<number>();
+  let workingTreeOpen = false;
+
+  function workingTreeHint(message: string) {
+    if (workingTreeOpen) {
+      return push(message, 'info', 6000);
+    }
+    const id = push(message, 'info', 0);
+    workingTreeHints.add(id);
+    return id;
+  }
+
+  function setWorkingTreeOpen(open: boolean) {
+    workingTreeOpen = open;
+    if (open) {
+      workingTreeHints.forEach(dismiss);
+      workingTreeHints.clear();
+    }
+  }
+
+  return {
+    toasts,
+    push,
+    dismiss,
+    pause,
+    resume,
+    undoLatest,
+    success,
+    error,
+    withUndo,
+    workingTreeHint,
+    setWorkingTreeOpen,
+  };
 });
 
 // Without this, editing a store during `wails3 dev` keeps the old instance (and its old logic)
