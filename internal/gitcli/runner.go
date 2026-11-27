@@ -24,9 +24,13 @@ func (e *ExitError) Error() string {
 }
 
 func Run(repoPath string, args ...string) (Result, error) {
+	return RunWithEnv(repoPath, nil, args...)
+}
+
+func RunWithEnv(repoPath string, extraEnv []string, args ...string) (Result, error) {
 	cmd := exec.Command("git", args...)
 	cmd.Dir = repoPath
-	cmd.Env = mergedEnv()
+	cmd.Env = append(mergedEnv(), extraEnv...)
 	hideWindow(cmd)
 
 	var stdout, stderr bytes.Buffer

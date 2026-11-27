@@ -80,7 +80,7 @@ frontend/src/components/ ← Vue components, grouped by feature
 ```
 app.go                              All bound methods
 internal/gitcli/
-  runner.go                         Run() / RunWithInput() — exec.Command wrapper
+  runner.go                         Run() / RunWithEnv() / RunWithInput() — exec.Command wrapper
   env.go                            login-shell PATH for subprocesses (cached once)
   commit.go                         Commit (incl. amend)
   commits.go                        CheckoutRef, CreateBranchAt, RevertCommit, CherryPick, CreateTag, MoveTag, ResetBranch(mode)
@@ -132,6 +132,8 @@ internal/repo/
                                     SyncAutostash pops/drops it once the merge/rebase concludes (phase re-derived on restart)
   rebase.go                         IsInRebase, GetRebaseState (step/total), Start/Continue/AbortRebase;
                                     PreviewRebase counts pushed commits a rebase would rewrite; StartRebase reports up-to-date
+  interactive_rebase.go             GetRebaseTodo (commit..HEAD, oldest first; refuses merges in the range), StartInteractiveRebase,
+                                    UndoInteractiveRebase (reset --keep) — see Rebase flow
   cherrypick.go                     CherryPick: outcome committed / staged / empty / conflict; an empty pick (changes
                                     already on the branch) is skipped instead of left in progress
   conflict.go                       GetMergeKind (merge / cherry-pick / revert), IsInMerge, GetMergeMessage,
@@ -206,6 +208,8 @@ frontend/src/
     graph/CommitDetail.vue          Commit metadata (copy hash, parent links) + CommitFileList / FileDiffView
     graph/CommitFileList.vue        Changed files grouped by folder with A/M/D/R status and +/− totals
     graph/FileDiffView.vue          Diff of the selected file; resizable file list
+    graph/InteractiveRebaseModal.vue  Editor for an interactive rebase (stores/interactiveRebase.ts, utils/rebasePlan.ts):
+                                    action per commit, move up/down, reword field, force-push warning
     graph/CommitContextMenu.vue     Right-click menu for commits; self-clamps via clampMenuPosition in onMounted
     graph/graphRenderer.ts          drawGraphCell() — CELL_W=14, bezier curves for diagonals; the HEAD commit is
                                     drawn as the icon's knot (--brand-sapwood ring, --brand-heartwood core)
@@ -262,6 +266,8 @@ Frontend parses markers with `utils/conflicts.ts` (`parseConflicts`, unit-tested
 ### Rebase flow (`internal/gitcli/rebase.go` + `internal/repo/rebase.go`)
 `StartRebase(onto)` → `git rebase <onto>`. `ContinueRebase()` → `git rebase --continue`. `AbortRebase()` → `git rebase --abort`. `GetRebaseState()` reads step/total from the rebase dir for the Working Tree rebase banner; mid-rebase conflicts reuse ConflictView.
 
+Interactive rebase ("Interactive rebase from here…" in the commit menu): the modal builds a plan of pick / reword / squash / fixup / drop steps. `StartInteractiveRebase` validates it against the real range, writes a todo list to `<git dir>/burlwood-rebase/` and runs `git rebase -i --autostash` with `GIT_SEQUENCE_EDITOR=cp '<todo>'` and `GIT_EDITOR=true`, so no editor opens. Reword is a `pick` plus `exec git commit --amend -F <file>`. A conflict stops as an ordinary rebase (banner, Continue, Abort); a finished one offers Undo.
+
 ### Context menu pattern
 All context menus are teleported to `<body>` to escape overflow clipping. Position clamping is shared via `composables/useContextMenu.ts`:
 - `Sidebar.vue` / `StagingView.vue`: set position on open, then `await nextTick()` + `clampMenuPosition(getElementById(...), x, y)` to update
@@ -306,7 +312,7 @@ closes its tab). Remove is disabled for the main worktree, the one you're in and
 (`prunable`) offers Prune instead.
 
 ### Commit context menu (`CommitContextMenu.vue` + `internal/gitcli/commits.go`)
-Copy short/full SHA, Copy commit message (`GetCommitMessage`, %B), Checkout, Create branch here (`checkout -b <name> <hash>`), Create tag (then optionally push it), Move tag, Push/Force-push tag, Delete tag (hands over to the sidebar's confirmation via the 'burlwood:delete-tag' event), Revert (confirm mode), Cherry-pick (commit or stage; unavailable on merge commits, the current commit and mid-merge/rebase; hidden on stashes), Reset branch soft/mixed, hard reset via `HardResetBranch` (undoable with `UndoHardReset`), Copy hash. Name inputs and confirmations are `mode` states (`'branch'`, `'tag'`, `'move-tag'`, `'revert-confirm'`, `'cherry-pick-confirm'`, `'tag-created'`).
+Copy short/full SHA, Copy commit message (`GetCommitMessage`, %B), Checkout, Create branch here (`checkout -b <name> <hash>`), Create tag (then optionally push it), Move tag, Push/Force-push tag, Delete tag (hands over to the sidebar's confirmation via the 'burlwood:delete-tag' event), Revert (confirm mode), Interactive rebase from here… (opens the modal), Cherry-pick (commit or stage; unavailable on merge commits, the current commit and mid-merge/rebase; hidden on stashes), Reset branch soft/mixed, hard reset via `HardResetBranch` (undoable with `UndoHardReset`), Copy hash. Name inputs and confirmations are `mode` states (`'branch'`, `'tag'`, `'move-tag'`, `'revert-confirm'`, `'cherry-pick-confirm'`, `'tag-created'`).
 
 ### Working tree file context menu (`StagingView.vue` + `internal/gitcli/fileops.go`)
 Right-click on any file item (conflicts, unstaged, staged). Items are contextual per section:

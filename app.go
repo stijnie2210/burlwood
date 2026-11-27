@@ -286,6 +286,18 @@ func (a *App) StartRebase(repoPath, onto string) (repo.RebaseResult, error) {
 	return a.manager.StartRebase(repoPath, onto)
 }
 
+func (a *App) GetRebaseTodo(repoPath, fromHash string) (repo.RebaseTodo, error) {
+	return a.manager.GetRebaseTodo(repoPath, fromHash)
+}
+
+func (a *App) StartInteractiveRebase(repoPath, fromHash string, steps []repo.RebaseStep) (repo.InteractiveRebaseResult, error) {
+	return a.manager.StartInteractiveRebase(repoPath, fromHash, steps)
+}
+
+func (a *App) UndoInteractiveRebase(repoPath string, result repo.InteractiveRebaseResult) error {
+	return a.manager.UndoInteractiveRebase(repoPath, result)
+}
+
 func (a *App) ContinueRebase(repoPath string) error {
 	return a.manager.ContinueRebase(repoPath)
 }
