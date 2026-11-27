@@ -15,7 +15,7 @@ import {
   PullBranch,
   Commit,
   GetAmendInfo,
-  IsInMerge,
+  GetMergeKind,
   GetMergeMessage,
   IsInRebase,
   GetRebaseState,
@@ -23,6 +23,7 @@ import {
 } from '../../bindings/burlwood/app';
 import type * as gitcli from '../../bindings/burlwood/internal/gitcli';
 import type * as repo from '../../bindings/burlwood/internal/repo';
+import { MergeKind } from '../../bindings/burlwood/internal/repo/models';
 import { describeGitError } from '../utils/gitErrors';
 import { useToastStore } from './toast';
 import { isActive } from './repos';
@@ -67,7 +68,8 @@ export const useStagingStore = defineStore('staging', () => {
   const diff = ref<FileDiff[]>([]);
   const diffLoading = ref(false);
   const diffError = ref<string | null>(null);
-  const isInMerge = ref(false);
+  const mergeKind = ref<MergeKind>(MergeKind.MergeKindNone);
+  const isInMerge = computed(() => mergeKind.value !== MergeKind.MergeKindNone);
   const mergeMessage = ref('');
   const isInRebase = ref(false);
   const rebaseState = ref<repo.RebaseState>({ step: 0, total: 0, message: '', onto: '' });
@@ -104,9 +106,9 @@ export const useStagingStore = defineStore('staging', () => {
         // genuine failure, not the normal "still waiting" case (that resolves with no error)
         console.error('SyncAutostash failed:', e);
       }
-      const [statusResult, mergeState, mergeMsg, rebaseActive, rebaseInfo] = await Promise.all([
+      const [statusResult, kind, mergeMsg, rebaseActive, rebaseInfo] = await Promise.all([
         GetStatus(repoPath),
-        IsInMerge(repoPath),
+        GetMergeKind(repoPath),
         GetMergeMessage(repoPath),
         IsInRebase(repoPath),
         GetRebaseState(repoPath),
@@ -115,7 +117,7 @@ export const useStagingStore = defineStore('staging', () => {
         return;
       }
       files.value = statusResult ?? [];
-      isInMerge.value = mergeState;
+      mergeKind.value = kind;
       mergeMessage.value = mergeMsg;
       isInRebase.value = rebaseActive;
       rebaseState.value = rebaseInfo;
@@ -277,7 +279,7 @@ export const useStagingStore = defineStore('staging', () => {
     files.value = [];
     selectedPath.value = null;
     diff.value = [];
-    isInMerge.value = false;
+    mergeKind.value = MergeKind.MergeKindNone;
     mergeMessage.value = '';
     isInRebase.value = false;
     rebaseState.value = { step: 0, total: 0, message: '', onto: '' };
@@ -291,6 +293,7 @@ export const useStagingStore = defineStore('staging', () => {
     diff,
     diffLoading,
     diffError,
+    mergeKind,
     isInMerge,
     mergeMessage,
     isInRebase,

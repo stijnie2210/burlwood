@@ -32,6 +32,7 @@ import {
   SavePatchFile,
   DeleteWorkingFile,
 } from '../../../bindings/burlwood/app';
+import { MergeKind } from '../../../bindings/burlwood/internal/repo/models';
 
 const repos = useReposStore();
 const branches = useBranchesStore();
@@ -654,7 +655,18 @@ async function onConflictResolved() {
 
 const confirmingAbort = ref(false);
 
+const mergeOperation = computed(() => {
+  if (staging.mergeKind === MergeKind.MergeKindCherryPick) {
+    return 'Cherry-pick';
+  }
+  if (staging.mergeKind === MergeKind.MergeKindRevert) {
+    return 'Revert';
+  }
+  return 'Merge';
+});
+
 async function doAbortMerge() {
+  const operation = mergeOperation.value;
   confirmingAbort.value = false;
   try {
     await AbortMerge(repoPath());
@@ -664,7 +676,7 @@ async function doAbortMerge() {
       branches.load(repoPath()),
     ]);
     staging.clearSelection();
-    toast.success('Merge aborted');
+    toast.success(`${operation} aborted`);
   } catch (e) {
     toast.error(e);
   }
@@ -715,9 +727,11 @@ async function doAbortRebase() {
 
 <template>
   <div class="staging-outer">
-    <!-- Merge in progress banner -->
+    <!-- Merge, cherry-pick or revert in progress banner -->
     <div v-if="staging.isInMerge" class="merge-banner">
-      <span class="merge-banner-text">Merge in progress — resolve all conflicts, then commit</span>
+      <span class="merge-banner-text"
+        >{{ mergeOperation }} in progress — resolve all conflicts, then commit</span
+      >
       <div v-if="confirmingAbort" class="merge-abort-confirm">
         <span class="merge-abort-confirm-text">Discard all resolutions?</span>
         <button class="merge-abort-btn merge-abort-btn--confirm" @click="doAbortMerge">
@@ -727,7 +741,9 @@ async function doAbortRebase() {
           Cancel
         </button>
       </div>
-      <button v-else class="merge-abort-btn" @click="confirmingAbort = true">Abort Merge</button>
+      <button v-else class="merge-abort-btn" @click="confirmingAbort = true">
+        Abort {{ mergeOperation }}
+      </button>
     </div>
 
     <!-- Rebase in progress banner -->
