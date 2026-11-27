@@ -15,6 +15,7 @@ export const usePrefsStore = defineStore('prefs', () => {
     dateFormat: 'relative',
     pullMode: 'ff',
     pruneOnFetch: false,
+    stashIncludeUntracked: false,
   });
   const loaded = ref(false);
   const modalOpen = ref(false);

@@ -143,6 +143,23 @@ const { onKeydown } = useDialog(() => prefs.modalOpen, panelRef, onCancel);
             </div>
           </section>
 
+          <!-- Stash -->
+          <section class="prefs-section">
+            <h3 class="prefs-section-title">Stash</h3>
+
+            <div class="prefs-row">
+              <span class="prefs-label">Include untracked files</span>
+              <label class="toggle">
+                <input
+                  v-model="draft.stashIncludeUntracked"
+                  aria-label="Include untracked files when stashing"
+                  type="checkbox"
+                />
+                <span class="toggle-track"><span class="toggle-thumb" /></span>
+              </label>
+            </div>
+          </section>
+
           <!-- Commit graph -->
           <section class="prefs-section">
             <h3 class="prefs-section-title">Commit graph</h3>

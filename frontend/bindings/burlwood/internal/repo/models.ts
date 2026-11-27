@@ -23,6 +23,7 @@ export interface AppPrefs {
      */
     "pullMode": string;
     "pruneOnFetch": boolean;
+    "stashIncludeUntracked": boolean;
 }
 
 export interface BranchInfo {

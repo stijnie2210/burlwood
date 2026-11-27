@@ -86,7 +86,7 @@ internal/gitcli/
   commits.go                        CheckoutRef, CreateBranchAt, RevertCommit, CherryPick, CreateTag, MoveTag, ResetBranch(mode)
   branches.go                       DeleteBranch, RenameBranch, SetUpstream/UnsetUpstream, Merge (--no-edit)
   worktree.go                       RemoveWorktree (optionally --force), PruneWorktrees
-  stash.go                          ListStashes, Apply/Pop/Drop/RenameStash, Stash/StashPop, StashPushNamed, CreateBranch
+  stash.go                          ListStashes, Apply/Pop/Drop/RenameStash, Stash (--include-untracked per prefs)/StashPop, StashPushNamed, CreateBranch
   rebase.go                         StartRebase, ContinueRebase, AbortRebase
   staging.go                        StageFile, UnstageFile, StageFiles/UnstageFiles (one call, paths via stdin),
                                     ApplyPatch, ReverseApplyToWorkingTree, DiscardFile
@@ -105,7 +105,7 @@ internal/gitcli/
 internal/repo/
   manager.go                        Manager{map[string]*git.Repository}; Open/Close/Get
                                     RecentEntry → ~/Library/Application Support/burlwood/repos.json; ListRecentRepos drops repos that are gone
-  prefs.go / session.go /           AppPrefs (editor, auto-fetch, prune on fetch, graph limit, diff context, date format, pull mode),
+  prefs.go / session.go /           AppPrefs (editor, auto-fetch, prune on fetch, stash untracked, graph limit, diff context, date format, pull mode),
     windowprefs.go                  open tabs + active tab, window frame — JSON files next to repos.json
   configdir.go                      configPath(): the settings folder; moves the pre-rename `gitgood` folder once
   branches.go                       ListBranches (for-each-ref), GetAheadBehind; BranchInfo.worktree names another

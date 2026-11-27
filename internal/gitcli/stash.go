@@ -129,8 +129,12 @@ func RenameStash(repoPath, ref, newMessage string) error {
 	return nil
 }
 
-func Stash(repoPath string) error {
-	_, err := Run(repoPath, "stash")
+func Stash(repoPath string, includeUntracked bool) error {
+	args := []string{"stash", "push"}
+	if includeUntracked {
+		args = append(args, "--include-untracked")
+	}
+	_, err := Run(repoPath, args...)
 	return err
 }
 

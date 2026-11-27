@@ -16,6 +16,7 @@ type AppPrefs struct {
 	DateFormat            string `json:"dateFormat"` // "relative" | "absolute"
 	PullMode              string `json:"pullMode"`   // "fetch" | "ff" | "ff-only" | "rebase" — default action for the toolbar Pull button
 	PruneOnFetch          bool   `json:"pruneOnFetch"`
+	StashIncludeUntracked bool   `json:"stashIncludeUntracked"`
 }
 
 var (

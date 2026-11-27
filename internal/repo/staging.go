@@ -58,7 +58,8 @@ func (m *Manager) FetchAll(repoPath string) error {
 }
 
 func (m *Manager) Stash(repoPath string) error {
-	return gitcli.Stash(repoPath)
+	prefs, _ := LoadPrefs()
+	return gitcli.Stash(repoPath, prefs.StashIncludeUntracked)
 }
 
 func (m *Manager) StashPop(repoPath string) error {
