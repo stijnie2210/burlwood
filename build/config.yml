@@ -11,7 +11,7 @@ info:
   description: "A Git client"
   copyright: "© 2026, Stijn Mommersteeg"
   comments: "A Git client"
-  version: "1.0.1"
+  version: "1.0.2"
 
 dev_mode:
   root_path: .
