@@ -46,6 +46,11 @@ func ApplyPatch(repoPath string, patch []byte, reverse bool) error {
 	return err
 }
 
+func ReverseApplyToWorkingTree(repoPath string, patch []byte) error {
+	_, err := RunWithInput(repoPath, patch, "apply", "--reverse")
+	return err
+}
+
 func DiscardFile(repoPath, path string) error {
 	_, err := Run(repoPath, "restore", "--", path)
 	if err != nil {

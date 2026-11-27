@@ -5,7 +5,13 @@ import type * as repo from '../../bindings/burlwood/internal/repo';
 
 function makeHunk(
   header: string,
-  lines: { type: string; content: string; oldLine: number; newLine: number }[]
+  lines: {
+    type: string;
+    content: string;
+    oldLine: number;
+    newLine: number;
+    noNewline?: boolean;
+  }[]
 ): repo.Hunk {
   return { header, lines };
 }
@@ -76,6 +82,28 @@ describe('buildHunkPatch', () => {
     ].join('\n');
 
     expect(patch).toBe(expected);
+  });
+
+  it("keeps git's no-newline marker after the line it belongs to", () => {
+    const hunk = makeHunk('@@ -1,2 +1,2 @@', [
+      { type: 'context', content: 'ctx', oldLine: 1, newLine: 1 },
+      { type: 'del', content: 'old', oldLine: 2, newLine: 0, noNewline: true },
+      { type: 'add', content: 'new', oldLine: 0, newLine: 2, noNewline: true },
+    ]);
+    expect(buildHunkPatch('file.go', hunk)).toBe(
+      [
+        'diff --git a/file.go b/file.go',
+        '--- a/file.go',
+        '+++ b/file.go',
+        '@@ -1,2 +1,2 @@',
+        ' ctx',
+        '-old',
+        '\\ No newline at end of file',
+        '+new',
+        '\\ No newline at end of file',
+        '',
+      ].join('\n')
+    );
   });
 });
 

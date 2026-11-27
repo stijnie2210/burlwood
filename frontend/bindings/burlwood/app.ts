@@ -83,6 +83,10 @@ export function DiscardFile(repoPath: string, path: string): $CancellablePromise
     return $Call.ByID(2822748111, repoPath, path);
 }
 
+export function DiscardHunk(repoPath: string, path: string, patch: string): $CancellablePromise<gitcli$0.DiscardSnapshot> {
+    return $Call.ByID(3564137197, repoPath, path, patch);
+}
+
 export function DropStash(repoPath: string, ref: string): $CancellablePromise<void> {
     return $Call.ByID(2533241749, repoPath, ref);
 }

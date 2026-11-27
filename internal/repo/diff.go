@@ -166,7 +166,10 @@ func parseUnifiedDiff(output string) []FileDiff {
 
 		case curHunk != nil && len(line) > 0:
 			if line[0] == '\\' {
-				continue // "\ No newline at end of file"
+				if n := len(curHunk.Lines); n > 0 {
+					curHunk.Lines[n-1].NoNewline = true
+				}
+				continue
 			}
 			content := ""
 			if len(line) > 1 {

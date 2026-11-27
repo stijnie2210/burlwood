@@ -31,6 +31,14 @@ func (m *Manager) DiscardFile(repoPath, path string) (gitcli.DiscardSnapshot, er
 	return snap, gitcli.DiscardFile(repoPath, path)
 }
 
+func (m *Manager) DiscardHunk(repoPath, path, patch string) (gitcli.DiscardSnapshot, error) {
+	snap, err := gitcli.SnapshotWorkingFile(repoPath, path)
+	if err != nil {
+		return snap, err
+	}
+	return snap, gitcli.ReverseApplyToWorkingTree(repoPath, []byte(patch))
+}
+
 func (m *Manager) UndoDiscard(repoPath string, snap gitcli.DiscardSnapshot) error {
 	return gitcli.RestoreWorkingFile(repoPath, snap)
 }
@@ -82,6 +90,9 @@ func BuildHunkPatch(path string, hunk Hunk) string {
 			fmt.Fprintf(&sb, "-%s\n", l.Content)
 		default:
 			fmt.Fprintf(&sb, " %s\n", l.Content)
+		}
+		if l.NoNewline {
+			sb.WriteString("\\ No newline at end of file\n")
 		}
 	}
 	return sb.String()

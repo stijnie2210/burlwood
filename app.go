@@ -134,6 +134,10 @@ func (a *App) DiscardFile(repoPath, path string) (gitcli.DiscardSnapshot, error)
 	return a.manager.DiscardFile(repoPath, path)
 }
 
+func (a *App) DiscardHunk(repoPath, path, patch string) (gitcli.DiscardSnapshot, error) {
+	return a.manager.DiscardHunk(repoPath, path, patch)
+}
+
 func (a *App) UndoDiscard(repoPath string, snap gitcli.DiscardSnapshot) error {
 	return a.manager.UndoDiscard(repoPath, snap)
 }
