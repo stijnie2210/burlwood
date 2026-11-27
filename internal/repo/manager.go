@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"runtime"
+	"strings"
 	"sync"
 
 	git "github.com/go-git/go-git/v5"
@@ -109,14 +111,8 @@ func LoadRecentRepos() ([]recentEntry, error) {
 func SaveRecentRepo(path string) error {
 	entries, _ := LoadRecentRepos()
 
-	// Deduplicate — move to front if already present
 	name := filepath.Base(path)
-	filtered := []recentEntry{{Path: path, Name: name}}
-	for _, e := range entries {
-		if e.Path != path {
-			filtered = append(filtered, e)
-		}
-	}
+	filtered := dedupeRecent(append([]recentEntry{{Path: path, Name: name}}, entries...), runtime.GOOS)
 	if len(filtered) > 20 {
 		filtered = filtered[:20]
 	}
@@ -129,7 +125,7 @@ func ListRecentRepos() ([]recentEntry, error) {
 		return nil, err
 	}
 	kept := make([]recentEntry, 0, len(entries))
-	for _, e := range entries {
+	for _, e := range dedupeRecent(entries, runtime.GOOS) {
 		if !RepoGone(e.Path) {
 			kept = append(kept, e)
 		}
@@ -138,6 +134,32 @@ func ListRecentRepos() ([]recentEntry, error) {
 		_ = writeRecentRepos(kept)
 	}
 	return kept, nil
+}
+
+// Keeps the first entry per folder. On Windows one folder can be spelled with either slash and
+// any letter case; older versions stored git's C:/… form next to Go's C:\….
+func dedupeRecent(entries []recentEntry, goos string) []recentEntry {
+	seen := map[string]bool{}
+	kept := make([]recentEntry, 0, len(entries))
+	for _, e := range entries {
+		key := pathKey(e.Path, goos)
+		if !seen[key] {
+			seen[key] = true
+			kept = append(kept, e)
+		}
+	}
+	return kept
+}
+
+func pathKey(path, goos string) string {
+	if goos != "windows" {
+		return filepath.Clean(path)
+	}
+	key := strings.ToLower(strings.ReplaceAll(path, "/", `\`))
+	if len(key) > 3 {
+		key = strings.TrimRight(key, `\`)
+	}
+	return key
 }
 
 func writeRecentRepos(entries []recentEntry) error {
