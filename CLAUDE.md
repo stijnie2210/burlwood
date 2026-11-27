@@ -106,6 +106,7 @@ internal/gitcli/
 internal/repo/
   manager.go                        Manager{map[string]*git.Repository}; Open/Close/Get
                                     RecentEntry → ~/Library/Application Support/burlwood/repos.json; ListRecentRepos drops repos that are gone
+                                    and duplicates (on Windows a folder spelled with either slash or another case is one repo)
   prefs.go / session.go /           AppPrefs (editor, auto-fetch, prune on fetch, stash untracked, graph limit, diff context, date format, pull mode),
     windowprefs.go                  open tabs + active tab, window frame — JSON files next to repos.json
   configdir.go                      configPath(): the settings folder; moves the pre-rename `gitgood` folder once
