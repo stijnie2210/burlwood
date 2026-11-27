@@ -3,7 +3,7 @@ import { parentDir } from '../../utils/folders';
 import { ref, watch, computed, onMounted, onUnmounted, nextTick } from 'vue';
 import type { Ref } from 'vue';
 import { isImageFile, imageDataUrl } from '../../utils/imageUtils';
-import { platform } from '../../utils/platform';
+import { platform, shortcut } from '../../utils/platform';
 import { useReposStore } from '../../stores/repos';
 import { useBranchesStore } from '../../stores/branches';
 import { useCommitsStore } from '../../stores/commits';
@@ -1003,6 +1003,7 @@ async function doAbortRebase() {
                 spellcheck="true"
                 @keydown.enter.exact.prevent="descInputRef?.focus()"
                 @keydown.meta.enter="onCommit"
+                @keydown.ctrl.enter="onCommit"
               />
               <span
                 class="char-count"
@@ -1024,6 +1025,7 @@ async function doAbortRebase() {
               aria-label="Commit description"
               rows="3"
               @keydown.meta.enter="onCommit"
+              @keydown.ctrl.enter="onCommit"
             />
 
             <label class="amend-row">
@@ -1039,6 +1041,7 @@ async function doAbortRebase() {
               class="commit-btn"
               :class="{ ready: canCommit && commitSummary.trim() }"
               :disabled="!canCommit"
+              :title="`Commit (${shortcut(platform === 'mac' ? '↩' : 'Enter')})`"
               @click="onCommit"
             >
               <span v-if="committing">Committing…</span>

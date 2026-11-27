@@ -185,6 +185,8 @@ frontend/src/
     logModal.ts                     title/content for LogViewerModal (full git output)
   components/
     layout/ToolBar.vue              Title-bar row (hidden-inset, --wails-draggable): repo button, current-branch chip,
+                                    (menu bar and App.vue's ⌘ shortcuts reach Pull/Push/New Branch/Stash/Pop via the
+                                    'burlwood:toolbar' event; main.go's buildMenu lists every shortcut)
                                     Commits|Working Tree segmented control, icon-only git actions (tooltips +
                                     aria-labels), Find commit field (⌘F via the 'burlwood:find' event), Settings
     layout/TabBar.vue               Repo tabs (open/close/switch); only rendered with 2+ repos

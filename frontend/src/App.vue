@@ -161,6 +161,8 @@ const startDetailResize = makeResizer(detailWidth, 200, 800, 'left');
 
 const repoPath = computed(() => repos.activeRepo?.path ?? '');
 
+const TOOLBAR_ACTIONS = new Set(['pull', 'push', 'new-branch', 'stash', 'pop-stash']);
+
 function runAction(action: string) {
   if (action === 'view-commits' && repos.activeRepo) {
     viewMode.value = 'commits';
@@ -186,6 +188,8 @@ function runAction(action: string) {
     repos.pickAndOpen();
   } else if (action === 'preferences') {
     prefsStore.openModal();
+  } else if (TOOLBAR_ACTIONS.has(action)) {
+    window.dispatchEvent(new CustomEvent('burlwood:toolbar', { detail: action }));
   } else if (action === 'find' && repos.activeRepo) {
     viewMode.value = 'commits';
     nextTick(() => window.dispatchEvent(new CustomEvent('burlwood:find')));
@@ -199,6 +203,10 @@ const SHORTCUTS: Record<string, string> = {
   ']': 'next-tab',
   w: 'close-tab',
   r: 'fetch',
+  p: 'push',
+  P: 'pull',
+  N: 'new-branch',
+  S: 'stash',
   o: 'open-repo',
   ',': 'preferences',
 };
