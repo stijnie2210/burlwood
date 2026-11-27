@@ -75,6 +75,13 @@ export interface DeletedBranch {
     "upstream": string;
 }
 
+export interface DeletedRemoteBranch {
+    "remote": string;
+    "name": string;
+    "hash": string;
+    "alreadyGone": boolean;
+}
+
 export interface DeletedTag {
     "name": string;
     "target": string;

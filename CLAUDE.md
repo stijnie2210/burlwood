@@ -113,6 +113,8 @@ internal/repo/
                                     DeleteBranch returns name/hash/upstream so RestoreBranch can undo it
   merge.go                          MergeBranch: outcome (up-to-date / fast-forward / merged) from HEAD before and after,
                                     not git's (translated) output; a conflict returns an error and leaves MERGE_HEAD
+  remote_branches.go                DeleteRemoteBranch (push --delete; a branch the remote no longer has only drops the stale
+                                    remote-tracking ref), RestoreRemoteBranch pushes the old hash back for Undo
   worktrees.go                      ListWorktrees (git worktree list --porcelain): main first, isCurrent per repoPath
   tags.go                           ListTags: newest first, annotated tags peeled to their commit; DeleteTag (optionally
                                     from a remote too, remote first so a failure keeps the local tag), RestoreTag for Undo
@@ -269,6 +271,7 @@ All context menus are teleported to `<body>` to escape overflow clipping. Positi
   exists, else "Check out as new local branch") → `CheckoutRemoteBranch`
 - **Delete…**: confirm (Cancel focused), `git branch -d`; when it isn't merged, a force-delete step (Keep branch focused)
   naming the base git checked (the upstream, else the current branch). Both end in an Undo toast (`RestoreBranch`)
+- **Delete from <remote>…** (remote branches only): confirm (Cancel focused), `DeleteRemoteBranch`; Undo pushes it back
 - **Rename…**: `git branch -m <old> <new>`; a failure keeps the menu open with the error under the field
 - **Copy name**: `navigator.clipboard.writeText()`
 - **Push**: `pushWithFeedback` (`composables/usePush.ts`) → `PushBranch` in `internal/gitcli/push.go`

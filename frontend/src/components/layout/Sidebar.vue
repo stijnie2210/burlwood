@@ -21,6 +21,7 @@ import type { BranchInfo, TagInfo, WorktreeInfo } from '../../stores/branches';
 import { MergeOutcome } from '../../../bindings/burlwood/internal/repo/models';
 import type {
   DeletedBranch,
+  DeletedRemoteBranch,
   DeletedTag,
   SwitchResult,
 } from '../../../bindings/burlwood/internal/repo/models';
@@ -33,6 +34,8 @@ import {
   SetUpstream,
   UnsetUpstream,
   DeleteBranch,
+  DeleteRemoteBranch,
+  RestoreRemoteBranch,
   RenameBranch,
   DeleteTag,
   RestoreTag,
@@ -238,7 +241,8 @@ type CtxMode =
   | 'upstream'
   | 'confirm-rebase'
   | 'confirm-delete'
-  | 'confirm-force-delete';
+  | 'confirm-force-delete'
+  | 'confirm-delete-remote';
 
 interface CtxMenu {
   x: number;
@@ -716,6 +720,52 @@ async function confirmDelete(force: boolean) {
     }
     closeCtxMenu();
     toast.error(msg);
+  }
+}
+
+async function startDeleteRemote() {
+  const menu = ctxMenu.value;
+  if (!menu?.remoteBranch) {
+    return;
+  }
+  menu.mode = 'confirm-delete-remote';
+  await reclampCtxMenu();
+}
+
+async function confirmDeleteRemote() {
+  const menu = ctxMenu.value;
+  const repoPath = repos.activeRepo?.path;
+  if (!menu?.remoteBranch || !repoPath) {
+    closeCtxMenu();
+    return;
+  }
+  if (menu.busy) {
+    return;
+  }
+  menu.busy = true;
+  const { remote, name } = menu.remoteBranch;
+  try {
+    const deleted = await DeleteRemoteBranch(repoPath, remote, name);
+    closeCtxMenu();
+    await Promise.all([branches.load(repoPath), commits.load(repoPath)]);
+    if (deleted.alreadyGone) {
+      toast.success(`${remote} no longer had ${name}; removed the stale ${remote}/${name}`);
+      return;
+    }
+    toast.withUndo(`Deleted ${name} from ${remote}`, () => restoreRemoteBranch(repoPath, deleted));
+  } catch (e: unknown) {
+    closeCtxMenu();
+    toast.error(e);
+  }
+}
+
+async function restoreRemoteBranch(repoPath: string, deleted: DeletedRemoteBranch) {
+  try {
+    await RestoreRemoteBranch(repoPath, deleted);
+    await Promise.all([branches.load(repoPath), commits.load(repoPath)]);
+    toast.success(`Pushed ${deleted.name} back to ${deleted.remote}`);
+  } catch (e: unknown) {
+    toast.error(e);
   }
 }
 
@@ -1699,6 +1749,16 @@ async function confirmStashRename() {
             }}</span>
           </button>
         </template>
+        <template v-else-if="ctxMenu.remoteBranch">
+          <div class="ctx-menu-divider" role="separator" />
+          <button
+            role="menuitem"
+            class="ctx-menu-item ctx-menu-item-danger"
+            @click="startDeleteRemote()"
+          >
+            Delete from {{ ctxMenu.remoteBranch.remote }}…
+          </button>
+        </template>
       </template>
 
       <template v-else-if="ctxMenu.mode === 'rename'">
@@ -1820,6 +1880,25 @@ async function confirmStashRename() {
               Force delete
             </button>
             <button class="ctx-menu-btn" data-autofocus @click="closeCtxMenu()">Keep branch</button>
+          </div>
+        </div>
+      </template>
+
+      <template v-else-if="ctxMenu.mode === 'confirm-delete-remote' && ctxMenu.remoteBranch">
+        <div class="ctx-menu-confirm">
+          <p id="branch-menu-desc" class="ctx-menu-confirm-text">
+            Delete "{{ ctxMenu.remoteBranch.name }}" from {{ ctxMenu.remoteBranch.remote }}? It's
+            gone for everyone who fetches; your local branches stay.
+          </p>
+          <div class="ctx-menu-row">
+            <button
+              class="ctx-menu-btn ctx-menu-btn-danger"
+              :disabled="ctxMenu.busy"
+              @click="confirmDeleteRemote()"
+            >
+              Delete
+            </button>
+            <button class="ctx-menu-btn" data-autofocus @click="closeCtxMenu()">Cancel</button>
           </div>
         </div>
       </template>

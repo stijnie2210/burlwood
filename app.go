@@ -278,6 +278,14 @@ func (a *App) DeleteBranch(repoPath, name string, force bool) (repo.DeletedBranc
 	return a.manager.DeleteBranch(repoPath, name, force)
 }
 
+func (a *App) DeleteRemoteBranch(repoPath, remote, name string) (repo.DeletedRemoteBranch, error) {
+	return a.manager.DeleteRemoteBranch(repoPath, remote, name)
+}
+
+func (a *App) RestoreRemoteBranch(repoPath string, branch repo.DeletedRemoteBranch) error {
+	return a.manager.RestoreRemoteBranch(repoPath, branch)
+}
+
 func (a *App) RestoreBranch(repoPath string, branch repo.DeletedBranch) error {
 	return a.manager.RestoreBranch(repoPath, branch)
 }
