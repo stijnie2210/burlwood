@@ -19,7 +19,11 @@ import { describeGitError } from '../../utils/gitErrors';
 import type { StashEntry } from '../../stores/stash';
 import type { BranchInfo, TagInfo, WorktreeInfo } from '../../stores/branches';
 import { MergeOutcome } from '../../../bindings/burlwood/internal/repo/models';
-import type { DeletedBranch, SwitchResult } from '../../../bindings/burlwood/internal/repo/models';
+import type {
+  DeletedBranch,
+  DeletedTag,
+  SwitchResult,
+} from '../../../bindings/burlwood/internal/repo/models';
 import {
   CheckoutRemoteBranch,
   PreviewRebase,
@@ -30,6 +34,9 @@ import {
   UnsetUpstream,
   DeleteBranch,
   RenameBranch,
+  DeleteTag,
+  RestoreTag,
+  PushTag,
   ApplyStash,
   DropStash,
   PopStash,
@@ -360,6 +367,9 @@ function onWindowMouseDown(e: MouseEvent) {
   }
   if (wtCtxMenuEl.value && !wtCtxMenuEl.value.contains(e.target as Node)) {
     closeWtCtxMenu();
+  }
+  if (tagCtxMenuEl.value && !tagCtxMenuEl.value.contains(e.target as Node)) {
+    closeTagCtxMenu();
   }
 }
 
@@ -879,6 +889,130 @@ async function selectTag(tag: TagInfo) {
     return;
   }
   await commits.selectCommit(repoPath, tag.hash);
+}
+
+interface TagCtxMenu {
+  x: number;
+  y: number;
+  name: string;
+  mode: 'default' | 'confirm-delete';
+  alsoFromOrigin: boolean;
+  busy: boolean;
+}
+
+const tagCtxMenu = ref<TagCtxMenu | null>(null);
+const tagCtxMenuEl = ref<HTMLElement | null>(null);
+const hasOrigin = computed(() => branches.remote.some((b) => b.remote === 'origin'));
+
+watch(
+  () => tagCtxMenu.value?.mode,
+  () => nextTick(() => keepFocusInMenu(tagCtxMenuEl.value))
+);
+
+async function openTagCtxMenu(e: MouseEvent, tag: TagInfo) {
+  e.preventDefault();
+  e.stopPropagation();
+  rememberMenuFocus();
+  tagCtxMenu.value = {
+    x: e.clientX,
+    y: e.clientY,
+    name: tag.name,
+    mode: 'default',
+    alsoFromOrigin: false,
+    busy: false,
+  };
+  await nextTick();
+  await reclampTagCtxMenu();
+  focusFirstMenuItem(tagCtxMenuEl.value);
+}
+
+async function reclampTagCtxMenu() {
+  await nextTick();
+  const menu = tagCtxMenuEl.value;
+  if (menu && tagCtxMenu.value) {
+    const { x, y } = clampMenuPosition(menu, tagCtxMenu.value.x, tagCtxMenu.value.y);
+    tagCtxMenu.value = { ...tagCtxMenu.value, x, y };
+  }
+}
+
+function closeTagCtxMenu() {
+  tagCtxMenu.value = null;
+  restoreMenuFocus();
+}
+
+async function copyTagName() {
+  const menu = tagCtxMenu.value;
+  closeTagCtxMenu();
+  if (!menu) {
+    return;
+  }
+  await navigator.clipboard.writeText(menu.name);
+  toast.success('Copied: ' + menu.name);
+}
+
+async function pushTagToOrigin() {
+  const menu = tagCtxMenu.value;
+  const repoPath = repos.activeRepo?.path;
+  closeTagCtxMenu();
+  if (!menu || !repoPath) {
+    return;
+  }
+  try {
+    await PushTag(repoPath, menu.name);
+    toast.success(`Pushed ${menu.name} to origin`);
+  } catch (e: unknown) {
+    toast.error(e);
+  }
+}
+
+async function startTagDelete() {
+  if (!tagCtxMenu.value) {
+    return;
+  }
+  tagCtxMenu.value.mode = 'confirm-delete';
+  await reclampTagCtxMenu();
+}
+
+async function confirmTagDelete() {
+  const menu = tagCtxMenu.value;
+  const repoPath = repos.activeRepo?.path;
+  if (!menu || !repoPath) {
+    closeTagCtxMenu();
+    return;
+  }
+  if (menu.busy) {
+    return;
+  }
+  menu.busy = true;
+  try {
+    const deleted = await DeleteTag(repoPath, menu.name, menu.alsoFromOrigin ? 'origin' : '');
+    closeTagCtxMenu();
+    await Promise.all([branches.load(repoPath), commits.load(repoPath)]);
+    let message = `Deleted ${menu.name}`;
+    if (deleted.remoteDeleted) {
+      message = `Deleted ${menu.name} here and on origin`;
+    } else if (menu.alsoFromOrigin) {
+      message = `Deleted ${menu.name} (it wasn't on origin)`;
+    }
+    toast.withUndo(message, () => restoreTag(repoPath, deleted));
+  } catch (e: unknown) {
+    closeTagCtxMenu();
+    toast.error(e);
+  }
+}
+
+async function restoreTag(repoPath: string, deleted: DeletedTag) {
+  try {
+    await RestoreTag(repoPath, deleted);
+    await Promise.all([branches.load(repoPath), commits.load(repoPath)]);
+    toast.success(
+      deleted.remoteDeleted
+        ? `Restored ${deleted.name} here. Push it to put it back on origin.`
+        : `Restored ${deleted.name}`
+    );
+  } catch (e: unknown) {
+    toast.error(e);
+  }
 }
 
 async function selectStash(entry: StashEntry) {
@@ -1406,6 +1540,8 @@ async function confirmStashRename() {
             @keydown.enter="selectTag(t)"
             @keydown.up.prevent.stop="focusSiblingItem($event, -1)"
             @keydown.down.prevent.stop="focusSiblingItem($event, 1)"
+            @keydown.shift.f10.prevent="openTagCtxMenu(menuEventFor($event), t)"
+            @contextmenu="openTagCtxMenu($event, t)"
           >
             <svg
               class="branch-icon"
@@ -1793,6 +1929,59 @@ async function confirmStashRename() {
             <button class="ctx-menu-btn" data-autofocus @click="closeWtCtxMenu()">
               Keep worktree
             </button>
+          </div>
+        </div>
+      </template>
+    </div>
+  </Teleport>
+
+  <!-- Tag context menu -->
+  <Teleport to="body">
+    <div
+      v-if="tagCtxMenu"
+      ref="tagCtxMenuEl"
+      class="ctx-menu"
+      :role="tagCtxMenu.mode === 'default' ? 'menu' : 'dialog'"
+      aria-labelledby="tag-menu-label"
+      :aria-describedby="tagCtxMenu.mode === 'confirm-delete' ? 'tag-menu-desc' : undefined"
+      :style="{ left: tagCtxMenu.x + 'px', top: tagCtxMenu.y + 'px' }"
+      @keydown="handleMenuKeydown($event, tagCtxMenuEl, closeTagCtxMenu)"
+    >
+      <div id="tag-menu-label" class="ctx-menu-label">{{ tagCtxMenu.name }}</div>
+
+      <template v-if="tagCtxMenu.mode === 'default'">
+        <button v-if="hasOrigin" role="menuitem" class="ctx-menu-item" @click="pushTagToOrigin()">
+          Push to origin
+        </button>
+        <button role="menuitem" class="ctx-menu-item" @click="copyTagName()">Copy tag name</button>
+        <div class="ctx-menu-divider" role="separator" />
+        <button
+          role="menuitem"
+          class="ctx-menu-item ctx-menu-item-danger"
+          @click="startTagDelete()"
+        >
+          Delete…
+        </button>
+      </template>
+
+      <template v-else>
+        <div class="ctx-menu-confirm">
+          <p id="tag-menu-desc" class="ctx-menu-confirm-text">
+            Delete the tag "{{ tagCtxMenu.name }}"? The commit it points to stays.
+          </p>
+          <label v-if="hasOrigin" class="ctx-menu-check">
+            <input v-model="tagCtxMenu.alsoFromOrigin" type="checkbox" />
+            Also delete it from origin
+          </label>
+          <div class="ctx-menu-row">
+            <button
+              class="ctx-menu-btn ctx-menu-btn-danger"
+              :disabled="tagCtxMenu.busy"
+              @click="confirmTagDelete()"
+            >
+              Delete
+            </button>
+            <button class="ctx-menu-btn" data-autofocus @click="closeTagCtxMenu()">Cancel</button>
           </div>
         </div>
       </template>
@@ -2388,6 +2577,19 @@ async function confirmStashRename() {
   color: var(--text-secondary);
   text-align: left;
 }
+.ctx-menu-check {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 2px 10px;
+  font-size: var(--text-meta);
+  color: var(--text-primary);
+}
+.ctx-menu-check input {
+  margin: 0;
+  accent-color: var(--accent-fill);
+}
+
 .ctx-menu-note {
   max-width: 260px;
   padding: 4px 12px 6px;

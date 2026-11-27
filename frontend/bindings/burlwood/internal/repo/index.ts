@@ -14,6 +14,7 @@ export type {
     CherryPickResult,
     ConflictContent,
     DeletedBranch,
+    DeletedTag,
     FileDiff,
     FileStatus,
     Hunk,

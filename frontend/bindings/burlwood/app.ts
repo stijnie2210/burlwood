@@ -75,6 +75,10 @@ export function DeleteBranch(repoPath: string, name: string, force: boolean): $C
     return $Call.ByID(308689290, repoPath, name, force);
 }
 
+export function DeleteTag(repoPath: string, name: string, remote: string): $CancellablePromise<repo$0.DeletedTag> {
+    return $Call.ByID(4252857114, repoPath, name, remote);
+}
+
 export function DeleteWorkingFile(repoPath: string, filePath: string): $CancellablePromise<void> {
     return $Call.ByID(4048889335, repoPath, filePath);
 }
@@ -272,6 +276,10 @@ export function ResolveConflict(repoPath: string, path: string, content: string)
 
 export function RestoreBranch(repoPath: string, branch: repo$0.DeletedBranch): $CancellablePromise<void> {
     return $Call.ByID(960554369, repoPath, branch);
+}
+
+export function RestoreTag(repoPath: string, t: repo$0.DeletedTag): $CancellablePromise<void> {
+    return $Call.ByID(4166632447, repoPath, t);
 }
 
 export function RevertCommit(repoPath: string, hash: string, commitImmediately: boolean): $CancellablePromise<void> {
