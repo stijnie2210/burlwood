@@ -441,8 +441,14 @@ function onWindowMouseDown(e: MouseEvent) {
   }
 }
 
-onMounted(() => window.addEventListener('mousedown', onWindowMouseDown));
-onUnmounted(() => window.removeEventListener('mousedown', onWindowMouseDown));
+onMounted(() => {
+  window.addEventListener('mousedown', onWindowMouseDown);
+  window.addEventListener('burlwood:delete-tag', openTagDeleteConfirm);
+});
+onUnmounted(() => {
+  window.removeEventListener('mousedown', onWindowMouseDown);
+  window.removeEventListener('burlwood:delete-tag', openTagDeleteConfirm);
+});
 
 const currentBranchName = computed(() => branches.local.find((b) => b.isCurrent)?.name ?? '');
 const busyReason = computed(() => {
@@ -1038,6 +1044,13 @@ async function openTagCtxMenu(e: MouseEvent, tag: TagInfo) {
   await nextTick();
   await reclampTagCtxMenu();
   focusFirstMenuItem(tagCtxMenuEl.value);
+}
+
+async function openTagDeleteConfirm(e: Event) {
+  const { name, x, y } = (e as CustomEvent<{ name: string; x: number; y: number }>).detail;
+  rememberMenuFocus();
+  tagCtxMenu.value = { x, y, name, mode: 'confirm-delete', alsoFromOrigin: false, busy: false };
+  await reclampTagCtxMenu();
 }
 
 async function reclampTagCtxMenu() {

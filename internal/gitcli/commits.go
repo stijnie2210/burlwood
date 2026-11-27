@@ -1,6 +1,9 @@
 package gitcli
 
-import "fmt"
+import (
+	"fmt"
+	"strings"
+)
 
 func CheckoutRef(repoPath, ref string) error {
 	_, err := Run(repoPath, "checkout", ref)
@@ -53,4 +56,12 @@ func ResetBranch(repoPath, hash, mode string) error {
 	}
 	_, err := Run(repoPath, "reset", "--"+mode, hash)
 	return err
+}
+
+func CommitMessage(repoPath, hash string) (string, error) {
+	out, err := Run(repoPath, "log", "-1", "--format=%B", hash)
+	if err != nil {
+		return "", err
+	}
+	return strings.TrimSpace(out.Stdout), nil
 }

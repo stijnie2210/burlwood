@@ -91,6 +91,10 @@ export function DiscardFile(repoPath: string, path: string): $CancellablePromise
     return $Call.ByID(2822748111, repoPath, path);
 }
 
+export function DiscardFiles(repoPath: string, paths: string[] | null): $CancellablePromise<gitcli$0.DiscardSnapshot[] | null> {
+    return $Call.ByID(2555264244, repoPath, paths);
+}
+
 export function DiscardHunk(repoPath: string, path: string, patch: string): $CancellablePromise<gitcli$0.DiscardSnapshot> {
     return $Call.ByID(3564137197, repoPath, path, patch);
 }
@@ -125,6 +129,10 @@ export function GetCommitDiff(repoPath: string, hash: string): $CancellablePromi
 
 export function GetCommitGraph(repoPath: string, limit: number): $CancellablePromise<graph$0.GraphRow[] | null> {
     return $Call.ByID(1780604814, repoPath, limit);
+}
+
+export function GetCommitMessage(repoPath: string, hash: string): $CancellablePromise<string> {
+    return $Call.ByID(840224325, repoPath, hash);
 }
 
 export function GetConflictContent(repoPath: string, path: string): $CancellablePromise<repo$0.ConflictContent> {
@@ -360,6 +368,10 @@ export function SyncAutostash(repoPath: string): $CancellablePromise<void> {
 
 export function UndoDiscard(repoPath: string, snap: gitcli$0.DiscardSnapshot): $CancellablePromise<void> {
     return $Call.ByID(877283083, repoPath, snap);
+}
+
+export function UndoDiscards(repoPath: string, snaps: gitcli$0.DiscardSnapshot[] | null): $CancellablePromise<void> {
+    return $Call.ByID(3371074024, repoPath, snaps);
 }
 
 export function UndoHardReset(repoPath: string, undo: gitcli$0.ResetUndo): $CancellablePromise<void> {

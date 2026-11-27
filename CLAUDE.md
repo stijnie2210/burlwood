@@ -138,6 +138,7 @@ internal/repo/
                                     GetConflictContent, ResolveConflict, AbortMerge (the --abort for that kind)
   stash.go                          stash list/apply/pop/drop/rename
   staging.go                        StageHunk/UnstageHunk/DiscardHunk (accept patch string from frontend), UndoDiscard,
+                                    DiscardFiles/UndoDiscards (Discard All: snapshots every file before touching any),
                                     FetchAll, Commit, GetAmendInfo; BuildHunkPatch (test reference for the TS version)
 internal/desktop/
   appimage.go                       Run as an AppImage on Linux ($APPIMAGE): writes ~/.local/share/applications/burlwood.desktop
@@ -305,7 +306,7 @@ closes its tab). Remove is disabled for the main worktree, the one you're in and
 (`prunable`) offers Prune instead.
 
 ### Commit context menu (`CommitContextMenu.vue` + `internal/gitcli/commits.go`)
-Checkout, Create branch here (`checkout -b <name> <hash>`), Create tag (then optionally push it), Move tag, Push/Force-push tag, Revert (confirm mode), Cherry-pick (commit or stage; unavailable on merge commits, the current commit and mid-merge/rebase; hidden on stashes), Reset branch soft/mixed, hard reset via `HardResetBranch` (undoable with `UndoHardReset`), Copy hash. Name inputs and confirmations are `mode` states (`'branch'`, `'tag'`, `'move-tag'`, `'revert-confirm'`, `'cherry-pick-confirm'`, `'tag-created'`).
+Copy short/full SHA, Copy commit message (`GetCommitMessage`, %B), Checkout, Create branch here (`checkout -b <name> <hash>`), Create tag (then optionally push it), Move tag, Push/Force-push tag, Delete tag (hands over to the sidebar's confirmation via the 'burlwood:delete-tag' event), Revert (confirm mode), Cherry-pick (commit or stage; unavailable on merge commits, the current commit and mid-merge/rebase; hidden on stashes), Reset branch soft/mixed, hard reset via `HardResetBranch` (undoable with `UndoHardReset`), Copy hash. Name inputs and confirmations are `mode` states (`'branch'`, `'tag'`, `'move-tag'`, `'revert-confirm'`, `'cherry-pick-confirm'`, `'tag-created'`).
 
 ### Working tree file context menu (`StagingView.vue` + `internal/gitcli/fileops.go`)
 Right-click on any file item (conflicts, unstaged, staged). Items are contextual per section:
