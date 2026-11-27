@@ -92,10 +92,12 @@ func buildMenu(app *application.App) *application.Menu {
 		app.Event.Emit("open-preferences")
 	})
 	appNameMenu.AddSeparator()
-	appNameMenu.AddRole(application.Hide)
-	appNameMenu.AddRole(application.HideOthers)
-	appNameMenu.AddRole(application.ShowAll)
-	appNameMenu.AddSeparator()
+	if runtime.GOOS == "darwin" {
+		appNameMenu.AddRole(application.Hide)
+		appNameMenu.AddRole(application.HideOthers)
+		appNameMenu.AddRole(application.ShowAll)
+		appNameMenu.AddSeparator()
+	}
 	appNameMenu.Add("Quit Burlwood").SetAccelerator("CmdOrCtrl+q").OnClick(func(_ *application.Context) {
 		app.Quit()
 	})
@@ -130,7 +132,15 @@ func buildMenu(app *application.App) *application.Menu {
 	viewMenu.AddSeparator()
 	viewMenu.Add("Find Commit…").SetAccelerator("CmdOrCtrl+f").OnClick(emit("find"))
 
-	appMenu.AddRole(application.WindowMenu)
+	// Not the WindowMenu role: off macOS it adds Close with Ctrl+W, which takes the shortcut from
+	// Close Tab and quits the app.
+	windowMenu := appMenu.AddSubmenu("Window")
+	windowMenu.AddRole(application.Minimise)
+	windowMenu.AddRole(application.Zoom)
+	if runtime.GOOS == "darwin" {
+		windowMenu.AddSeparator()
+		windowMenu.AddRole(application.Front)
+	}
 
 	open := func(url string) func(*application.Context) {
 		return func(_ *application.Context) {
